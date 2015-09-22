@@ -17,13 +17,12 @@ import rx.subjects.ReplaySubject;
  * subscribe() again with the same Observable. Cancellation is usually more suited for lifecycle
  * events like Activity.onDestroy()
  */
-final class SubscriptionProxy<T> implements Subscription {
+final class SubscriptionProxy<T> implements RequestSubscription {
   private final ReplaySubject<T> replaySubject = ReplaySubject.create();
   private final Action0 onTerminate;
   private final Observable<T> upstream;
   private final Observer<T> proxy = new Observer<T>() {
-    @Override
-    public void onCompleted() {
+    @Override public void onCompleted() {
       if (!finished) {
         observer.onCompleted();
         onTerminate.call();
@@ -31,8 +30,7 @@ final class SubscriptionProxy<T> implements Subscription {
       }
     }
 
-    @Override
-    public void onError(Throwable e) {
+    @Override public void onError(Throwable e) {
       if (!finished) {
         observer.onError(e);
         onTerminate.call();
@@ -40,8 +38,7 @@ final class SubscriptionProxy<T> implements Subscription {
       }
     }
 
-    @Override
-    public void onNext(T t) {
+    @Override public void onNext(T t) {
       if (!finished) {
         observer.onNext(t);
       }
@@ -81,18 +78,16 @@ final class SubscriptionProxy<T> implements Subscription {
     downstreamSubscription.unsubscribe();
   }
 
-  @Override
-  public void unsubscribe() {
+  @Override public void unsubscribe() {
     Preconditions.checkState(downstreamSubscription != null, "Must call subscribe() first");
     downstreamSubscription.unsubscribe();
   }
 
-  @Override
-  public boolean isUnsubscribed() {
+  @Override public boolean isUnsubscribed() {
     return downstreamSubscription.isUnsubscribed();
   }
 
-  boolean isCancelled() {
+  @Override public boolean isCancelled() {
     return downstreamSubscription.isUnsubscribed() && upstreamSubscription.isUnsubscribed();
   }
 }

@@ -2,7 +2,7 @@ package com.airbnb.chimas;
 
 import rx.Observable;
 import rx.Observer;
-import rx.Subscription;
+import rx.functions.Action0;
 
 /**
  * A wrapper for a {@link SubscriptionProxy} for use with the {@link ObservableGroup} to monitor a call's
@@ -13,10 +13,11 @@ class ManagedObservable<T> {
   private final SubscriptionProxy<T> proxy;
   private Observer<T> observer;
 
-  ManagedObservable(String tag, Observable<T> observable, Observer<T> observer) {
+  ManagedObservable(
+      String tag, Observable<T> observable, Observer<T> observer, Action0 onTerminate) {
     this.tag = tag;
     this.observer = observer;
-    this.proxy = SubscriptionProxy.create(observable);
+    this.proxy = SubscriptionProxy.create(observable, onTerminate);
   }
 
   void cancel() {
@@ -35,7 +36,7 @@ class ManagedObservable<T> {
     proxy.subscribe(observer);
   }
 
-  Subscription subscription() {
+  RequestSubscription subscription() {
     return proxy;
   }
 

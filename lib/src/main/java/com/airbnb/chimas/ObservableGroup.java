@@ -7,7 +7,6 @@ import java.util.Map;
 
 import rx.Observable;
 import rx.Observer;
-import rx.Subscription;
 import rx.functions.Action0;
 
 /**
@@ -35,7 +34,7 @@ class ObservableGroup {
    * already added, the previous one will be canceled and removed before adding and subscribing to
    * the new one. Returns the new {@link rx.Subscription} object.
    */
-  <T> Subscription addAndExecute(
+  <T> RequestSubscription addAndExecute(
       final String tag, final Observable<T> observable, Observer<T> observer) {
     ManagedObservable previousRequest = requestMap.get(tag);
 
@@ -43,15 +42,16 @@ class ObservableGroup {
       cancelAndRemoveRequest(previousRequest);
     }
 
-    observable.doOnTerminate(new Action0() {
+    Action0 onTerminate = new Action0() {
       @Override
       public void call() {
         Log.d(TAG, "doOnTerminate() -> request tag " + tag);
         onTerminate(tag);
       }
-    });
+    };
 
-    ManagedObservable<T> managedObservable = new ManagedObservable<>(tag, observable, observer);
+    ManagedObservable<T> managedObservable =
+        new ManagedObservable<>(tag, observable, observer, onTerminate);
     requestMap.put(tag, managedObservable);
 
     if (!isLocked) {

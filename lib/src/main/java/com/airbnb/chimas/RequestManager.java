@@ -6,7 +6,6 @@ import com.google.common.base.Preconditions;
 
 import rx.Observable;
 import rx.Observer;
-import rx.Subscription;
 
 /**
  * Easily keep reference to AirRequests across lifecycle changes. Requests are grouped by a unique
@@ -25,7 +24,7 @@ public final class RequestManager {
    * Fires the provided request and saves it under the given id. If a request of the same class is
    * already running, the previous one will be canceled and removed from this manager.
    */
-  public <T> Subscription execute(
+  public <T> RequestSubscription execute(
       int groupId, String tag, Observable<T> observable, Observer<T> observer) {
     ObservableGroup group = findOrCreateGroup(groupId);
     return group.addAndExecute(tag, observable, observer);
