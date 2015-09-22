@@ -1,8 +1,8 @@
 package com.airbnb.chimas;
 
-import android.support.v4.util.ArrayMap;
 import android.util.Log;
 
+import java.util.HashMap;
 import java.util.Map;
 
 import rx.Observable;
@@ -26,7 +26,7 @@ import rx.functions.Action0;
 class ObservableGroup {
   private static final String TAG = "CallGroup";
 
-  private final Map<String, ManagedObservable<?>> requestMap = new ArrayMap<>();
+  private final Map<String, ManagedObservable<?>> requestMap = new HashMap<>();
   private boolean isLocked;
 
   /**

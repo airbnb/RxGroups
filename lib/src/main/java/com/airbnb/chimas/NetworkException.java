@@ -41,8 +41,9 @@ public class NetworkException extends Exception {
     bodyString = null;
   }
 
-  public Object errorResponse() {
-    return errorResponse;
+  public <T> T errorResponse() {
+    //noinspection unchecked
+    return (T) errorResponse;
   }
 
   /**

@@ -1,7 +1,6 @@
 package com.airbnb.chimas;
 
 import android.net.Uri;
-import android.support.v4.util.ArrayMap;
 
 import com.squareup.okhttp.MediaType;
 import com.squareup.okhttp.RequestBody;
@@ -10,6 +9,7 @@ import com.squareup.okhttp.internal.Util;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -54,7 +54,7 @@ final class ObservableRequestFactory {
 
   private static Map<String, String> convertHeaders(Map<String, String> headers) {
     Set<Map.Entry<String, String>> entries = headers.entrySet();
-    Map<String, String> headersMap = new ArrayMap<>(entries.size());
+    Map<String, String> headersMap = new HashMap<>(entries.size());
     for (Map.Entry<String, String> header : entries) {
       headersMap.put(header.getKey(), Util.toHumanReadableAscii(header.getValue()));
     }

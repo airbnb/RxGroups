@@ -1,4 +1,5 @@
 apply plugin: 'com.android.library'
+apply from: 'gradle-maven-push.gradle'
 
 android {
   compileSdkVersion 23
@@ -7,18 +8,12 @@ android {
   defaultConfig {
     minSdkVersion 16
     versionCode 1
-    versionName "1.0"
-  }
-  buildTypes {
-    release {
-      minifyEnabled false
-      proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
-    }
+    versionName "0.0.1"
   }
 }
 
 dependencies {
-  compile "com.android.support:appcompat-v7:23.0.1"
+  compile "com.android.support:support-annotations:23.0.1"
   compile 'com.squareup.okhttp:okhttp:2.5.0'
   compile 'com.squareup.retrofit:converter-jackson:2.0.0-beta1-airbnb'
   compile 'com.squareup.retrofit:retrofit-typedrequest:2.0.0-beta1-airbnb'
@@ -48,5 +43,13 @@ dependencies {
     exclude module: 'wagon-file'
     exclude module: 'wagon-http-lightweight'
     exclude module: 'wagon-provider-api'
+  }
+}
+
+if (JavaVersion.current().isJava8Compatible()) {
+  allprojects {
+    tasks.withType(Javadoc) {
+      options.addStringOption('Xdoclint:none', '-quiet')
+    }
   }
 }

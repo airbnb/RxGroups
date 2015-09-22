@@ -1,7 +1,6 @@
 package com.airbnb.chimas;
 
 import android.net.Uri;
-import android.support.annotation.WorkerThread;
 
 import com.airbnb.BuildConfig;
 import com.google.common.reflect.TypeToken;
@@ -44,29 +43,11 @@ public abstract class AirRequest<T> implements Func1<Response<T>, Response<T>> {
   /** Returns this request's tag. */
   public abstract Object getTag();
 
-  /** Milliseconds to live in cache */
-  public long getTTL() {
-    return 0;
-  }
-
-  /**
-   * Milliseconds to be considered 'fresh' in cache This means that if the current time is less
-   * then softttl expire time, the request will skip the network entirely and only cache respond.
-   * <p/>
-   * from @Geobio If cached response is less than this many milliseconds, then the cached response
-   * is considered to be up-to-date. No network request will be sent, and the cached response will
-   * be returned.
-   */
-  public long getSoftTTL() {
-    return 0;
-  }
-
   public RequestMethod getMethod() {
     return RequestMethod.GET;
   }
 
   @Override
-  @WorkerThread
   public Response<T> call(Response<T> response) {
     return response;
   }
