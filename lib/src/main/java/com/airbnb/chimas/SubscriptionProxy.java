@@ -65,10 +65,12 @@ final class SubscriptionProxy<T> implements RequestSubscription {
   void subscribe(Observer<T> observer) {
     if (this.observer != observer) {
       finished = false;
+      this.observer = observer;
+      upstreamSubscription = upstream.subscribe(replaySubject);
+      downstreamSubscription = replaySubject.subscribe(proxy);
+    } else if (isUnsubscribed()) {
+      downstreamSubscription = replaySubject.subscribe(proxy);
     }
-    this.observer = observer;
-    downstreamSubscription = replaySubject.subscribe(proxy);
-    upstreamSubscription = upstream.subscribe(replaySubject);
   }
 
   void cancel() {

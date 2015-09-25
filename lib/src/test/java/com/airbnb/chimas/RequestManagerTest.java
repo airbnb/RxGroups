@@ -13,9 +13,11 @@ import org.robolectric.annotation.Config;
 import org.robolectric.shadows.ShadowLog;
 
 import java.io.IOException;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import retrofit.JacksonConverterFactory;
+import retrofit.Query;
 import retrofit.Response;
 import retrofit.Retrofit;
 import retrofit.RxJavaCallAdapterFactory;
@@ -47,25 +49,64 @@ public class RequestManagerTest {
   private final TestSubscriber<Response<String>> listenerA = new TestSubscriber<>();
   private final TestSubscriber<Response<String>> listenerB = new TestSubscriber<>();
 
-  private class TestRequestA extends TestRequest {
+  private class TestRequestA extends AirRequest<String> {
     public TestRequestA() {
       super(chimas);
     }
+
+    @Override public Object getTag() {
+      return null;
+    }
+
+    @Override public Set<Query> getParams() {
+      return null;
+    }
+
+    @Override public String getBody() {
+      return null;
+    }
+
+    @Override public String getContentType() {
+      return null;
+    }
+
+    @Override public void onError(NetworkException e) {
+    }
   }
 
-  private class TestRequestB extends TestRequest {
+  private class TestRequestB extends AirRequest<String> {
     public TestRequestB() {
       super(chimas);
+    }
+
+    @Override public Object getTag() {
+      return null;
+    }
+
+    @Override public Set<Query> getParams() {
+      return null;
+    }
+
+    @Override public String getBody() {
+      return null;
+    }
+
+    @Override public String getContentType() {
+      return null;
+    }
+
+    @Override public void onError(NetworkException e) {
+
     }
   }
 
   private RequestSubscription execute(
-      int group, TestRequest request, Observer<Response<String>> listener) {
+      int group, AirRequest request, Observer<Response<String>> listener) {
     return requestManager.execute(
         group, request.getClass().getSimpleName(), request.toObservable(), listener);
   }
 
-  private boolean hasObservable(int group, TestRequest request) {
+  private boolean hasObservable(int group, AirRequest request) {
     return requestManager.hasObservable(group, request.getClass().getSimpleName());
   }
 
@@ -76,7 +117,7 @@ public class RequestManagerTest {
   }
 
   @Test public void shouldNotHaveRequests() {
-    assertThat(requestManager.hasObservable(GROUP_A, "TestRequestA"), equalTo(false));
+    assertThat(requestManager.hasObservable(GROUP_A, "TestSubscriberA"), equalTo(false));
   }
 
   @Test public void shouldAddRequestById() {
@@ -88,7 +129,7 @@ public class RequestManagerTest {
     assertThat(requestManager.hasObservable(GROUP_A, "TestRequestA"), equalTo(true));
 
     assertThat(hasObservable(GROUP_B, request), equalTo(false));
-    assertThat(requestManager.hasObservable(GROUP_A, "AirRequestV2"), equalTo(false));
+    assertThat(requestManager.hasObservable(GROUP_A, "TestRequestB"), equalTo(false));
   }
 
   @Test public void shouldNotBeCompleted() {
@@ -144,8 +185,8 @@ public class RequestManagerTest {
   }
 
   @Test public void shouldSeparateRequestsById() {
-    TestRequest requestA = new TestRequestA();
-    TestRequest requestB = new TestRequestB();
+    AirRequest requestA = new TestRequestA();
+    AirRequest requestB = new TestRequestB();
 
     execute(GROUP_A, requestA, listenerA);
     assertThat(hasObservable(GROUP_A, requestA), equalTo(true));
@@ -162,8 +203,8 @@ public class RequestManagerTest {
   }
 
   @Test public void shouldClearResponsesById() {
-    TestRequest requestA = new TestRequestA();
-    TestRequest requestB = new TestRequestA();
+    AirRequest requestA = new TestRequestA();
+    AirRequest requestB = new TestRequestA();
 
     RequestSubscription callA = execute(GROUP_A, requestA, listenerA);
     RequestSubscription callB = execute(GROUP_B, requestB, listenerA);
@@ -183,8 +224,8 @@ public class RequestManagerTest {
   }
 
   @Test public void shouldClearResponsesWhenLocked() {
-    TestRequest requestA = new TestRequestA();
-    TestRequest requestB = new TestRequestB();
+    AirRequest requestA = new TestRequestA();
+    AirRequest requestB = new TestRequestB();
 
     execute(GROUP_A, requestA, listenerA);
     execute(GROUP_A, requestB, listenerA);

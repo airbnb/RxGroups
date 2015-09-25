@@ -1,8 +1,9 @@
 package com.airbnb.chimas;
 
+import android.util.ArrayMap;
+
 import com.squareup.okhttp.CacheControl;
 
-import java.util.Collections;
 import java.util.Map;
 
 import retrofit.Response;
@@ -42,8 +43,10 @@ final class DoubleOperator<T> implements Func1<Response<T>, Observable<Response<
     retrofit.ObservableRequest.Builder builder =
         observableRequest.rawRequest().newBuilder(retrofit);
     // Replace original Cache-Control header with FORCE_NETWORK
-    Map<String, String> headers = Collections.singletonMap(
-        "Cache-Control", CacheControl.FORCE_NETWORK.toString());
+    Map<String, String> originalHeaders = observableRequest.rawRequest().headers();
+    Map<String, String> headers = new ArrayMap<>(originalHeaders.size() + 1);
+    headers.putAll(originalHeaders);
+    headers.put("Cache-Control", CacheControl.FORCE_NETWORK.toString());
     ObservableRequest<T> newRequest = new ObservableRequest<>(
         observableRequest.airRequest(), builder.headers(headers).build());
 
