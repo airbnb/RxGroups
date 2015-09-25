@@ -1,7 +1,6 @@
 package com.airbnb.chimas;
 
-import android.net.Uri;
-
+import com.squareup.okhttp.HttpUrl;
 import com.squareup.okhttp.MediaType;
 import com.squareup.okhttp.RequestBody;
 import com.squareup.okhttp.internal.Util;
@@ -85,11 +84,11 @@ final class ObservableRequestFactory {
   }
 
   private static String convertPath(String url) {
-    Uri uri = Uri.parse(url);
-    if (uri.getQuery() != null) {
-      return uri.getPath() + "?" + uri.getQuery();
+    HttpUrl uri = HttpUrl.parse(url);
+    if (uri.query() != null) {
+      return uri.encodedPath() + "?" + uri.query();
     }
-    return uri.getPath();
+    return uri.encodedPath();
   }
 
   private static List<Field> convertFields(AirRequest<?> airRequest) {

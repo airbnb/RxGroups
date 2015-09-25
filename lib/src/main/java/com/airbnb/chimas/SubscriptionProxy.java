@@ -73,7 +73,7 @@ final class SubscriptionProxy<T> implements RequestSubscription {
     }
   }
 
-  void cancel() {
+  @Override public void cancel() {
     Preconditions.checkState(upstreamSubscription != null, "Must call subscribe() first");
     Preconditions.checkState(downstreamSubscription != null, "Must call subscribe() first");
     upstreamSubscription.unsubscribe();

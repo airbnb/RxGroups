@@ -1,8 +1,5 @@
 package com.airbnb.chimas;
 
-import android.support.annotation.Nullable;
-import android.util.Log;
-
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.squareup.okhttp.MediaType;
 import com.squareup.okhttp.ResponseBody;
@@ -67,19 +64,18 @@ public class NetworkException extends Exception {
     return statusCode;
   }
 
-  private static String getBodyAsString(@Nullable ResponseBody responseBody) {
+  private static String getBodyAsString(ResponseBody responseBody) {
     if (responseBody == null) {
       return null;
     }
     try {
       return responseBody.string();
     } catch (IOException e) {
-      Log.w(TAG, "Failed to read error ResponseBody as String");
       return null;
     }
   }
 
-  private static ResponseBody cloneResponseBody(@Nullable final ResponseBody body) {
+  private static ResponseBody cloneResponseBody(final ResponseBody body) {
     if (body == null) {
       return null;
     }
@@ -89,7 +85,6 @@ public class NetworkException extends Exception {
       buffer.writeAll(source);
       source.close();
     } catch (IOException e) {
-      Log.w(TAG, "Failed to clone ResponseBody");
       return null;
     }
     return new ResponseBody() {
@@ -111,7 +106,7 @@ public class NetworkException extends Exception {
   }
 
   private <T> T getBodyAsErrorResponse(List<Converter.Factory> converterFactories,
-      Type responseType, @Nullable ResponseBody body) {
+      Type responseType, ResponseBody body) {
     if (body == null) {
       return null;
     }
@@ -121,7 +116,6 @@ public class NetworkException extends Exception {
       //noinspection unchecked
       return (T) converter.convert(body);
     } catch (JsonProcessingException e) {
-      Log.e(TAG, "Failed to parse error response as JSON", e);
       return null;
     } catch (IOException e) {
       throw new RuntimeException(e);

@@ -1,7 +1,5 @@
 package com.airbnb.chimas;
 
-import android.util.Log;
-
 import java.util.HashMap;
 import java.util.Map;
 
@@ -45,7 +43,6 @@ class ObservableGroup {
     Action0 onTerminate = new Action0() {
       @Override
       public void call() {
-        Log.d(TAG, "doOnTerminate() -> request tag " + tag);
         onTerminate(tag);
       }
     };

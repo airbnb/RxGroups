@@ -8,8 +8,6 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
-import org.junit.runner.RunWith;
-import org.robolectric.annotation.Config;
 import org.robolectric.shadows.ShadowLog;
 
 import java.io.IOException;
@@ -27,8 +25,6 @@ import rx.observers.TestSubscriber;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.junit.Assert.assertThat;
 
-@Config(sdk = 21, manifest = ChimasTestRunner.MANIFEST_PATH)
-@RunWith(ChimasTestRunner.class)
 public class RequestManagerTest {
   private static final int GROUP_A = 1;
   private static final int GROUP_B = 2;
@@ -70,6 +66,10 @@ public class RequestManagerTest {
       return null;
     }
 
+    @Override protected String getBaseUrl() {
+      return server.url("/").toString();
+    }
+
     @Override public void onError(NetworkException e) {
     }
   }
@@ -93,6 +93,10 @@ public class RequestManagerTest {
 
     @Override public String getContentType() {
       return null;
+    }
+
+    @Override protected String getBaseUrl() {
+      return server.url("/").toString();
     }
 
     @Override public void onError(NetworkException e) {

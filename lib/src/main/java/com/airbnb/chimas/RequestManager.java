@@ -1,8 +1,9 @@
 package com.airbnb.chimas;
 
-import android.util.SparseArray;
-
 import com.google.common.base.Preconditions;
+
+import java.util.HashMap;
+import java.util.Map;
 
 import rx.Observable;
 import rx.Observer;
@@ -18,7 +19,7 @@ import rx.Observer;
 public final class RequestManager {
 
   /** Map ids to a group of observables. */
-  private final SparseArray<ObservableGroup> observableGroupMap = new SparseArray<>();
+  private final Map<Integer, ObservableGroup> observableGroupMap = new HashMap<>();
 
   /**
    * Fires the provided request and saves it under the given id. If a request of the same class is

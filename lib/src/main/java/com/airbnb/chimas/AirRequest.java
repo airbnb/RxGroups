@@ -1,9 +1,7 @@
 package com.airbnb.chimas;
 
-import android.net.Uri;
-
-import com.airbnb.BuildConfig;
 import com.google.common.reflect.TypeToken;
+import com.squareup.okhttp.HttpUrl;
 
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Type;
@@ -29,9 +27,9 @@ public abstract class AirRequest<T> implements Func1<Response<T>, Response<T>> {
   private final ObservableFactory observableFactory;
 
   public AirRequest(Chimas chimas) {
-    this.retrofit = chimas.retrofit();
-    this.observableRequestFactory = chimas.observableRequestFactory();
-    this.observableFactory = chimas.observableFactory();
+    retrofit = chimas.retrofit();
+    observableRequestFactory = chimas.observableRequestFactory();
+    observableFactory = chimas.observableFactory();
   }
 
   public Observable<Response<T>> toObservable() {
@@ -64,15 +62,13 @@ public abstract class AirRequest<T> implements Func1<Response<T>, Response<T>> {
 
   public abstract String getContentType();
 
-  /** @return this request's URL path */
+  /** @return this request's path */
   public String getPath() {
     return "";
   }
 
-  /** @return this request's base url. Default is '/' */
-  protected String getBaseUrl() {
-    return "/";
-  }
+  /** @return this request's absolute base url */
+  protected abstract String getBaseUrl();
 
   public List<Query> getDefaultQueryParams() {
     return Collections.emptyList();
@@ -89,7 +85,7 @@ public abstract class AirRequest<T> implements Func1<Response<T>, Response<T>> {
       queryParams.addAll(getParams());
     }
 
-    Uri.Builder builder = Uri.parse(getBaseUrl() + getPath()).buildUpon();
+    HttpUrl.Builder builder = HttpUrl.parse(getBaseUrl() + getPath()).newBuilder();
 
     addParamsToQuery(builder, queryParams);
 
@@ -100,7 +96,7 @@ public abstract class AirRequest<T> implements Func1<Response<T>, Response<T>> {
     return type;
   }
 
-  protected static void addParamsToQuery(Uri.Builder builder, List<Query> queryParams) {
+  protected static void addParamsToQuery(HttpUrl.Builder builder, List<Query> queryParams) {
     String encoding = "UTF-8";
     for (Query entry : queryParams) {
       String queryName = entry.name();
@@ -118,13 +114,9 @@ public abstract class AirRequest<T> implements Func1<Response<T>, Response<T>> {
           name = queryName;
           value = queryValue;
         }
-        builder.appendQueryParameter(name, value);
+        builder.addEncodedQueryParameter(name, value);
       } catch (UnsupportedEncodingException e) {
-        if (BuildConfig.DEBUG) {
-          throw new RuntimeException(
-              "Unable to convert query parameter " + queryName +
-                  " value to UTF-8: " + queryValue, e);
-        }
+        throw new RuntimeException(e);
       }
     }
   }

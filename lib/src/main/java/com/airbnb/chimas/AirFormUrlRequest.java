@@ -1,6 +1,6 @@
 package com.airbnb.chimas;
 
-import android.net.Uri;
+import com.squareup.okhttp.HttpUrl;
 
 public abstract class AirFormUrlRequest<T> extends AirRequest<T> {
 
@@ -13,7 +13,7 @@ public abstract class AirFormUrlRequest<T> extends AirRequest<T> {
    * via Form fields instead.
    */
   @Override public String getUrl() {
-    Uri.Builder builder = Uri.parse(getBaseUrl() + getPath()).buildUpon();
+    HttpUrl.Builder builder = HttpUrl.parse(getBaseUrl() + getPath()).newBuilder();
 
     addParamsToQuery(builder, getDefaultQueryParams());
 

@@ -5,8 +5,6 @@ import com.squareup.okhttp.mockwebserver.MockWebServer;
 
 import org.junit.Rule;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.robolectric.annotation.Config;
 
 import java.io.IOException;
 
@@ -16,8 +14,6 @@ import static org.hamcrest.core.IsEqual.equalTo;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 
-@Config(sdk = 21, manifest = ChimasTestRunner.MANIFEST_PATH)
-@RunWith(ChimasTestRunner.class)
 public class AirFormUrlRequestTest {
 
   @Rule public MockWebServer server = new MockWebServer();
