@@ -6,7 +6,7 @@ final class Util {
     // no instances
   }
 
-  static NetworkException castOrWrap(Throwable e) {
+  public static NetworkException castOrWrap(Throwable e) {
     if (e instanceof NetworkException) {
       return (NetworkException) e;
     }
