@@ -1,4 +1,11 @@
 apply plugin: 'java'
+apply plugin: 'checkstyle'
+
+checkstyle {
+  configFile rootProject.file('checkstyle.xml')
+  showViolations true
+  configProperties = ['checkstyle.cache.file': rootProject.file('build/checkstyle.cache')]
+}
 
 sourceCompatibility = 1.7
 
@@ -7,36 +14,11 @@ project.version = PROJECT_VERSION
 
 
 dependencies {
-  compile 'com.squareup.okhttp:okhttp:2.5.0'
-  compile 'com.squareup.retrofit:converter-jackson:2.0.0-beta1-airbnb'
-  compile 'com.squareup.retrofit:retrofit-typedrequest:2.0.0-beta1-airbnb'
   compile 'io.reactivex:rxjava:1.0.14'
-  compile 'io.reactivex:rxandroid:1.0.1'
+  compile 'com.google.code.findbugs:jsr305:3.0.0'
 
   testCompile 'junit:junit:4.12'
-  testCompile 'com.squareup.okhttp:mockwebserver:2.5.0'
-  testCompile 'org.mockito:mockito-core:1.10.19'
-  testCompile 'org.hamcrest:hamcrest-integration:1.3'
-  testCompile 'org.hamcrest:hamcrest-core:1.3'
-  testCompile 'org.hamcrest:hamcrest-library:1.3'
-  testCompile 'org.apache.maven:maven-ant-tasks:2.1.3'
-  testCompile('org.robolectric:robolectric:3.0') {
-    exclude module: 'classworlds'
-    exclude module: 'commons-logging'
-    exclude module: 'httpclient'
-    exclude module: 'maven-artifact'
-    exclude module: 'maven-artifact-manager'
-    exclude module: 'maven-error-diagnostics'
-    exclude module: 'maven-model'
-    exclude module: 'maven-project'
-    exclude module: 'maven-settings'
-    exclude module: 'plexus-container-default'
-    exclude module: 'plexus-interpolation'
-    exclude module: 'plexus-utils'
-    exclude module: 'wagon-file'
-    exclude module: 'wagon-http-lightweight'
-    exclude module: 'wagon-provider-api'
-  }
+  testCompile 'org.assertj:assertj-core:1.7.0'
 }
 
 if (JavaVersion.current().isJava8Compatible()) {

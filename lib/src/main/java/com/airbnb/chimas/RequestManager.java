@@ -1,29 +1,25 @@
 package com.airbnb.chimas;
 
-import com.google.common.base.Preconditions;
-
-import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import rx.Observable;
 import rx.Observer;
 
 /**
- * Easily keep reference to AirRequests across lifecycle changes. Requests are grouped by a unique
- * id, which allows you to manage and reclaim requests made with the same id. Execute requests, and
- * then lock or unlock their listeners to control when you get the response back. Results will be
- * held in a queue until a observer is added and the id is unlocked.
- * <p/>
- * This is not threadsafe and should only be used from the main thread.
+ * Easily keep reference to {@link Observable}s across lifecycle changes. Observables are grouped by
+ * a unique group id, which allows you to manage and reclaim subscriptions made with the same id.
+ * Subscribe to observables, and then lock or unlock their observers to control when you get the
+ * event back. Events will be held in a queue until an Observer is added and the group is unlocked.
  */
 public final class RequestManager {
 
   /** Map ids to a group of observables. */
-  private final Map<Integer, ObservableGroup> observableGroupMap = new HashMap<>();
+  private final Map<Integer, ObservableGroup> observableGroupMap = new ConcurrentHashMap<>();
 
   /**
-   * Fires the provided request and saves it under the given id. If a request of the same class is
-   * already running, the previous one will be canceled and removed from this manager.
+   * Fires the provided Observable and saves it under the given id. If an Observable with the same
+   * tag is already running, the previous one will be canceled and removed from this manager.
    */
   public <T> RequestSubscription execute(
       int groupId, String tag, Observable<T> observable, Observer<T> observer) {
@@ -32,9 +28,9 @@ public final class RequestManager {
   }
 
   /**
-   * Checks if the given request has already been added to the group with {@link #execute(int,
-   * String, Observable, Observer)}. If so, it updates the existing request to use the given
-   * request's observer.
+   * Checks if the given {@link Observable} has already been added to the group with
+   * {@link #execute(int, String, Observable, Observer)}. If so, it updates the existing Observable
+   * to use the provided observer.
    * Otherwise the request is executed as normal. This does not change locked status.
    */
   public <T> void executeOrResubscribe(
@@ -47,14 +43,14 @@ public final class RequestManager {
   }
 
   /**
-   * True if a request exists under the given id. False if the request doesn't exist, either
-   * because it was never added, it finished, or it was removed manually.
+   * Returns {@code true} if an Observable exists under the given id or {@code false} otherwise,
+   * either because it was never added, it has been completed, or it was removed manually.
    */
   public boolean hasObservable(int groupId, String tag) {
     return findOrCreateGroup(groupId).hasObservable(tag);
   }
 
-  /** Unsubscribe listeners from a given groupId. If the group doesn't exist, this does nothing */
+  /** Unsubscribe observers from a given groupId. If the group doesn't exist, this does nothing */
   public void unsubscribe(int groupId) {
     ObservableGroup observableGroup = observableGroupMap.get(groupId);
     if (observableGroup != null) {
@@ -68,7 +64,7 @@ public final class RequestManager {
    *
    * @throws IllegalStateException if no request with the given class and groupId was found.
    */
-  public void resubscribe(int groupId, String tag, Observer observer) {
+  public void resubscribe(int groupId, String tag, Observer<?> observer) {
     ObservableGroup observableGroup = observableGroupMap.get(groupId);
     Preconditions.checkState(observableGroup != null, "must execute request first");
     observableGroup.resubscribe(tag, observer);
@@ -85,7 +81,7 @@ public final class RequestManager {
   }
 
   /**
-   * Locks (prevents) request Observables added with the the given groupId from emitting events
+   * Locks (prevents) Observables added with the the given groupId from emitting events
    * until they are unlocked.
    */
   public void lock(int groupId) {
@@ -93,7 +89,7 @@ public final class RequestManager {
   }
 
   /**
-   * Unlock requests with the given groupId. Available events will be fired immediately if an
+   * Unlock observers with the given groupId. Available events will be fired immediately if an
    * Observer has been added. If the group doesn't exist, this does nothing.
    */
   public void unlock(int groupId) {

@@ -4,8 +4,6 @@ buildscript {
   repositories {
     jcenter()
   }
-  dependencies {
-  }
 }
 
 allprojects {
