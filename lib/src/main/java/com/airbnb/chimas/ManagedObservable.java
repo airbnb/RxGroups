@@ -29,7 +29,7 @@ class ManagedObservable<T> implements RequestSubscription {
     observer = null;
   }
 
-  void softUnsubscribe() {
+  void lock() {
     proxy.unsubscribe();
   }
 
@@ -48,7 +48,7 @@ class ManagedObservable<T> implements RequestSubscription {
     }
   }
 
-  void setObserverAndSubscribe(Observer<T> observer) {
+  void subscribe(Observer<T> observer) {
     this.observer = Preconditions.checkNotNull(observer);
     proxy.subscribe(observer);
   }

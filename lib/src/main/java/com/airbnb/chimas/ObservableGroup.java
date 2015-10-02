@@ -18,17 +18,26 @@ import rx.functions.Action0;
  * added the original wil be canceled and discarded. This restriction allows observers to be
  * reattached to an observer without ambiguity.
  */
-class ObservableGroup {
+public final class ObservableGroup {
   private final Map<String, ManagedObservable<?>> groupMap = new ConcurrentHashMap<>();
+  private final long groupId;
   private boolean locked;
 
+  public ObservableGroup(long groupId) {
+    this.groupId = groupId;
+  }
+
+  public long id() {
+    return groupId;
+  }
+
   /**
-   * Adds a Observable to this group and executes (subscribes) to it. If an Observable with the same
-   * tag is already added, the previous one will be canceled and removed before adding and
-   * subscribing to the new one. Returns the new {@link RequestSubscription} object.
+   * Adds an {@link Observable} and {@link Observer} to this group and subscribes to it. If an
+   * Observable with the same tag is already added, the previous one will be canceled and removed
+   * before adding and subscribing to the new one. Returns the new {@link RequestSubscription}
+   * object.
    */
-  <T> RequestSubscription addAndExecute(
-      final String tag, final Observable<T> observable, Observer<T> observer) {
+  public <T> RequestSubscription add(String tag, Observable<T> observable, Observer<T> observer) {
     // noinspection unchecked
     ManagedObservable<T> previousObservable = (ManagedObservable<T>) groupMap.get(tag);
 
@@ -36,10 +45,11 @@ class ObservableGroup {
       cancelAndRemove(previousObservable);
     }
 
+    final String finalTag = tag;
     Action0 onTerminate = new Action0() {
       @Override
       public void call() {
-        onTerminate(tag);
+        onTerminate(finalTag);
       }
     };
 
@@ -56,10 +66,21 @@ class ObservableGroup {
   }
 
   /**
-   * Cancels all subscriptions and releases references to them. Queued events will be cleared and
-   * their data lost.
+   * Checks if the given {@link Observable} has already been added to the group with {@link
+   * #add(String, Observable, Observer)}. If so, it unsubscribes the previous Observer (if any) and
+   * subscribes the existing Observable to the new provided Observer. This does not change the
+   * locked status.
    */
-  void cleanUp() {
+  public <T> void addOrResubscribe(String tag, Observable<T> observable, Observer<T> observer) {
+    if (hasObservable(tag)) {
+      resubscribe(tag, observer);
+    } else {
+      add(tag, observable, observer);
+    }
+  }
+
+  /** Cancels all subscriptions and releases references to Observables and Observers. */
+  void cancel() {
     for (ManagedObservable<?> managedObservable : groupMap.values()) {
       managedObservable.cancel();
     }
@@ -68,15 +89,15 @@ class ObservableGroup {
 
   /**
    * Locks (prevents) Observables added to this group from emitting new events. Observables added
-   * via {@code addAndExecute()} while the group is locked will **not** be subscribed until their
-   * respective group is unlocked. If it's never unlocked, then the Observable will never be
-   * subscribed to at all. This does not clear references to existing Observers. Please use {@link
-   * #unsubscribe()} if you want to clear references to existing Observers.
+   * via {@code add()} while the group is locked will **not** be subscribed until their respective
+   * group is unlocked. If it's never unlocked, then the Observable will never be subscribed to at
+   * all. This does not clear references to existing Observers. Please use {@link #unsubscribe()} if
+   * you want to clear references to existing Observers.
    */
-  void lock() {
+  public void lock() {
     locked = true;
     for (ManagedObservable<?> managedObservable : groupMap.values()) {
-      managedObservable.softUnsubscribe();
+      managedObservable.lock();
     }
   }
 
@@ -84,7 +105,7 @@ class ObservableGroup {
    * Unlocks (releases) Observables added to this group to emit new events until they are locked,
    * unsubscribed or cancelled.
    */
-  void unlock() {
+  public void unlock() {
     locked = false;
     for (ManagedObservable<?> managedObservable : groupMap.values()) {
       managedObservable.subscribe();
@@ -92,22 +113,26 @@ class ObservableGroup {
   }
 
   /**
-   * Unsubscribes observers from this group. This does not cancel the underlying HTTP request. Also
-   * clears any references to existing {@link Observer} in order to avoid leaks.
+   * Unsubscribes all Observers managed by this group. Also clears any references to existing {@link
+   * Observer} objects in order to avoid leaks. This does not disconnect from the upstream
+   * Observable, so it can be resumed upon calling {@link #resubscribe(String, Observer)} if
+   * needed.
    */
-  void unsubscribe() {
+  public void unsubscribe() {
     for (ManagedObservable<?> managedObservable : groupMap.values()) {
       managedObservable.unsubscribe();
     }
   }
 
   /**
-   * Resubscribes an Observer to an existing {@link ManagedObservable} for the provided tag. If the
-   * Observable has already emitted events, they will be immediately delivered if it's unlocked.
+   * Resubscribes an Observer to an existing {@link Observable} for the provided tag. If the
+   * Observable has already emitted events, they will be immediately delivered if it's unlocked. Any
+   * previously subscribed Observers will be unsubscribed before the new one.
    */
-  @SuppressWarnings({"rawtypes", "unchecked"}) void resubscribe(String tag, Observer observer) {
+  @SuppressWarnings({"rawtypes", "unchecked"})
+  public void resubscribe(String tag, Observer observer) {
     ManagedObservable<?> managedObservable = groupMap.get(tag);
-    managedObservable.setObserverAndSubscribe(observer);
+    managedObservable.subscribe(observer);
   }
 
   /**
@@ -120,18 +145,13 @@ class ObservableGroup {
     groupMap.remove(managedObservable.tag());
   }
 
-  /**
-   * Returns whether an {@link Observable} exists for the provided {@code tag}
-   */
-  boolean hasObservable(String tag) {
+  /** Returns whether an {@link Observable} exists for the provided {@code tag} */
+  public boolean hasObservable(String tag) {
     ManagedObservable<?> managedObservable = groupMap.get(tag);
     return managedObservable != null;
   }
 
-  /**
-   * Removes any requests that match the provided request klass and requestId from the list of
-   * managed requests. If no matching requests are found, it does nothing.
-   */
+  /** Removes any Observables that match the provided tag. If none are found, it does nothing. */
   private void onTerminate(String tag) {
     ManagedObservable<?> managedObservable = groupMap.get(tag);
     if (managedObservable != null) {
