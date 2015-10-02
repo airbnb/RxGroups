@@ -1,505 +1,395 @@
 package com.airbnb.chimas;
 
-import com.squareup.okhttp.OkHttpClient;
-import com.squareup.okhttp.mockwebserver.MockResponse;
-import com.squareup.okhttp.mockwebserver.MockWebServer;
-
 import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
-import org.robolectric.shadows.ShadowLog;
 
 import java.io.IOException;
-import java.util.Set;
-import java.util.concurrent.TimeUnit;
 
-import retrofit.JacksonConverterFactory;
-import retrofit.Query;
-import retrofit.Response;
-import retrofit.Retrofit;
-import retrofit.RxJavaCallAdapterFactory;
-import rx.Observer;
+import rx.Observable;
 import rx.observers.TestSubscriber;
+import rx.subjects.PublishSubject;
 
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.junit.Assert.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 
 public class RequestManagerTest {
-  private static final int GROUP_A = 1;
-  private static final int GROUP_B = 2;
-
-  @Rule public MockWebServer server = new MockWebServer();
-  @Rule public ExpectedException thrown = ExpectedException.none();
-
   RequestManager requestManager = new RequestManager();
-  OkHttpClient client = new OkHttpClient();
-  Retrofit retrofit = new Retrofit.Builder()
-      .client(client)
-      .baseUrl(server.url("/"))
-      .addCallAdapterFactory(RxJavaCallAdapterFactory.create())
-      .addConverterFactory(JacksonConverterFactory.create())
-      .build();
-  Chimas chimas = new Chimas(String.class, retrofit);
-
-  private final TestSubscriber<Response<String>> listenerA = new TestSubscriber<>();
-  private final TestSubscriber<Response<String>> listenerB = new TestSubscriber<>();
-
-  private class TestRequestA extends AirRequest<String> {
-    public TestRequestA() {
-      super(chimas);
-    }
-
-    @Override public Object getTag() {
-      return null;
-    }
-
-    @Override public Set<Query> getParams() {
-      return null;
-    }
-
-    @Override public String getBody() {
-      return null;
-    }
-
-    @Override public String getContentType() {
-      return null;
-    }
-
-    @Override protected String getBaseUrl() {
-      return server.url("/").toString();
-    }
-
-    @Override public void onError(NetworkException e) {
-    }
-  }
-
-  private class TestRequestB extends AirRequest<String> {
-    public TestRequestB() {
-      super(chimas);
-    }
-
-    @Override public Object getTag() {
-      return null;
-    }
-
-    @Override public Set<Query> getParams() {
-      return null;
-    }
-
-    @Override public String getBody() {
-      return null;
-    }
-
-    @Override public String getContentType() {
-      return null;
-    }
-
-    @Override protected String getBaseUrl() {
-      return server.url("/").toString();
-    }
-
-    @Override public void onError(NetworkException e) {
-
-    }
-  }
-
-  private RequestSubscription execute(
-      int group, AirRequest request, Observer<Response<String>> listener) {
-    return requestManager.execute(
-        group, request.getClass().getSimpleName(), request.toObservable(), listener);
-  }
-
-  private boolean hasObservable(int group, AirRequest request) {
-    return requestManager.hasObservable(group, request.getClass().getSimpleName());
-  }
 
   @Before public void setUp() throws IOException {
-    ShadowLog.stream = System.out;
-    requestManager.cancel(GROUP_A);
-    requestManager.cancel(GROUP_B);
+    System.setProperty("rxjava.plugin.RxJavaSchedulersHook.implementation",
+        TestRxJavaSchedulerHook.class.getName());
   }
 
-  @Test public void shouldNotHaveRequests() {
-    assertThat(requestManager.hasObservable(GROUP_A, "TestSubscriberA"), equalTo(false));
+  @Test public void shouldNotHaveObservable() {
+    assertThat(requestManager.hasObservable(1, "test")).isEqualTo(false);
   }
 
   @Test public void shouldAddRequestById() {
-    TestRequestA request = new TestRequestA();
+    Observable<String> observable = Observable.never();
 
-    execute(GROUP_A, request, listenerA);
+    requestManager.execute(1, "foo", observable, new TestSubscriber<String>());
 
-    assertThat(hasObservable(GROUP_A, request), equalTo(true));
-    assertThat(requestManager.hasObservable(GROUP_A, "TestRequestA"), equalTo(true));
-
-    assertThat(hasObservable(GROUP_B, request), equalTo(false));
-    assertThat(requestManager.hasObservable(GROUP_A, "TestRequestB"), equalTo(false));
+    assertThat(requestManager.hasObservable(1, "foo")).isEqualTo(true);
+    assertThat(requestManager.hasObservable(2, "foo")).isEqualTo(false);
+    assertThat(requestManager.hasObservable(1, "bar")).isEqualTo(false);
   }
 
   @Test public void shouldNotBeCompleted() {
-    execute(GROUP_A, new TestRequestA(), listenerA);
-    listenerA.assertNotCompleted();
+    TestSubscriber<Object> subscriber = new TestSubscriber<>();
+    requestManager.execute(1, "foo", Observable.never(), subscriber);
+    subscriber.assertNotCompleted();
   }
 
   @Test public void shouldBeSubscribed() {
-    RequestSubscription call = execute(GROUP_A, new TestRequestA(), listenerA);
-    assertThat(call.isCancelled(), equalTo(false));
+    RequestSubscription subscription = requestManager.execute(
+        1, "foo", Observable.never(), new TestSubscriber<>());
+    assertThat(subscription.isCancelled()).isEqualTo(false);
   }
 
-  @Test public void shouldDeliverSuccessfulResponse() throws Exception {
-    server.enqueue(new MockResponse().setBody("\"Foo Bar\""));
+  @Test public void shouldDeliverSuccessfulEvent() throws Exception {
+    PublishSubject<String> subject = PublishSubject.create();
+    TestSubscriber<String> subscriber = new TestSubscriber<>();
 
-    execute(GROUP_A, new TestRequestA(), listenerA);
+    requestManager.execute(1, "foo", subject, subscriber);
+    subscriber.assertNotCompleted();
 
-    listenerA.assertNotCompleted();
+    subject.onNext("Foo Bar");
+    subject.onCompleted();
 
-    listenerA.awaitTerminalEvent(3, TimeUnit.SECONDS);
-    listenerA.assertCompleted();
-    assertThat(listenerA.getOnNextEvents().get(0).body(), equalTo("Foo Bar"));
+    subscriber.assertCompleted();
+    subscriber.assertValue("Foo Bar");
   }
 
   @Test public void shouldDeliverError() throws Exception {
-    server.enqueue(new MockResponse().setResponseCode(500).setBody("Failed"));
+    TestSubscriber<String> testSubscriber = new TestSubscriber<>();
+    Observable<String> observable = Observable.error(new RuntimeException("boom"));
+    requestManager.execute(1, "foo", observable, testSubscriber);
 
-    TestSubscriber<Response<String>> testSubscriber = new TestSubscriber<>();
-    execute(GROUP_A, new TestRequestA(), testSubscriber);
-
-    testSubscriber.awaitTerminalEvent(3, TimeUnit.SECONDS);
-    testSubscriber.assertError(NetworkException.class);
+    testSubscriber.assertError(RuntimeException.class);
   }
 
-  @Test public void shouldReplaceRequestsOfSameClassWithSameId() throws Exception {
-    server.enqueue(new MockResponse().setBody("\"Hello World\""));
-    server.enqueue(new MockResponse().setBody("\"Hello World\""));
+  @Test public void shouldReplaceObservablesOfSameTagAndSameGroupId() throws Exception {
+    Observable<String> observable1 = Observable.never();
+    PublishSubject<String> observable2 = PublishSubject.create();
+    TestSubscriber<String> observer1 = new TestSubscriber<>();
+    TestSubscriber<String> observer2 = new TestSubscriber<>();
+    RequestSubscription subscription1 = requestManager.execute(1, "foo", observable1, observer1);
+    RequestSubscription subscription2 = requestManager.execute(1, "foo", observable2, observer2);
 
-    TestRequestA request1 = new TestRequestA();
-    TestRequestA request2 = new TestRequestA();
+    assertThat(subscription1.isCancelled()).isEqualTo(true);
+    assertThat(subscription2.isCancelled()).isEqualTo(false);
+    assertThat(requestManager.hasObservable(1, "foo")).isEqualTo(true);
 
-    RequestSubscription call1 = execute(GROUP_A, request1, listenerA);
-    RequestSubscription call2 = execute(GROUP_A, request2, listenerB);
+    observable2.onNext("Hello World");
+    observable2.onCompleted();
 
-    assertThat(call1.isCancelled(), equalTo(true));
-    assertThat(call2.isCancelled(), equalTo(false));
-
-    assertThat(requestManager.hasObservable(GROUP_A, "TestRequestA"), equalTo(true));
-
-    listenerB.awaitTerminalEvent(3, TimeUnit.SECONDS);
-    listenerB.assertCompleted();
-    assertThat(listenerB.getOnNextEvents().get(0).body(), equalTo("Hello World"));
+    observer2.assertCompleted();
+    observer2.assertValue("Hello World");
   }
 
-  @Test public void shouldSeparateRequestsById() {
-    AirRequest requestA = new TestRequestA();
-    AirRequest requestB = new TestRequestB();
+  @Test public void shouldSeparateObservablesByGroupId() {
+    Observable<String> observable1 = Observable.never();
+    Observable<String> observable2 = Observable.never();
+    TestSubscriber<String> subscriber1 = new TestSubscriber<>();
+    TestSubscriber<String> subscriber2 = new TestSubscriber<>();
 
-    execute(GROUP_A, requestA, listenerA);
-    assertThat(hasObservable(GROUP_A, requestA), equalTo(true));
-    assertThat(requestManager.hasObservable(GROUP_A, "TestRequestA"), equalTo(true));
-    assertThat(hasObservable(GROUP_A, requestB), equalTo(false));
-    assertThat(hasObservable(GROUP_B, requestA), equalTo(false));
-    assertThat(hasObservable(GROUP_B, requestB), equalTo(false));
+    requestManager.execute(1, "tag", observable1, subscriber1);
+    assertThat(requestManager.hasObservable(1, "tag")).isEqualTo(true);
+    assertThat(requestManager.hasObservable(1, "foo")).isEqualTo(false);
+    assertThat(requestManager.hasObservable(2, "tag")).isEqualTo(false);
+    assertThat(requestManager.hasObservable(2, "foo")).isEqualTo(false);
 
-    execute(GROUP_B, requestB, listenerB);
-    assertThat(hasObservable(GROUP_A, requestA), equalTo(true));
-    assertThat(hasObservable(GROUP_A, requestB), equalTo(false));
-    assertThat(hasObservable(GROUP_B, requestA), equalTo(false));
-    assertThat(hasObservable(GROUP_B, requestB), equalTo(true));
+    requestManager.execute(2, "foo", observable2, subscriber2);
+    assertThat(requestManager.hasObservable(1, "tag")).isEqualTo(true);
+    assertThat(requestManager.hasObservable(1, "foo")).isEqualTo(false);
+    assertThat(requestManager.hasObservable(2, "tag")).isEqualTo(false);
+    assertThat(requestManager.hasObservable(2, "foo")).isEqualTo(true);
   }
 
-  @Test public void shouldClearResponsesById() {
-    AirRequest requestA = new TestRequestA();
-    AirRequest requestB = new TestRequestA();
+  @Test public void shouldClearObservablesByGroupId() {
+    Observable<String> observable1 = Observable.never();
+    Observable<String> observable2 = Observable.never();
+    TestSubscriber<String> subscriber1 = new TestSubscriber<>();
 
-    RequestSubscription callA = execute(GROUP_A, requestA, listenerA);
-    RequestSubscription callB = execute(GROUP_B, requestB, listenerA);
+    RequestSubscription subscription1 = requestManager.execute(1, "foo", observable1, subscriber1);
+    RequestSubscription subscription2 = requestManager.execute(2, "foo", observable2, subscriber1);
 
-    requestManager.cancel(GROUP_A);
+    requestManager.cancel(1);
 
-    assertThat(hasObservable(GROUP_A, requestA), equalTo(false));
-    assertThat(hasObservable(GROUP_B, requestB), equalTo(true));
-    assertThat(callA.isCancelled(), equalTo(true));
-    assertThat(callB.isCancelled(), equalTo(false));
+    assertThat(requestManager.hasObservable(1, "foo")).isEqualTo(false);
+    assertThat(requestManager.hasObservable(2, "foo")).isEqualTo(true);
+    assertThat(subscription1.isCancelled()).isEqualTo(true);
+    assertThat(subscription2.isCancelled()).isEqualTo(false);
 
-    requestManager.cancel(GROUP_B);
-    assertThat(hasObservable(GROUP_A, requestA), equalTo(false));
-    assertThat(hasObservable(GROUP_B, requestB), equalTo(false));
-    assertThat(callA.isCancelled(), equalTo(true));
-    assertThat(callB.isCancelled(), equalTo(true));
+    requestManager.cancel(2);
+    assertThat(requestManager.hasObservable(1, "foo")).isEqualTo(false);
+    assertThat(requestManager.hasObservable(2, "foo")).isEqualTo(false);
+    assertThat(subscription1.isCancelled()).isEqualTo(true);
+    assertThat(subscription2.isCancelled()).isEqualTo(true);
   }
 
-  @Test public void shouldClearResponsesWhenLocked() {
-    AirRequest requestA = new TestRequestA();
-    AirRequest requestB = new TestRequestB();
+  @Test public void shouldClearObservablesWhenLocked() {
+    Observable<String> observable1 = Observable.never();
+    Observable<String> observable2 = Observable.never();
+    TestSubscriber<String> subscriber1 = new TestSubscriber<>();
+    TestSubscriber<String> subscriber2 = new TestSubscriber<>();
 
-    execute(GROUP_A, requestA, listenerA);
-    execute(GROUP_A, requestB, listenerA);
+    requestManager.execute(1, "foo", observable1, subscriber1);
+    requestManager.execute(1, "bar", observable2, subscriber2);
 
-    requestManager.unsubscribe(GROUP_A);
-    requestManager.cancel(GROUP_A);
+    requestManager.unsubscribe(1);
+    requestManager.cancel(1);
 
-    assertThat(hasObservable(GROUP_A, requestA), equalTo(false));
-    assertThat(hasObservable(GROUP_A, requestB), equalTo(false));
+    assertThat(requestManager.hasObservable(1, "foo")).isEqualTo(false);
+    assertThat(requestManager.hasObservable(1, "bar")).isEqualTo(false);
   }
 
   @Test public void shouldClearQueuedResults() throws Exception {
-    server.enqueue(new MockResponse().setBody("\"Hello World\""));
+    PublishSubject<String> subject = PublishSubject.create();
+    TestSubscriber<String> subscriber1 = new TestSubscriber<>();
 
-    TestRequestA requestA = new TestRequestA();
-    execute(GROUP_A, requestA, listenerA);
+    requestManager.execute(1, "foo", subject, subscriber1);
+    requestManager.unsubscribe(1);
+    subject.onNext("Hello");
+    subject.onCompleted();
+    requestManager.cancel(1);
 
-    // If a request is cleared while its response is queued the request should be deleted and
-    // the response never delivered
-    requestManager.unsubscribe(GROUP_A);
-    listenerA.awaitTerminalEvent(3, TimeUnit.SECONDS);
-    listenerA.assertNotCompleted();
-    requestManager.cancel(GROUP_A);
-
-    assertThat(hasObservable(GROUP_A, requestA), equalTo(false));
+    assertThat(requestManager.hasObservable(1, "foo")).isEqualTo(false);
   }
 
-  @Test public void shouldRemoveResponseAfterSuccessfulDelivery() throws Exception {
-    server.enqueue(new MockResponse().setBody("\"Roberto Gomez Bolanos is king\""));
-    TestRequestA request = new TestRequestA();
+  @Test public void shouldRemoveObservablesAfterTermination() throws Exception {
+    PublishSubject<String> subject = PublishSubject.create();
+    TestSubscriber<String> subscriber = new TestSubscriber<>();
+    requestManager.execute(1, "foo", subject, subscriber);
 
-    execute(GROUP_A, request, listenerA);
+    subject.onNext("Roberto Gomez Bolanos is king");
+    subject.onCompleted();
 
-    listenerA.awaitTerminalEvent(3, TimeUnit.SECONDS);
-
-    // This allows us to wait for doOnTerminate() to finish, since it runs in the OkHttp
-    // dispatcher thread
-    client.getDispatcher().getExecutorService().awaitTermination(1, TimeUnit.SECONDS);
-
-    listenerA.assertCompleted();
-    assertThat(hasObservable(GROUP_A, request), equalTo(false));
+    subscriber.assertCompleted();
+    assertThat(requestManager.hasObservable(1, "foo")).isEqualTo(false);
   }
 
   @Test public void shouldRemoveResponseAfterErrorDelivery() throws InterruptedException {
-    server.enqueue(new MockResponse().setResponseCode(500).setBody("BOOM!"));
+    TestSubscriber<String> testSubscriber = new TestSubscriber<>();
+    PublishSubject<String> subject = PublishSubject.create();
 
-    TestSubscriber<Response<String>> testSubscriber = new TestSubscriber<>();
-    TestRequestA request = new TestRequestA();
+    requestManager.execute(1, "foo", subject, testSubscriber);
 
-    execute(GROUP_A, request, testSubscriber);
-    testSubscriber.awaitTerminalEvent(3, TimeUnit.SECONDS);
-    testSubscriber.assertError(NetworkException.class);
+    subject.onError(new RuntimeException("BOOM!"));
 
-    // This allows us to wait for doOnTerminate() to finish, since it runs in the OkHttp
-    // dispatcher thread
-    client.getDispatcher().getExecutorService().awaitTermination(1, TimeUnit.SECONDS);
+    testSubscriber.assertError(Exception.class);
 
-    assertThat(hasObservable(GROUP_A, request), equalTo(false));
+    assertThat(requestManager.hasObservable(1, "foo")).isEqualTo(false);
   }
 
   @Test public void shouldNotDeliverResultWhileUnsubscribed() throws Exception {
-    server.enqueue(new MockResponse().setBody("\"Roberto Gomez Bolanos\""));
-    TestRequestA request = new TestRequestA();
+    TestSubscriber<String> testSubscriber = new TestSubscriber<>();
+    PublishSubject<String> subject = PublishSubject.create();
 
-    execute(GROUP_A, request, listenerA);
-    requestManager.unsubscribe(GROUP_A);
+    requestManager.execute(1, "foo", subject, testSubscriber);
+    requestManager.unsubscribe(1);
 
-    listenerA.awaitTerminalEvent(3, TimeUnit.SECONDS);
+    subject.onNext("Roberto Gomez Bolanos");
+    subject.onCompleted();
 
-    client.getDispatcher().getExecutorService().awaitTermination(1, TimeUnit.SECONDS);
-
-    listenerA.assertNotCompleted();
-    assertThat(hasObservable(GROUP_A, request), equalTo(true));
+    testSubscriber.assertNotCompleted();
+    assertThat(requestManager.hasObservable(1, "foo")).isEqualTo(true);
   }
 
-  @Test public void shouldDeliverQueuedResponseWhenResubscribed() throws Exception {
-    server.enqueue(new MockResponse().setBody("\"Hello World\""));
-    server.enqueue(new MockResponse().setBody("\"Don Ramón\""));
+  @Test public void shouldDeliverQueuedEventsWhenResubscribed() throws Exception {
+    TestSubscriber<String> testSubscriber = new TestSubscriber<>();
+    PublishSubject<String> subject = PublishSubject.create();
+    requestManager.execute(1, "foo", subject, testSubscriber);
+    requestManager.unsubscribe(1);
 
-    TestSubscriber<Response<String>> testSubscriber = new TestSubscriber<>();
-    TestRequestA request = new TestRequestA();
-    execute(GROUP_A, request, testSubscriber);
-    requestManager.unsubscribe(GROUP_A);
+    subject.onNext("Hello World");
+    subject.onCompleted();
 
-    listenerA.awaitTerminalEvent(3, TimeUnit.SECONDS);
-    listenerA.assertNotCompleted();
+    testSubscriber.assertNotCompleted();
+    testSubscriber.assertNoValues();
 
-    requestManager.resubscribe(GROUP_A, request.getClass().getSimpleName(), testSubscriber);
+    requestManager.resubscribe(1, "foo", testSubscriber);
 
-    testSubscriber.awaitTerminalEvent(3, TimeUnit.SECONDS);
+    testSubscriber.assertCompleted();
     testSubscriber.assertNoErrors();
-    assertThat(testSubscriber.getOnNextEvents().get(0).body(), equalTo("Hello World"));
+    testSubscriber.assertValue("Hello World");
 
-    client.getDispatcher().getExecutorService().awaitTermination(1, TimeUnit.SECONDS);
-
-    assertThat(hasObservable(GROUP_A, request), equalTo(false));
+    assertThat(requestManager.hasObservable(1, "foo")).isEqualTo(false);
   }
 
   @Test public void shouldDeliverQueuedErrorWhenResubscribed() throws Exception {
-    server.enqueue(new MockResponse().setResponseCode(500).setBody("Failed"));
-    TestSubscriber<Response<String>> testSubscriber = new TestSubscriber<>();
-    TestRequestA request = new TestRequestA();
+    TestSubscriber<String> testSubscriber = new TestSubscriber<>();
+    PublishSubject<String> subject = PublishSubject.create();
 
-    execute(GROUP_A, request, testSubscriber);
-    requestManager.unsubscribe(GROUP_A);
-    requestManager.resubscribe(GROUP_A, request.getClass().getSimpleName(), testSubscriber);
+    requestManager.execute(1, "foo", subject, testSubscriber);
+    requestManager.unsubscribe(1);
 
-    testSubscriber.awaitTerminalEvent(3, TimeUnit.SECONDS);
-    testSubscriber.assertError(NetworkException.class);
+    subject.onError(new Exception("Exploded"));
 
-    client.getDispatcher().getExecutorService().awaitTermination(1, TimeUnit.SECONDS);
+    testSubscriber.assertNotCompleted();
+    testSubscriber.assertNoValues();
 
-    assertThat(hasObservable(GROUP_A, request), equalTo(false));
+    requestManager.resubscribe(1, "foo", testSubscriber);
+
+    testSubscriber.assertError(Exception.class);
+
+    assertThat(requestManager.hasObservable(1, "foo")).isEqualTo(false);
   }
 
   @Test public void shouldUnsubscribeByContext() throws Exception {
-    server.enqueue(new MockResponse().setBody("\"Gremio Foot-ball Porto Alegrense\""));
-    TestSubscriber<Response<String>> testSubscriber = new TestSubscriber<>();
-    TestRequestB requestB = new TestRequestB();
-    execute(GROUP_B, requestB, testSubscriber);
-    requestManager.unsubscribe(GROUP_A);
+    PublishSubject<String> subject = PublishSubject.create();
+    TestSubscriber<String> testSubscriber = new TestSubscriber<>();
 
-    testSubscriber.awaitTerminalEvent(3, TimeUnit.SECONDS);
+    requestManager.execute(2, "foo", subject, testSubscriber);
+    requestManager.unsubscribe(1);
+
+    subject.onNext("Gremio Foot-ball Porto Alegrense");
+    subject.onCompleted();
+
     testSubscriber.assertCompleted();
     testSubscriber.assertNoErrors();
-    assertThat(testSubscriber.getOnNextEvents().get(0).body(),
-        equalTo("Gremio Foot-ball Porto Alegrense"));
+    testSubscriber.assertValue("Gremio Foot-ball Porto Alegrense");
 
-    client.getDispatcher().getExecutorService().awaitTermination(1, TimeUnit.SECONDS);
-
-    assertThat(hasObservable(GROUP_B, requestB), equalTo(false));
+    assertThat(requestManager.hasObservable(2, "foo")).isEqualTo(false);
   }
 
-  @Test public void shouldClearQueuedResultWhenSameRequestIsAdded() throws Exception {
-    server.enqueue(new MockResponse().setBody("\"El Chavo del Ocho\""));
-    server.enqueue(new MockResponse().setBody("\"El Chapulin Colorado\""));
+  @Test public void shouldNotDeliverEventsAfterCancelled() throws Exception {
+    PublishSubject<String> subject = PublishSubject.create();
+    TestSubscriber<String> testSubscriber = new TestSubscriber<>();
 
-    TestRequestA request = new TestRequestA();
-    execute(GROUP_A, request, listenerA);
-    requestManager.cancel(GROUP_A);
+    requestManager.execute(1, "foo", subject, testSubscriber);
+    requestManager.cancel(1);
 
-    listenerA.awaitTerminalEvent(3, TimeUnit.SECONDS);
-    listenerA.assertNotCompleted();
+    subject.onNext("Gremio Foot-ball Porto Alegrense");
+    subject.onCompleted();
 
-    TestSubscriber<Response<String>> testSubscriber = new TestSubscriber<>();
-    request = new TestRequestA();
-    execute(GROUP_A, request, testSubscriber);
-
-    testSubscriber.awaitTerminalEvent(3, TimeUnit.SECONDS);
-    testSubscriber.assertNoErrors();
-    assertThat(testSubscriber.getOnNextEvents().get(0).body(), equalTo("El Chapulin Colorado"));
-
-    client.getDispatcher().getExecutorService().awaitTermination(1, TimeUnit.SECONDS);
-
-    listenerA.assertNotCompleted();
-    assertThat(hasObservable(GROUP_A, request), equalTo(false));
-  }
-
-  @Test
-  public void shouldNotDeliverResponseWhenCancelled() throws Exception {
-    server.enqueue(new MockResponse().setBody("\"Hello World\""));
-    TestRequestA request = new TestRequestA();
-
-    execute(GROUP_A, request, listenerA);
-    requestManager.cancel(GROUP_A);
-
-    listenerA.awaitTerminalEvent(3, TimeUnit.SECONDS);
-
-    client.getDispatcher().getExecutorService().awaitTermination(1, TimeUnit.SECONDS);
-
-    listenerA.assertNotCompleted();
-    assertThat(hasObservable(GROUP_A, request), equalTo(false));
+    testSubscriber.assertNotCompleted();
+    assertThat(requestManager.hasObservable(1, "foo")).isEqualTo(false);
   }
 
   @Test public void shouldNotRemoveSubscribersForOtherIds() throws Exception {
-    server.enqueue(new MockResponse().setBody("\"Carlos Villagran\""));
-    server.enqueue(new MockResponse().setBody("\"Florinda Mesa\""));
+    PublishSubject<String> subject1 = PublishSubject.create();
+    TestSubscriber<String> testSubscriber1 = new TestSubscriber<>();
+    PublishSubject<String> subject2 = PublishSubject.create();
+    TestSubscriber<String> testSubscriber2 = new TestSubscriber<>();
 
-    TestSubscriber<Response<String>> testSubscriber = new TestSubscriber<>();
-    TestRequestA requestA = new TestRequestA();
-    TestRequestB requestB = new TestRequestB();
+    requestManager.execute(1, "foo", subject1, testSubscriber1);
+    requestManager.execute(2, "bar", subject2, testSubscriber2);
+    requestManager.unsubscribe(1);
 
-    execute(GROUP_A, requestA, listenerA);
-    execute(GROUP_B, requestB, testSubscriber);
-    requestManager.unsubscribe(GROUP_A);
+    subject1.onNext("Florinda Mesa");
+    subject1.onCompleted();
+    subject2.onNext("Carlos Villagran");
+    subject2.onCompleted();
 
-    listenerA.awaitTerminalEvent(3, TimeUnit.SECONDS);
-    listenerA.assertNotCompleted();
-
-    client.getDispatcher().getExecutorService().awaitTermination(1, TimeUnit.SECONDS);
-
-    testSubscriber.awaitTerminalEvent(3, TimeUnit.SECONDS);
-    testSubscriber.assertNoErrors();
-    assertThat(testSubscriber.getOnNextEvents().get(0).body(), equalTo("Florinda Mesa"));
+    testSubscriber1.assertNotCompleted();
+    testSubscriber2.assertNoErrors();
+    testSubscriber2.assertValue("Carlos Villagran");
   }
 
   @Test public void shouldOverrideExistingSubscriber() throws Exception {
-    server.enqueue(new MockResponse().setBody("\"Ruben Aguirre\""));
-    server.enqueue(new MockResponse().setBody("\"Maria Antonieta de las Nieves\""));
-    TestRequestA request = new TestRequestA();
+    PublishSubject<String> subject = PublishSubject.create();
+    TestSubscriber<String> testSubscriber1 = new TestSubscriber<>();
+    TestSubscriber<String> testSubscriber2 = new TestSubscriber<>();
 
-    execute(GROUP_A, request, listenerA);
-    requestManager.resubscribe(GROUP_A, request.getClass().getSimpleName(), listenerB);
+    requestManager.execute(1, "tag", subject, testSubscriber1);
+    requestManager.resubscribe(1, "tag", testSubscriber2);
 
-    listenerA.awaitTerminalEvent(3, TimeUnit.SECONDS);
-    listenerA.assertNotCompleted();
-    listenerB.awaitTerminalEvent(3, TimeUnit.SECONDS);
-    listenerB.assertCompleted();
+    subject.onNext("Ruben Aguirre");
+    subject.onCompleted();
+
+    testSubscriber1.assertNotCompleted();
+    testSubscriber1.assertNoValues();
+    testSubscriber2.assertCompleted();
+    testSubscriber2.assertValue("Ruben Aguirre");
   }
 
   @Test public void shouldQueueMultipleRequests() throws Exception {
-    server.enqueue(new MockResponse().setBody("\"Chespirito\""));
-    server.enqueue(new MockResponse().setBody("\"Edgar Vivar\""));
+    PublishSubject<String> subject1 = PublishSubject.create();
+    TestSubscriber<String> testSubscriber1 = new TestSubscriber<>();
+    PublishSubject<String> subject2 = PublishSubject.create();
+    TestSubscriber<String> testSubscriber2 = new TestSubscriber<>();
 
-    TestRequestA requestA = new TestRequestA();
-    TestRequestB requestB = new TestRequestB();
+    requestManager.execute(1, "foo", subject1, testSubscriber1);
+    requestManager.execute(1, "bar", subject2, testSubscriber2);
+    requestManager.unsubscribe(1);
 
-    execute(GROUP_A, requestA, listenerA);
-    execute(GROUP_A, requestB, listenerB);
-    requestManager.unsubscribe(GROUP_A);
+    subject1.onNext("Chespirito");
+    subject1.onCompleted();
+    subject2.onNext("Edgar Vivar");
+    subject2.onCompleted();
 
-    listenerA.awaitTerminalEvent(3, TimeUnit.SECONDS);
-    listenerA.assertNotCompleted();
-    listenerB.awaitTerminalEvent(3, TimeUnit.SECONDS);
-    listenerB.assertNotCompleted();
-
-    client.getDispatcher().getExecutorService().awaitTermination(1, TimeUnit.SECONDS);
-
-    assertThat(hasObservable(GROUP_A, requestA), equalTo(true));
-    assertThat(hasObservable(GROUP_A, requestB), equalTo(true));
+    testSubscriber1.assertNotCompleted();
+    testSubscriber2.assertNotCompleted();
+    assertThat(requestManager.hasObservable(1, "foo")).isEqualTo(true);
+    assertThat(requestManager.hasObservable(1, "bar")).isEqualTo(true);
   }
 
   @Test public void shouldNotDeliverResultWhileLocked() throws Exception {
-    server.enqueue(new MockResponse().setBody("\"Chespirito\""));
+    TestSubscriber<String> testSubscriber = new TestSubscriber<>();
+    PublishSubject<String> subject = PublishSubject.create();
 
-    TestSubscriber<Response<String>> testSubscriber = new TestSubscriber<>();
-    TestRequestA request = new TestRequestA();
+    requestManager.lock(1);
+    requestManager.execute(1, "tag", subject, testSubscriber);
 
-    requestManager.lock(GROUP_A);
-    execute(GROUP_A, request, testSubscriber);
-
-    testSubscriber.awaitTerminalEvent(3, TimeUnit.SECONDS);
+    subject.onNext("Chespirito");
+    subject.onCompleted();
 
     testSubscriber.assertNotCompleted();
-    testSubscriber.assertNoTerminalEvent();
-
-    assertThat(hasObservable(GROUP_A, request), equalTo(true));
+    testSubscriber.assertNoValues();
+    assertThat(requestManager.hasObservable(1, "tag")).isEqualTo(true);
   }
 
-  @Test public void shouldDeliverQueuedResponseWhenUnlocked() throws InterruptedException {
-    server.enqueue(new MockResponse().setBody("\"Chespirito\""));
+  @Test public void shouldAutoResubscribeAfterUnlock() throws InterruptedException {
+    TestSubscriber<String> testSubscriber = new TestSubscriber<>();
+    PublishSubject<String> subject = PublishSubject.create();
 
-    TestSubscriber<Response<String>> testSubscriber = new TestSubscriber<>();
-    TestRequestA request = new TestRequestA();
+    requestManager.lock(1);
+    requestManager.execute(1, "tag", subject, testSubscriber);
 
-    requestManager.lock(GROUP_A);
-    execute(GROUP_A, request, testSubscriber);
+    subject.onNext("Chespirito");
+    subject.onCompleted();
 
-    testSubscriber.awaitTerminalEvent(3, TimeUnit.SECONDS);
-
-    requestManager.unlock(GROUP_A);
-
-    testSubscriber.awaitTerminalEvent(3, TimeUnit.SECONDS);
+    requestManager.unlock(1);
 
     testSubscriber.assertCompleted();
     testSubscriber.assertNoErrors();
-    assertThat(testSubscriber.getOnNextEvents().get(0).body(), equalTo("Chespirito"));
+    testSubscriber.assertValue("Chespirito");
+    assertThat(requestManager.hasObservable(1, "tag")).isEqualTo(false);
+  }
 
-    client.getDispatcher().getExecutorService().awaitTermination(1, TimeUnit.SECONDS);
+  @Test public void shouldAutoResubscribeAfterLockAndUnlock() {
+    TestSubscriber<String> testSubscriber = new TestSubscriber<>();
+    PublishSubject<String> subject = PublishSubject.create();
 
-    assertThat(hasObservable(GROUP_A, request), equalTo(false));
+    requestManager.execute(1, "tag", subject, testSubscriber);
+    requestManager.lock(1);
+
+    subject.onNext("Chespirito");
+    subject.onCompleted();
+
+    requestManager.unlock(1);
+
+    testSubscriber.assertCompleted();
+    testSubscriber.assertNoErrors();
+    testSubscriber.assertValue("Chespirito");
+    assertThat(requestManager.hasObservable(1, "tag")).isEqualTo(false);
+  }
+
+  @Test public void testUnsubscribeWhenLocked() {
+    TestSubscriber<String> testSubscriber = new TestSubscriber<>();
+    PublishSubject<String> subject = PublishSubject.create();
+
+    requestManager.execute(1, "tag", subject, testSubscriber);
+    requestManager.lock(1);
+    requestManager.unsubscribe(1);
+
+    subject.onNext("Chespirito");
+    subject.onCompleted();
+
+    requestManager.unlock(1);
+
+    testSubscriber.assertNotCompleted();
+    testSubscriber.assertNoValues();
+    assertThat(requestManager.hasObservable(1, "tag")).isEqualTo(true);
   }
 }

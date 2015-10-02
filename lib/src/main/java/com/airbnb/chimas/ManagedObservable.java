@@ -5,10 +5,10 @@ import rx.Observer;
 import rx.functions.Action0;
 
 /**
- * A wrapper for a {@link SubscriptionProxy} for use with the {@link ObservableGroup} to monitor a call's
- * state. Delegates all events to the provided delegate.
+ * A wrapper for a {@link SubscriptionProxy} for use with the {@link ObservableGroup} to monitor a
+ * subscription state by tag.
  */
-class ManagedObservable<T> {
+class ManagedObservable<T> implements RequestSubscription {
   private final String tag;
   private final SubscriptionProxy<T> proxy;
   private Observer<T> observer;
@@ -17,31 +17,40 @@ class ManagedObservable<T> {
       String tag, Observable<T> observable, Observer<T> observer, Action0 onTerminate) {
     this.tag = tag;
     this.observer = observer;
-    this.proxy = SubscriptionProxy.create(observable, onTerminate);
+    proxy = SubscriptionProxy.create(observable, onTerminate);
   }
 
-  void cancel() {
+  @Override public boolean isCancelled() {
+    return proxy.isCancelled();
+  }
+
+  @Override public void cancel() {
     proxy.cancel();
+    observer = null;
   }
 
-  void unsubscribe() {
+  void softUnsubscribe() {
     proxy.unsubscribe();
   }
 
-  void setObserver(Observer<T> observer) {
-    this.observer = observer;
+  @Override public void unsubscribe() {
+    proxy.unsubscribe();
+    observer = null;
+  }
+
+  @Override public boolean isUnsubscribed() {
+    return proxy.isUnsubscribed();
   }
 
   void subscribe() {
+    if (observer != null) {
+      proxy.subscribe(observer);
+    }
+  }
+
+  void setObserverAndSubscribe(Observer<T> observer) {
+    this.observer = Preconditions.checkNotNull(observer);
     proxy.subscribe(observer);
-  }
-
-  RequestSubscription subscription() {
-    return proxy;
-  }
-
-  boolean isCanceled() {
-    return proxy.isCancelled();
   }
 
   String tag() {
