@@ -52,7 +52,7 @@ final class SubscriptionProxy<T> {
 
   public void unsubscribe() {
     Preconditions.checkState(subscription != null, "Must call subscribe() first");
-    subscription.unsubscribe();
+    subscriptionList.remove(subscription);
   }
 
   public boolean isUnsubscribed() {
