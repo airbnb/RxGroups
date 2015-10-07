@@ -4,6 +4,9 @@ buildscript {
   repositories {
     jcenter()
   }
+  dependencies {
+    classpath 'com.bmuschko:gradle-nexus-plugin:2.3.1'
+  }
 }
 
 allprojects {
@@ -14,4 +17,8 @@ allprojects {
 
 task clean(type: Delete) {
   delete rootProject.buildDir
+}
+
+def isCi() {
+  project.hasProperty('CI') && CI.equals('true')
 }

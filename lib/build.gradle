@@ -1,5 +1,6 @@
 apply plugin: 'java'
 apply plugin: 'checkstyle'
+apply plugin: 'com.bmuschko.nexus'
 
 checkstyle {
   configFile rootProject.file('checkstyle.xml')
@@ -11,7 +12,6 @@ sourceCompatibility = 1.7
 
 project.group = 'com.airbnb.chimas'
 project.version = PROJECT_VERSION
-
 
 dependencies {
   compile 'io.reactivex:rxjava:1.0.14'
@@ -27,4 +27,50 @@ if (JavaVersion.current().isJava8Compatible()) {
       options.addStringOption('Xdoclint:none', '-quiet')
     }
   }
+}
+
+modifyPom {
+  project {
+    name 'Chimas library'
+    description PROJECT_DESCRIPTION
+    url PROJECT_URL
+    inceptionYear '2015'
+    version PROJECT_VERSION
+    groupId PROJECT_GROUP_ID
+    artifactId 'chimas'
+
+    scm {
+      url PROJECT_URL
+      connection 'scm:git@git.musta.ch:airbnb/chimas.git'
+      developerConnection 'scm:git@git.musta.ch:airbnb/chimas.git'
+    }
+
+    licenses {
+      license {
+        name 'The Apache Software License, Version 2.0'
+        url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+        distribution 'repo'
+      }
+    }
+
+    developers {
+      developer {
+        id 'airbnb'
+        name 'Airbnb'
+        email 'android@airbnb.com'
+      }
+    }
+  }
+}
+
+extraArchive {
+  sources = true
+  tests = false
+  javadoc = true
+}
+
+nexus {
+  sign = !isCi()
+  repositoryUrl = 'http://airbnb-maven-master.d.musta.ch/nexus/content/repositories/releases/'
+  snapshotRepositoryUrl = 'http://airbnb-maven-master.d.musta.ch/nexus/content/repositories/snapshots/'
 }
