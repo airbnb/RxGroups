@@ -51,8 +51,9 @@ final class SubscriptionProxy<T> {
   }
 
   public void unsubscribe() {
-    Preconditions.checkState(subscription != null, "Must call subscribe() first");
-    subscriptionList.remove(subscription);
+    if (subscription != null) {
+      subscriptionList.remove(subscription);
+    }
   }
 
   public boolean isUnsubscribed() {
