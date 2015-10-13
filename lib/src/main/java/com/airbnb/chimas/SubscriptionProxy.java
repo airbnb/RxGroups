@@ -38,9 +38,7 @@ final class SubscriptionProxy<T> {
   }
 
   Subscription subscribe(Observer<T> observer) {
-    if (subscription != null) {
-      unsubscribe();
-    }
+    unsubscribe();
     subscription = proxy.subscribe(observer);
     subscriptionList.add(subscription);
     return subscription;
