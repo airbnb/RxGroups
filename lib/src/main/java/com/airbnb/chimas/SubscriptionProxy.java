@@ -38,9 +38,7 @@ final class SubscriptionProxy<T> {
   }
 
   Subscription subscribe(Observer<T> observer) {
-    if (subscription != null) {
-      unsubscribe();
-    }
+    unsubscribe();
     subscription = proxy.subscribe(observer);
     subscriptionList.add(subscription);
     return subscription;
@@ -51,8 +49,9 @@ final class SubscriptionProxy<T> {
   }
 
   public void unsubscribe() {
-    Preconditions.checkState(subscription != null, "Must call subscribe() first");
-    subscriptionList.remove(subscription);
+    if (subscription != null) {
+      subscriptionList.remove(subscription);
+    }
   }
 
   public boolean isUnsubscribed() {
