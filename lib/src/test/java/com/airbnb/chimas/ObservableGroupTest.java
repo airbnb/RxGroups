@@ -9,6 +9,7 @@ import rx.Observable;
 import rx.observers.TestSubscriber;
 import rx.subjects.PublishSubject;
 
+import static junit.framework.TestCase.fail;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class ObservableGroupTest {
@@ -125,14 +126,14 @@ public class ObservableGroupTest {
     RequestSubscription subscription1 = group.add("foo", observable1, subscriber1);
     RequestSubscription subscription2 = group2.add("foo", observable2, subscriber1);
 
-    requestManager.cancel(group);
+    requestManager.destroy(group);
 
     assertThat(group.hasObservable("foo")).isEqualTo(false);
     assertThat(group2.hasObservable("foo")).isEqualTo(true);
     assertThat(subscription1.isCancelled()).isEqualTo(true);
     assertThat(subscription2.isCancelled()).isEqualTo(false);
 
-    requestManager.cancel(group2);
+    requestManager.destroy(group2);
     assertThat(group.hasObservable("foo")).isEqualTo(false);
     assertThat(group2.hasObservable("foo")).isEqualTo(false);
     assertThat(subscription1.isCancelled()).isEqualTo(true);
@@ -150,7 +151,7 @@ public class ObservableGroupTest {
     group.add("bar", observable2, subscriber2);
 
     group.unsubscribe();
-    requestManager.cancel(group);
+    requestManager.destroy(group);
 
     assertThat(group.hasObservable("foo")).isEqualTo(false);
     assertThat(group.hasObservable("bar")).isEqualTo(false);
@@ -165,7 +166,7 @@ public class ObservableGroupTest {
     group.unsubscribe();
     subject.onNext("Hello");
     subject.onCompleted();
-    requestManager.cancel(group);
+    requestManager.destroy(group);
 
     assertThat(group.hasObservable("foo")).isEqualTo(false);
   }
@@ -277,7 +278,7 @@ public class ObservableGroupTest {
     TestSubscriber<String> testSubscriber = new TestSubscriber<>();
 
     group.add("foo", subject, testSubscriber);
-    requestManager.cancel(group);
+    requestManager.destroy(group);
 
     subject.onNext("Gremio Foot-ball Porto Alegrense");
     subject.onCompleted();
@@ -419,5 +420,18 @@ public class ObservableGroupTest {
     testSubscriber.assertNotCompleted();
     testSubscriber.assertNoValues();
     assertThat(group.hasObservable("tag")).isEqualTo(true);
+  }
+
+  @Test public void testAddThrowsAfterDestroyed() {
+    ObservableGroup group = requestManager.newGroup();
+    group.destroy();
+    try {
+      TestSubscriber<String> testSubscriber = new TestSubscriber<>();
+      PublishSubject<String> subject = PublishSubject.create();
+
+      group.add("tag", subject, testSubscriber);
+      fail();
+    } catch (IllegalStateException ignored) {
+    }
   }
 }

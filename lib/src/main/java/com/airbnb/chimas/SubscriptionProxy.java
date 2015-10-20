@@ -8,7 +8,7 @@ import rx.subjects.ReplaySubject;
 import rx.subscriptions.CompositeSubscription;
 
 /**
- * This class is a middle man beween an {@link Observable} and an {@link Observer}. Since Retrofit
+ * This class is a middle man between an {@link Observable} and an {@link Observer}. Since Retrofit
  * cancels upon unsubscription, this allows us to unsubscribe without cancelling the underlying
  * OkHttp call by using a proxy {@link ReplaySubject}. This is especially useful during activities
  * onPause() -> onResume(), where we want to avoid updating the UI but we still don't want to cancel

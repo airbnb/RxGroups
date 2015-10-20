@@ -42,7 +42,7 @@ class ManagedObservable<T> implements RequestSubscription {
     return proxy.isUnsubscribed();
   }
 
-  void subscribe() {
+  void unlock() {
     if (observer != null) {
       proxy.subscribe(observer);
     }
