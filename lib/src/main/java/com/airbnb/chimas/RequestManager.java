@@ -1,6 +1,5 @@
 package com.airbnb.chimas;
 
-import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -15,6 +14,7 @@ import rx.Observable;
 public final class RequestManager {
   /** Map ids to a group of observables. */
   private final Map<Long, ObservableGroup> observableGroupMap = new ConcurrentHashMap<>();
+  private long nextId = 1;
 
   /** @return an existing group or a new group with the provided groupId */
   public ObservableGroup getGroup(long groupId) {
@@ -30,12 +30,7 @@ public final class RequestManager {
 
   /** @return a new {@link ObservableGroup} with a unique groupId */
   public ObservableGroup newGroup() {
-    long id;
-    if (!observableGroupMap.isEmpty()) {
-      id = Collections.max(observableGroupMap.keySet()) + 1;
-    } else {
-      id = 1;
-    }
+    long id = nextId++;
     ObservableGroup observableGroup = new ObservableGroup(id);
     observableGroupMap.put(id, observableGroup);
     return observableGroup;
@@ -43,10 +38,10 @@ public final class RequestManager {
 
   /**
    * Clears the provided group. References will be released, and no future results will be returned.
-   * Also clears up the groupId so it could be reused in the future by a different ObservableGroup.
+   * Once a group is destroyed it is an error to use it again.
    */
-  public void cancel(ObservableGroup group) {
-    group.cancel();
+  public void destroy(ObservableGroup group) {
+    group.destroy();
     observableGroupMap.remove(group.id());
   }
 }

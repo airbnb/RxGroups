@@ -22,6 +22,7 @@ public final class ObservableGroup {
   private final Map<String, ManagedObservable<?>> groupMap = new ConcurrentHashMap<>();
   private final long groupId;
   private boolean locked;
+  private boolean destroyed;
 
   public ObservableGroup(long groupId) {
     this.groupId = groupId;
@@ -38,6 +39,8 @@ public final class ObservableGroup {
    * object.
    */
   public <T> RequestSubscription add(String tag, Observable<T> observable, Observer<T> observer) {
+    Preconditions.checkState(!destroyed);
+
     // noinspection unchecked
     ManagedObservable<T> previousObservable = (ManagedObservable<T>) groupMap.get(tag);
 
@@ -59,7 +62,7 @@ public final class ObservableGroup {
     groupMap.put(tag, managedObservable);
 
     if (!locked) {
-      managedObservable.subscribe();
+      managedObservable.unlock();
     }
 
     return managedObservable;
@@ -79,8 +82,13 @@ public final class ObservableGroup {
     }
   }
 
-  /** Cancels all subscriptions and releases references to Observables and Observers. */
-  void cancel() {
+  /**
+   * Cancels all subscriptions and releases references to Observables and Observers.
+   * It is an error to call {@link #add} once this is called.
+   */
+  void destroy() {
+    destroyed = true;
+
     for (ManagedObservable<?> managedObservable : groupMap.values()) {
       managedObservable.cancel();
     }
@@ -108,7 +116,7 @@ public final class ObservableGroup {
   public void unlock() {
     locked = false;
     for (ManagedObservable<?> managedObservable : groupMap.values()) {
-      managedObservable.subscribe();
+      managedObservable.unlock();
     }
   }
 

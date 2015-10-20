@@ -26,6 +26,14 @@ public class RequestManagerTest {
     }
   }
 
+  @Test public void testIdsAreNotReused() {
+    for (int i = 1; i < 10; i++) {
+      ObservableGroup group = requestManager.newGroup();
+      assertThat(group.id()).isEqualTo(i);
+      group.destroy();
+    }
+  }
+
   @Test public void testEquality() {
     ObservableGroup originalGroup = requestManager.newGroup();
     ObservableGroup group1 = requestManager.getGroup(originalGroup.id());
@@ -39,11 +47,13 @@ public class RequestManagerTest {
     assertThat(group1).isNotEqualTo(group2);
   }
 
-  @Test public void testReuseReleasedIdsFromCancelledGroups() {
+  @Test public void testGetGroupThrowsAfterDestroyed() {
     ObservableGroup group = requestManager.newGroup();
-    requestManager.cancel(group);
-    ObservableGroup newGroup = requestManager.newGroup();
-    assertThat(group.id()).isEqualTo(newGroup.id());
-    assertThat(group).isNotEqualTo(newGroup);
+    requestManager.destroy(group);
+    try {
+      requestManager.getGroup(group.id());
+      fail();
+    } catch (IllegalArgumentException ignored) {
+    }
   }
 }
