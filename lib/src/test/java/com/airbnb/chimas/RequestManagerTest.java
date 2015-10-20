@@ -26,6 +26,14 @@ public class RequestManagerTest {
     }
   }
 
+  @Test public void testIdsAreNotReused() {
+    for (int i = 1; i < 10; i++) {
+      ObservableGroup group = requestManager.newGroup();
+      assertThat(group.id()).isEqualTo(i);
+      group.destroy();
+    }
+  }
+
   @Test public void testEquality() {
     ObservableGroup originalGroup = requestManager.newGroup();
     ObservableGroup group1 = requestManager.getGroup(originalGroup.id());
