@@ -11,7 +11,7 @@ import rx.Observable;
  * Subscribe to observables, and then lock or unlock their observers to control when you get the
  * event back. Events will be held in a queue until an Observer is added and the group is unlocked.
  */
-public final class RequestManager {
+public final class ObservableManager {
   /** Map ids to a group of observables. */
   private final Map<Long, ObservableGroup> observableGroupMap = new ConcurrentHashMap<>();
   private long nextId = 1;
@@ -43,5 +43,22 @@ public final class RequestManager {
   public void destroy(ObservableGroup group) {
     group.destroy();
     observableGroupMap.remove(group.id());
+  }
+
+  @Override public boolean equals(Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+
+    ObservableManager that = (ObservableManager) o;
+
+    //noinspection SimplifiableIfStatement
+    if (nextId != that.nextId) return false;
+    return observableGroupMap.equals(that.observableGroupMap);
+  }
+
+  @Override public int hashCode() {
+    int result = observableGroupMap.hashCode();
+    result = 31 * result + (int) (nextId ^ (nextId >>> 32));
+    return result;
   }
 }
