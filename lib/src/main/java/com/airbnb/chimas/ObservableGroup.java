@@ -166,4 +166,35 @@ public final class ObservableGroup {
       groupMap.remove(tag);
     }
   }
+
+  @Override public boolean equals(Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+
+    ObservableGroup that = (ObservableGroup) o;
+
+    if (groupId != that.groupId) return false;
+    if (locked != that.locked) return false;
+    //noinspection SimplifiableIfStatement
+    if (destroyed != that.destroyed) return false;
+    return groupMap.equals(that.groupMap);
+
+  }
+
+  @Override public int hashCode() {
+    int result = groupMap.hashCode();
+    result = 31 * result + (int) (groupId ^ (groupId >>> 32));
+    result = 31 * result + (locked ? 1 : 0);
+    result = 31 * result + (destroyed ? 1 : 0);
+    return result;
+  }
+
+  @Override public String toString() {
+    return "ObservableGroup{"
+        + "groupMap=" + groupMap
+        + ", groupId=" + groupId
+        + ", locked=" + locked
+        + ", destroyed=" + destroyed
+        + '}';
+  }
 }
