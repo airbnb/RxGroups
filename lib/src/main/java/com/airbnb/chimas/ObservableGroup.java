@@ -8,14 +8,14 @@ import rx.Observer;
 import rx.functions.Action0;
 
 /**
- * A helper class for {@link RequestManager} that groups {@link Observable}s to be managed together.
- * For example, a fragment will probably want to group all of its requests together so it can
- * lock/unlock/clear them all at once according to its lifecycle. <p> Requests are added to a {@link
- * ObservableGroup} with an observer, and that observer will be called when a response is ready. If
- * the {@link ObservableGroup} is locked when the response arrives, or if the observer was removed,
- * the response will be queued and delivered when the {@link ObservableGroup} is unlocked and a
- * observer is added. <p> Only one instance of a tag can be tracked at once. If a duplicate tag is
- * added the original wil be canceled and discarded. This restriction allows observers to be
+ * A helper class for {@link ObservableManager} that groups {@link Observable}s to be managed
+ * together. For example, a fragment will probably want to group all of its requests together so it
+ * can lock/unlock/clear them all at once according to its lifecycle. <p> Requests are added to a
+ * {@link ObservableGroup} with an observer, and that observer will be called when a response is
+ * ready. If the {@link ObservableGroup} is locked when the response arrives, or if the observer was
+ * removed, the response will be queued and delivered when the {@link ObservableGroup} is unlocked
+ * and a observer is added. <p> Only one instance of a tag can be tracked at once. If a duplicate
+ * tag is added the original wil be canceled and discarded. This restriction allows observers to be
  * reattached to an observer without ambiguity.
  */
 public final class ObservableGroup {
@@ -83,8 +83,8 @@ public final class ObservableGroup {
   }
 
   /**
-   * Cancels all subscriptions and releases references to Observables and Observers.
-   * It is an error to call {@link #add} once this is called.
+   * Cancels all subscriptions and releases references to Observables and Observers. It is an error
+   * to call {@link #add} once this is called.
    */
   void destroy() {
     destroyed = true;
@@ -165,5 +165,36 @@ public final class ObservableGroup {
     if (managedObservable != null) {
       groupMap.remove(tag);
     }
+  }
+
+  @Override public boolean equals(Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+
+    ObservableGroup that = (ObservableGroup) o;
+
+    if (groupId != that.groupId) return false;
+    if (locked != that.locked) return false;
+    //noinspection SimplifiableIfStatement
+    if (destroyed != that.destroyed) return false;
+    return groupMap.equals(that.groupMap);
+
+  }
+
+  @Override public int hashCode() {
+    int result = groupMap.hashCode();
+    result = 31 * result + (int) (groupId ^ (groupId >>> 32));
+    result = 31 * result + (locked ? 1 : 0);
+    result = 31 * result + (destroyed ? 1 : 0);
+    return result;
+  }
+
+  @Override public String toString() {
+    return "ObservableGroup{"
+        + "groupMap=" + groupMap
+        + ", groupId=" + groupId
+        + ", locked=" + locked
+        + ", destroyed=" + destroyed
+        + '}';
   }
 }

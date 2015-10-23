@@ -165,10 +165,10 @@ public class SubscriptionProxyTest {
   }
 
   @Test public void shouldRedeliverSameResultsToDifferentSubscriber() {
-    // Use case: When rotating an activity, RequestManager will re-subscribe original request's
+    // Use case: When rotating an activity, ObservableManager will re-subscribe original request's
     // Observable to a new Observer, which is a member of the new activity instance. In this
     // case, we may want to redeliver any previous results (if the request is still being
-    // managed by RequestManager).
+    // managed by ObservableManager).
     TestSubscriber<String> subscriber = new TestSubscriber<>();
     ReplaySubject<String> subject = ReplaySubject.create();
     SubscriptionProxy<String> proxy = SubscriptionProxy.create(subject);
