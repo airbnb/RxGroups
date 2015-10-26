@@ -46,7 +46,7 @@ public final class ObservableGroup {
     ManagedObservable<?> previousObservable = groupMap.get(tag);
 
     if (previousObservable != null) {
-      throw new IllegalStateException("An Observable with the same tag already exists.");
+      throw new IllegalStateException("An Observable with the tag " + tag + " already exists.");
     }
 
     final String finalTag = tag;
