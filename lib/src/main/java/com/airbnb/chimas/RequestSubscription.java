@@ -5,7 +5,7 @@ import rx.Subscription;
 
 public interface RequestSubscription extends Subscription {
   /**
-   * Indicates whether this {@code RequestSubscription} is currently cancelled, that is, wether the
+   * Indicates whether this {@code RequestSubscription} is currently cancelled, that is, whether the
    * underlying HTTP request associated to it has been cancelled.
    *
    * @return {@code true} if this {@code Subscription} is currently cancelled, {@code false}
