@@ -34,7 +34,7 @@ final class SubscriptionProxy<T> {
   }
 
   static <T> SubscriptionProxy<T> create(Observable<T> observable) {
-    return new SubscriptionProxy<>(observable, DummyAction.instance());
+    return create(observable, DummyAction.instance());
   }
 
   Subscription subscribe(Observer<T> observer) {
@@ -44,21 +44,21 @@ final class SubscriptionProxy<T> {
     return subscription;
   }
 
-  public void cancel() {
+  void cancel() {
     subscriptionList.unsubscribe();
   }
 
-  public void unsubscribe() {
+  void unsubscribe() {
     if (subscription != null) {
       subscriptionList.remove(subscription);
     }
   }
 
-  public boolean isUnsubscribed() {
+  boolean isUnsubscribed() {
     return subscription != null && subscription.isUnsubscribed();
   }
 
-  public boolean isCancelled() {
+  boolean isCancelled() {
     return isUnsubscribed() && upstreamSubscription.isUnsubscribed();
   }
 }

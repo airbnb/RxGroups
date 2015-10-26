@@ -6,6 +6,7 @@ import org.junit.Test;
 import java.io.IOException;
 
 import rx.Observable;
+import rx.Observer;
 import rx.observers.TestSubscriber;
 import rx.subjects.PublishSubject;
 
@@ -73,26 +74,6 @@ public class ObservableGroupTest {
     group.add("foo", observable, testSubscriber);
 
     testSubscriber.assertError(RuntimeException.class);
-  }
-
-  @Test public void shouldReplaceObservablesOfSameTagAndSameGroupId() throws Exception {
-    ObservableGroup group = observableManager.newGroup();
-    Observable<String> observable1 = Observable.never();
-    PublishSubject<String> observable2 = PublishSubject.create();
-    TestSubscriber<String> observer1 = new TestSubscriber<>();
-    TestSubscriber<String> observer2 = new TestSubscriber<>();
-    RequestSubscription subscription1 = group.add("foo", observable1, observer1);
-    RequestSubscription subscription2 = group.add("foo", observable2, observer2);
-
-    assertThat(subscription1.isCancelled()).isEqualTo(true);
-    assertThat(subscription2.isCancelled()).isEqualTo(false);
-    assertThat(group.hasObservable("foo")).isEqualTo(true);
-
-    observable2.onNext("Hello World");
-    observable2.onCompleted();
-
-    observer2.assertCompleted();
-    observer2.assertValue("Hello World");
   }
 
   @Test public void shouldSeparateObservablesByGroupId() {
@@ -426,12 +407,36 @@ public class ObservableGroupTest {
     ObservableGroup group = observableManager.newGroup();
     group.destroy();
     try {
-      TestSubscriber<String> testSubscriber = new TestSubscriber<>();
-      PublishSubject<String> subject = PublishSubject.create();
-
-      group.add("tag", subject, testSubscriber);
+      group.add("tag", PublishSubject.<String>create(), new TestSubscriber<String>());
       fail();
     } catch (IllegalStateException ignored) {
     }
+  }
+
+  @Test public void testThrowsIfSameTagAddedTwice() {
+    ObservableGroup group = observableManager.newGroup();
+    Observable<String> observable = PublishSubject.create();
+    Observer<String> observer = new TestSubscriber<>();
+    group.add("tag", observable, observer);
+    try {
+      group.add("tag", observable, observer);
+      fail();
+    } catch (IllegalStateException ignored) {
+    }
+  }
+
+  @Test public void testCancelAndReAddSubscription() {
+    ObservableGroup group = observableManager.newGroup();
+    RequestSubscription subscription = group.add(
+        "tag", PublishSubject.<String>create(), new TestSubscriber<String>());
+    group.cancelAndRemove("tag");
+    assertThat(subscription.isCancelled()).isTrue();
+
+    Observable<String> observable = PublishSubject.create();
+    Observer<String> observer = new TestSubscriber<>();
+
+    RequestSubscription subscription2 = group.add("tag", observable, observer);
+
+    assertThat(subscription2.isCancelled()).isFalse();
   }
 }
