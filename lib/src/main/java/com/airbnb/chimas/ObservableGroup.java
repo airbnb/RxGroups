@@ -33,19 +33,20 @@ public final class ObservableGroup {
   }
 
   /**
-   * Adds an {@link Observable} and {@link Observer} to this group and subscribes to it. If an
-   * Observable with the same tag is already added, the previous one will be canceled and removed
-   * before adding and subscribing to the new one. Returns the new {@link RequestSubscription}
-   * object.
+   * Adds an {@link Observable} and {@link Observer} to this group and subscribes to it.
+   *
+   * @return a {@link RequestSubscription} reference with which the {@link Observer} can stop
+   * receiving items before the {@link Observable} has completed.
+   * @throws IllegalStateException if an {@link Observable} with the same tag is already added and
+   *                               not yet completed.
    */
   public <T> RequestSubscription add(String tag, Observable<T> observable, Observer<T> observer) {
     Preconditions.checkState(!destroyed);
 
-    // noinspection unchecked
-    ManagedObservable<T> previousObservable = (ManagedObservable<T>) groupMap.get(tag);
+    ManagedObservable<?> previousObservable = groupMap.get(tag);
 
     if (previousObservable != null) {
-      cancelAndRemove(previousObservable);
+      throw new IllegalStateException("An Observable with the same tag already exists.");
     }
 
     final String finalTag = tag;
@@ -144,13 +145,16 @@ public final class ObservableGroup {
   }
 
   /**
-   * Remove the Observable from being tracked by this group. No queued or future results will be
-   * delivered. The subscription is also canceled to guarantee no responses will be delivered for it
-   * again.
+   * Removes the supplied {@link Observable} from this group and cancels it subscription.
+   * No more events will be delivered to its subscriber. If no Observable is found for the provided
+   * tag, nothing happens.
    */
-  private void cancelAndRemove(ManagedObservable<?> managedObservable) {
-    managedObservable.cancel();
-    groupMap.remove(managedObservable.tag());
+  public void cancelAndRemove(String tag) {
+    ManagedObservable<?> managedObservable = groupMap.get(tag);
+    if (managedObservable != null) {
+      managedObservable.cancel();
+      groupMap.remove(managedObservable.tag());
+    }
   }
 
   /** Returns whether an {@link Observable} exists for the provided {@code tag} */
