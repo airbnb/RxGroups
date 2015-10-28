@@ -413,16 +413,24 @@ public class ObservableGroupTest {
     }
   }
 
-  @Test public void testThrowsIfSameTagAddedTwice() {
+  @Test public void shouldReplaceObservablesOfSameTagAndSameGroupId() {
     ObservableGroup group = observableManager.newGroup();
-    Observable<String> observable = PublishSubject.create();
-    Observer<String> observer = new TestSubscriber<>();
-    group.add("tag", observable, observer);
-    try {
-      group.add("tag", observable, observer);
-      fail();
-    } catch (IllegalStateException ignored) {
-    }
+    Observable<String> observable1 = Observable.never();
+    PublishSubject<String> observable2 = PublishSubject.create();
+    TestSubscriber<String> observer1 = new TestSubscriber<>();
+    TestSubscriber<String> observer2 = new TestSubscriber<>();
+    RequestSubscription subscription1 = group.add("foo", observable1, observer1);
+    RequestSubscription subscription2 = group.add("foo", observable2, observer2);
+
+    assertThat(subscription1.isCancelled()).isEqualTo(true);
+    assertThat(subscription2.isCancelled()).isEqualTo(false);
+    assertThat(group.hasObservable("foo")).isEqualTo(true);
+
+    observable2.onNext("Hello World");
+    observable2.onCompleted();
+
+    observer2.assertCompleted();
+    observer2.assertValue("Hello World");
   }
 
   @Test public void testCancelAndReAddSubscription() {
