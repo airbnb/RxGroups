@@ -33,7 +33,9 @@ public final class ObservableGroup {
   }
 
   /**
-   * Adds an {@link Observable} and {@link Observer} to this group and subscribes to it.
+   * Adds an {@link Observable} and {@link Observer} to this group and subscribes to it. If an
+   * {@link Observable} with the same tag is already added, the previous one will be canceled and
+   * removed before adding and subscribing to the new one.
    *
    * @return a {@link RequestSubscription} reference with which the {@link Observer} can stop
    * receiving items before the {@link Observable} has completed.
@@ -46,7 +48,7 @@ public final class ObservableGroup {
     ManagedObservable<?> previousObservable = groupMap.get(tag);
 
     if (previousObservable != null) {
-      throw new IllegalStateException("An Observable with the tag " + tag + " already exists.");
+      cancelAndRemove(previousObservable);
     }
 
     final String finalTag = tag;
@@ -145,12 +147,19 @@ public final class ObservableGroup {
   }
 
   /**
-   * Removes the supplied {@link Observable} from this group and cancels it subscription.
-   * No more events will be delivered to its subscriber. If no Observable is found for the provided
-   * tag, nothing happens.
+   * Removes the supplied {@link Observable} from this group and cancels it subscription. No more
+   * events will be delivered to its subscriber. If no Observable is found for the provided tag,
+   * nothing happens.
    */
   public void cancelAndRemove(String tag) {
-    ManagedObservable<?> managedObservable = groupMap.get(tag);
+    cancelAndRemove(groupMap.get(tag));
+  }
+
+  /**
+   * Removes the supplied {@link Observable} from this group and cancels it subscription. No more
+   * events will be delivered to its subscriber.
+   */
+  public void cancelAndRemove(ManagedObservable<?> managedObservable) {
     if (managedObservable != null) {
       managedObservable.cancel();
       groupMap.remove(managedObservable.tag());
