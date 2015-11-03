@@ -12,7 +12,7 @@ class ManagedObservable<T> implements RequestSubscription {
   private final String tag;
   private final SubscriptionProxy<T> proxy;
   private Observer<T> observer;
-  private boolean locked;
+  private boolean locked = true;
 
   ManagedObservable(
       String tag, Observable<T> observable, Observer<T> observer, Action0 onTerminate) {
