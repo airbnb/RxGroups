@@ -12,6 +12,7 @@ class ManagedObservable<T> implements RequestSubscription {
   private final String tag;
   private final SubscriptionProxy<T> proxy;
   private Observer<T> observer;
+  private boolean locked = true;
 
   ManagedObservable(
       String tag, Observable<T> observable, Observer<T> observer, Action0 onTerminate) {
@@ -30,6 +31,7 @@ class ManagedObservable<T> implements RequestSubscription {
   }
 
   void lock() {
+    locked = true;
     proxy.unsubscribe();
   }
 
@@ -43,6 +45,8 @@ class ManagedObservable<T> implements RequestSubscription {
   }
 
   void unlock() {
+    locked = false;
+
     if (observer != null) {
       proxy.subscribe(observer);
     }
@@ -50,7 +54,10 @@ class ManagedObservable<T> implements RequestSubscription {
 
   void subscribe(Observer<T> observer) {
     this.observer = Preconditions.checkNotNull(observer);
-    proxy.subscribe(observer);
+
+    if (!locked) {
+      proxy.subscribe(observer);
+    }
   }
 
   String tag() {

@@ -136,9 +136,11 @@ public final class ObservableGroup {
   }
 
   /**
-   * Resubscribes an Observer to an existing {@link Observable} for the provided tag. If the
-   * Observable has already emitted events, they will be immediately delivered if it's unlocked. Any
-   * previously subscribed Observers will be unsubscribed before the new one.
+   * Resubscribes an Observer to an existing {@link Observable} for the provided tag. Does not
+   * change the locked status of this {@link ObservableGroup}. If it is unlocked, and the
+   * Observable has already emitted events, they will be immediately delivered. If it is locked
+   * then no events will be delivered until it is unlocked. Any previously subscribed Observers
+   * will be unsubscribed.
    */
   @SuppressWarnings({"rawtypes", "unchecked"})
   public void resubscribe(String tag, Observer observer) {
