@@ -234,6 +234,29 @@ public class ObservableGroupTest {
     assertThat(group.hasObservable("foo")).isEqualTo(false);
   }
 
+  @Test public void shouldNotDeliverEventsWhenResubscribedIfLocked() {
+    ObservableGroup group = observableManager.newGroup();
+    TestSubscriber<String> testSubscriber = new TestSubscriber<>();
+    PublishSubject<String> subject = PublishSubject.create();
+    group.add("foo", subject, testSubscriber);
+    group.unsubscribe();
+
+    subject.onNext("Hello World");
+    subject.onCompleted();
+
+    group.lock();
+    group.resubscribe("foo", testSubscriber);
+
+    testSubscriber.assertNotCompleted();
+    testSubscriber.assertNoValues();
+
+    group.unlock();
+    testSubscriber.assertCompleted();
+    testSubscriber.assertNoErrors();
+    testSubscriber.assertValue("Hello World");
+    assertThat(group.hasObservable("foo")).isEqualTo(false);
+  }
+
   @Test public void shouldUnsubscribeByContext() throws Exception {
     ObservableGroup group = observableManager.newGroup();
     ObservableGroup group2 = observableManager.newGroup();
