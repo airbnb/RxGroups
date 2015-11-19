@@ -1,7 +1,8 @@
-package com.airbnb.chimas;
+package com.airbnb.rxgroups;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicLong;
 
 import rx.Observable;
 
@@ -14,7 +15,7 @@ import rx.Observable;
 public final class ObservableManager {
   /** Map ids to a group of observables. */
   private final Map<Long, ObservableGroup> observableGroupMap = new ConcurrentHashMap<>();
-  private long nextId = 1;
+  private final AtomicLong nextId = new AtomicLong(1);
 
   /** @return an existing group or a new group with the provided groupId */
   public ObservableGroup getGroup(long groupId) {
@@ -30,7 +31,7 @@ public final class ObservableManager {
 
   /** @return a new {@link ObservableGroup} with a unique groupId */
   public ObservableGroup newGroup() {
-    long id = nextId++;
+    long id = nextId.getAndIncrement();
     ObservableGroup observableGroup = new ObservableGroup(id);
     observableGroupMap.put(id, observableGroup);
     return observableGroup;
@@ -52,13 +53,13 @@ public final class ObservableManager {
     ObservableManager that = (ObservableManager) o;
 
     //noinspection SimplifiableIfStatement
-    if (nextId != that.nextId) return false;
+    if (nextId.get() != that.nextId.get()) return false;
     return observableGroupMap.equals(that.observableGroupMap);
   }
 
   @Override public int hashCode() {
     int result = observableGroupMap.hashCode();
-    result = 31 * result + (int) (nextId ^ (nextId >>> 32));
+    result = 31 * result + (int) (nextId.get() ^ (nextId.get() >>> 32));
     return result;
   }
 }

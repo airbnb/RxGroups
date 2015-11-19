@@ -1,4 +1,4 @@
-package com.airbnb.chimas;
+package com.airbnb.rxgroups;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -431,6 +431,18 @@ public class ObservableGroupTest {
     group.destroy();
     try {
       group.add("tag", PublishSubject.<String>create(), new TestSubscriber<String>());
+      fail();
+    } catch (IllegalStateException ignored) {
+    }
+  }
+
+  @Test public void testResubscribeThrowsAfterDestroyed() {
+    ObservableGroup group = observableManager.newGroup();
+    try {
+      group.add("tag", PublishSubject.<String>create(), new TestSubscriber<String>());
+      group.unsubscribe();
+      group.destroy();
+      group.resubscribe("tag", new TestSubscriber<String>());
       fail();
     } catch (IllegalStateException ignored) {
     }

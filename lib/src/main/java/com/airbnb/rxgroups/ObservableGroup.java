@@ -1,4 +1,4 @@
-package com.airbnb.chimas;
+package com.airbnb.rxgroups;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -43,7 +43,7 @@ public final class ObservableGroup {
    *                               not yet completed.
    */
   public <T> RequestSubscription add(String tag, Observable<T> observable, Observer<T> observer) {
-    Preconditions.checkState(!destroyed);
+    checkNotDestroyed();
 
     ManagedObservable<?> previousObservable = groupMap.get(tag);
 
@@ -144,6 +144,7 @@ public final class ObservableGroup {
    */
   @SuppressWarnings({"rawtypes", "unchecked"})
   public void resubscribe(String tag, Observer observer) {
+    checkNotDestroyed();
     ManagedObservable<?> managedObservable = groupMap.get(tag);
     managedObservable.subscribe(observer);
   }
@@ -180,6 +181,10 @@ public final class ObservableGroup {
     if (managedObservable != null) {
       groupMap.remove(tag);
     }
+  }
+
+  private void checkNotDestroyed() {
+    Preconditions.checkState(!destroyed, "Group is already destroyed! id=" + groupId);
   }
 
   @Override public boolean equals(Object o) {

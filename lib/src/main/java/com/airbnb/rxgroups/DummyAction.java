@@ -1,4 +1,4 @@
-package com.airbnb.chimas;
+package com.airbnb.rxgroups;
 
 import rx.functions.Action0;
 

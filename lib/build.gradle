@@ -10,7 +10,7 @@ checkstyle {
 
 sourceCompatibility = 1.7
 
-project.group = 'com.airbnb.chimas'
+project.group = 'com.airbnb.rxgroups'
 project.version = PROJECT_VERSION
 
 dependencies {
@@ -31,18 +31,18 @@ if (JavaVersion.current().isJava8Compatible()) {
 
 modifyPom {
   project {
-    name 'Chimas library'
+    name 'RxGroups library'
     description PROJECT_DESCRIPTION
     url PROJECT_URL
     inceptionYear '2015'
     version PROJECT_VERSION
     groupId PROJECT_GROUP_ID
-    artifactId 'chimas'
+    artifactId 'rxgroups'
 
     scm {
       url PROJECT_URL
-      connection 'scm:git@git.musta.ch:airbnb/chimas.git'
-      developerConnection 'scm:git@git.musta.ch:airbnb/chimas.git'
+      connection 'scm:git@git.musta.ch:airbnb/rxgroups.git'
+      developerConnection 'scm:git@git.musta.ch:airbnb/rxgroups.git'
     }
 
     licenses {
