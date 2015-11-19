@@ -436,6 +436,18 @@ public class ObservableGroupTest {
     }
   }
 
+  @Test public void testResubscribeThrowsAfterDestroyed() {
+    ObservableGroup group = observableManager.newGroup();
+    try {
+      group.add("tag", PublishSubject.<String>create(), new TestSubscriber<String>());
+      group.unsubscribe();
+      group.destroy();
+      group.resubscribe("tag", new TestSubscriber<String>());
+      fail();
+    } catch (IllegalStateException ignored) {
+    }
+  }
+
   @Test public void shouldReplaceObservablesOfSameTagAndSameGroupId() {
     ObservableGroup group = observableManager.newGroup();
     Observable<String> observable1 = Observable.never();
