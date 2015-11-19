@@ -43,7 +43,7 @@ public final class ObservableGroup {
    *                               not yet completed.
    */
   public <T> RequestSubscription add(String tag, Observable<T> observable, Observer<T> observer) {
-    Preconditions.checkState(!destroyed);
+    Preconditions.checkState(!destroyed, "Group is already destroyed! id=" + groupId);
 
     ManagedObservable<?> previousObservable = groupMap.get(tag);
 
