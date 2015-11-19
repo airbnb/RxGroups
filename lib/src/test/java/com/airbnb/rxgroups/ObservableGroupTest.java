@@ -1,4 +1,4 @@
-package com.airbnb.chimas;
+package com.airbnb.rxgroups;
 
 import org.junit.Before;
 import org.junit.Test;

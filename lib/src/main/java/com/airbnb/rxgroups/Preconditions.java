@@ -12,7 +12,7 @@
  * the License.
  */
 
-package com.airbnb.chimas;
+package com.airbnb.rxgroups;
 
 import javax.annotation.Nullable;
 

@@ -1,4 +1,4 @@
-package com.airbnb.chimas;
+package com.airbnb.rxgroups;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;

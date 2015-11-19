@@ -1,4 +1,4 @@
-package com.airbnb.chimas;
+package com.airbnb.rxgroups;
 
 import rx.Scheduler;
 import rx.plugins.RxJavaSchedulersHook;
