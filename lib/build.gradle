@@ -1,6 +1,7 @@
 apply plugin: 'java'
 apply plugin: 'checkstyle'
 apply plugin: 'com.bmuschko.nexus'
+apply plugin: 'me.tatarka.retrolambda'
 
 checkstyle {
   configFile rootProject.file('checkstyle.xml')
@@ -8,13 +9,13 @@ checkstyle {
   configProperties = ['checkstyle.cache.file': rootProject.file('build/checkstyle.cache')]
 }
 
-sourceCompatibility = 1.7
+sourceCompatibility = 1.8
 
 project.group = 'com.airbnb.rxgroups'
 project.version = PROJECT_VERSION
 
 dependencies {
-  compile 'io.reactivex:rxjava:1.0.14'
+  compile 'io.reactivex:rxjava:1.1.0'
   compile 'com.google.code.findbugs:jsr305:3.0.0'
 
   testCompile 'junit:junit:4.12'
@@ -27,6 +28,10 @@ if (JavaVersion.current().isJava8Compatible()) {
       options.addStringOption('Xdoclint:none', '-quiet')
     }
   }
+}
+
+retrolambda {
+  oldJdk System.getenv("JAVA7_HOME")
 }
 
 modifyPom {

@@ -25,9 +25,12 @@ public class ObservableManager {
       throw new IllegalArgumentException("Group not found with groupId=" + groupId);
     }
 
+    if (observableGroup.isDestroyed()) {
+      throw new IllegalArgumentException("Group is already destroyed with groupId=" + groupId);
+    }
+
     return observableGroup;
   }
-
 
   /** @return a new {@link ObservableGroup} with a unique groupId */
   public ObservableGroup newGroup() {

@@ -11,14 +11,16 @@ import rx.functions.Action0;
 class ManagedObservable<T> implements RequestSubscription {
   private final String tag;
   private final SubscriptionProxy<T> proxy;
-  private Observer<T> observer;
   private boolean locked = true;
+  private Observable<T> observable;
+  private Observer<? super T> observer;
 
-  ManagedObservable(
-      String tag, Observable<T> observable, Observer<T> observer, Action0 onTerminate) {
+  ManagedObservable(String tag, Observable<T> observable, Observer<? super T> observer,
+      Action0 onTerminate) {
     this.tag = tag;
     this.observer = observer;
     proxy = SubscriptionProxy.create(observable, onTerminate);
+    this.observable = proxy.observable();
   }
 
   @Override public boolean isCancelled() {
@@ -48,15 +50,20 @@ class ManagedObservable<T> implements RequestSubscription {
     locked = false;
 
     if (observer != null) {
-      proxy.subscribe(observer);
+      proxy.subscribe(observable, observer);
     }
   }
 
-  void subscribe(Observer<T> observer) {
+  Observable<T> observable() {
+    return proxy.observable();
+  }
+
+  void resubscribe(Observable<T> observable, Observer<? super T> observer) {
+    this.observable = observable;
     this.observer = Preconditions.checkNotNull(observer);
 
     if (!locked) {
-      proxy.subscribe(observer);
+      proxy.subscribe(observable, observer);
     }
   }
 
@@ -74,7 +81,6 @@ class ManagedObservable<T> implements RequestSubscription {
     //noinspection SimplifiableIfStatement
     if (!proxy.equals(that.proxy)) return false;
     return !(observer != null ? !observer.equals(that.observer) : that.observer != null);
-
   }
 
   @Override public int hashCode() {

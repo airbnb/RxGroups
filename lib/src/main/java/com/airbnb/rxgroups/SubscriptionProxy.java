@@ -22,9 +22,9 @@ final class SubscriptionProxy<T> {
   private final CompositeSubscription subscriptionList;
   private Subscription subscription;
 
-  private SubscriptionProxy(Observable<T> observable, Action0 onTerminate) {
+  private SubscriptionProxy(Observable<T> upstreamObservable, Action0 onTerminate) {
     ReplaySubject<T> replaySubject = ReplaySubject.create();
-    upstreamSubscription = observable.subscribe(replaySubject);
+    upstreamSubscription = upstreamObservable.subscribe(replaySubject);
     proxy = replaySubject.doOnTerminate(onTerminate);
     subscriptionList = new CompositeSubscription(upstreamSubscription);
   }
@@ -37,9 +37,13 @@ final class SubscriptionProxy<T> {
     return create(observable, DummyAction.instance());
   }
 
-  Subscription subscribe(Observer<T> observer) {
+  Subscription subscribe(Observer<? super T> observer) {
+    return subscribe(proxy, observer);
+  }
+
+  Subscription subscribe(Observable<T> observable, Observer<? super T> observer) {
     unsubscribe();
-    subscription = proxy.subscribe(observer);
+    subscription = observable.subscribe(observer);
     subscriptionList.add(subscription);
     return subscription;
   }
@@ -60,5 +64,9 @@ final class SubscriptionProxy<T> {
 
   boolean isCancelled() {
     return isUnsubscribed() && upstreamSubscription.isUnsubscribed();
+  }
+
+  Observable<T> observable() {
+    return proxy;
   }
 }

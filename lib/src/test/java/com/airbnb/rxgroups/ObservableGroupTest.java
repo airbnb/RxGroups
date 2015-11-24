@@ -31,7 +31,7 @@ public class ObservableGroupTest {
     ObservableGroup group2 = observableManager.newGroup();
     Observable<String> observable = Observable.never();
 
-    group.add("foo", observable, new TestSubscriber<String>());
+    group.add("foo", observable, new TestSubscriber<>());
 
     assertThat(group.hasObservable("foo")).isEqualTo(true);
     assertThat(group2.hasObservable("foo")).isEqualTo(false);
@@ -207,7 +207,7 @@ public class ObservableGroupTest {
     testSubscriber.assertNotCompleted();
     testSubscriber.assertNoValues();
 
-    group.resubscribe("foo", testSubscriber);
+    group.<String>observable("foo").subscribe(testSubscriber);
 
     testSubscriber.assertCompleted();
     testSubscriber.assertNoErrors();
@@ -228,7 +228,7 @@ public class ObservableGroupTest {
     testSubscriber.assertNotCompleted();
     testSubscriber.assertNoValues();
 
-    group.resubscribe("foo", testSubscriber);
+    group.<String>observable("foo").subscribe(testSubscriber);
 
     testSubscriber.assertError(Exception.class);
     assertThat(group.hasObservable("foo")).isEqualTo(false);
@@ -245,7 +245,7 @@ public class ObservableGroupTest {
     subject.onCompleted();
 
     group.lock();
-    group.resubscribe("foo", testSubscriber);
+    group.<String>observable("foo").subscribe(testSubscriber);
 
     testSubscriber.assertNotCompleted();
     testSubscriber.assertNoValues();
@@ -320,7 +320,7 @@ public class ObservableGroupTest {
     TestSubscriber<String> testSubscriber2 = new TestSubscriber<>();
 
     group.add("tag", subject, testSubscriber1);
-    group.resubscribe("tag", testSubscriber2);
+    group.<String>observable("tag").subscribe(testSubscriber2);
 
     subject.onNext("Ruben Aguirre");
     subject.onCompleted();
@@ -430,7 +430,7 @@ public class ObservableGroupTest {
     ObservableGroup group = observableManager.newGroup();
     group.destroy();
     try {
-      group.add("tag", PublishSubject.<String>create(), new TestSubscriber<String>());
+      group.add("tag", PublishSubject.<String>create(), new TestSubscriber<>());
       fail();
     } catch (IllegalStateException ignored) {
     }
@@ -439,10 +439,10 @@ public class ObservableGroupTest {
   @Test public void testResubscribeThrowsAfterDestroyed() {
     ObservableGroup group = observableManager.newGroup();
     try {
-      group.add("tag", PublishSubject.<String>create(), new TestSubscriber<String>());
+      group.add("tag", PublishSubject.<String>create(), new TestSubscriber<>());
       group.unsubscribe();
       group.destroy();
-      group.resubscribe("tag", new TestSubscriber<String>());
+      group.<String>observable("tag").subscribe(new TestSubscriber<>());
       fail();
     } catch (IllegalStateException ignored) {
     }
@@ -471,7 +471,7 @@ public class ObservableGroupTest {
   @Test public void testCancelAndReAddSubscription() {
     ObservableGroup group = observableManager.newGroup();
     RequestSubscription subscription = group.add(
-        "tag", PublishSubject.<String>create(), new TestSubscriber<String>());
+        "tag", PublishSubject.<String>create(), new TestSubscriber<>());
     group.cancelAndRemove("tag");
     assertThat(subscription.isCancelled()).isTrue();
 
