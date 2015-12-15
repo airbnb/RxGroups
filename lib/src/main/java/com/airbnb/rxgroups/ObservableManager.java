@@ -12,7 +12,7 @@ import rx.Observable;
  * Subscribe to observables, and then lock or unlock their observers to control when you get the
  * event back. Events will be held in a queue until an Observer is added and the group is unlocked.
  */
-public final class ObservableManager {
+public class ObservableManager {
   /** Map ids to a group of observables. */
   private final Map<Long, ObservableGroup> observableGroupMap = new ConcurrentHashMap<>();
   private final AtomicLong nextId = new AtomicLong(1);

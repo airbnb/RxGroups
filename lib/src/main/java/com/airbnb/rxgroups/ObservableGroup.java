@@ -18,7 +18,7 @@ import rx.functions.Action0;
  * tag is added the original wil be canceled and discarded. This restriction allows observers to be
  * reattached to an observer without ambiguity.
  */
-public final class ObservableGroup {
+public class ObservableGroup {
   private final Map<String, ManagedObservable<?>> groupMap = new ConcurrentHashMap<>();
   private final long groupId;
   private boolean locked;
