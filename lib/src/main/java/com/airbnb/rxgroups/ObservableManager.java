@@ -12,7 +12,7 @@ import rx.Observable;
  * Subscribe to observables, and then lock or unlock their observers to control when you get the
  * event back. Events will be held in a queue until an Observer is added and the group is unlocked.
  */
-public final class ObservableManager {
+public class ObservableManager {
   /** Map ids to a group of observables. */
   private final Map<Long, ObservableGroup> observableGroupMap = new ConcurrentHashMap<>();
   private final AtomicLong nextId = new AtomicLong(1);
@@ -25,9 +25,12 @@ public final class ObservableManager {
       throw new IllegalArgumentException("Group not found with groupId=" + groupId);
     }
 
+    if (observableGroup.isDestroyed()) {
+      throw new IllegalArgumentException("Group is already destroyed with groupId=" + groupId);
+    }
+
     return observableGroup;
   }
-
 
   /** @return a new {@link ObservableGroup} with a unique groupId */
   public ObservableGroup newGroup() {

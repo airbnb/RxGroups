@@ -208,4 +208,20 @@ public class SubscriptionProxyTest {
     subscriber.assertNotCompleted();
     subscriber.assertNoValues();
   }
+
+  @Test public void shouldKeepDeliveringEventsAfterResubscribed() {
+    TestSubscriber<String> subscriber = new TestSubscriber<>();
+    ReplaySubject<String> subject = ReplaySubject.create();
+    SubscriptionProxy<String> proxy = SubscriptionProxy.create(subject);
+
+    proxy.subscribe(subscriber);
+    subject.onNext("Avanti 1");
+    proxy.unsubscribe();
+    subscriber = new TestSubscriber<>();
+    proxy.subscribe(subscriber);
+
+    subject.onNext("Avanti!");
+
+    subscriber.assertValues("Avanti 1", "Avanti!");
+  }
 }

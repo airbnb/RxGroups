@@ -27,6 +27,16 @@ public class ObservableManagerTest {
     }
   }
 
+  @Test public void testGetGroupThrowsIfDestroyed() {
+    try {
+      ObservableGroup group = observableManager.newGroup();
+      group.destroy();
+      observableManager.getGroup(1);
+      fail();
+    } catch (IllegalArgumentException ignored) {
+    }
+  }
+
   @Test public void testIdsAreNotReused() {
     for (int i = 1; i < 10; i++) {
       ObservableGroup group = observableManager.newGroup();
