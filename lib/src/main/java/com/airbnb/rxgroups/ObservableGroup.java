@@ -207,8 +207,8 @@ public class ObservableGroup {
   }
 
   @Override public String toString() {
-    return "ObservableGroup{" + "groupMap=" + groupMap + ", groupId=" + groupId + ", locked=" +
-        locked + ", destroyed=" + destroyed + '}';
+    return "ObservableGroup{" + "groupMap=" + groupMap + ", groupId=" + groupId + ", locked="
+        + locked + ", destroyed=" + destroyed + '}';
   }
 
   boolean isDestroyed() {
