@@ -1,0 +1,46 @@
+language: android
+
+android:
+  components:
+    - tools
+    - platform-tools
+    - build-tools-23.0.2
+    - android-23
+    - extra-google-google_play_services
+    - extra-android-m2repository
+    - extra-android-support
+    - extra-google-m2repository
+
+after_success:
+  - .buildscript/deploy_snapshot.sh
+
+jdk:
+  - oraclejdk8
+
+branches:
+  except:
+    - gh-pages
+
+notifications:
+  email: false
+
+script: ./gradlew check
+
+before_install:
+  - export JAVA7_HOME=/usr/lib/jvm/java-7-oracle
+  - export JAVA8_HOME=/usr/lib/jvm/java-8-oracle
+  - export JAVA_HOME=$JAVA8_HOME
+
+sudo: false
+
+before_cache:
+  - rm -f $HOME/.gradle/caches/modules-2/modules-2.lock
+
+cache:
+  directories:
+    - $HOME/.gradle/caches/
+    - $HOME/.gradle/wrapper/
+env:
+  global:
+    - secure: dM6IRKdqQiPLqeyIAFXnPHskSbvDo737f65QJvEoLlvkeU9+GNDze3FONmyR9lCHqMqfGKNPe9Nln17quwCx68F18vieGCXI1/fgyQhDdBfmxzFGEPkZzt7FzED+LdzRL024aeDWgXyGhJ6pXdUse/NdMzIHSEnaT/lk5uyooyz/wbncpftBcetdxjK53ahfQdGDtD0HL5iriX9hrxJn9U6vUOn59FxbSCp/YHD5WxROYOLc2rDNbPNq2UfKO0zXya0/W2g8L20u60EJ+8hhi76ngdKsUzbDRCXldo/9UpbT0rGwDoD1jRw/lbmlWjcGJX5syHcEurQkjPDG1geOGW62a5LtD5BhpMGDhWd+QcSj1Sp3whvObSW6YGfp/2vxXrJT3Mgfvv1rOM7toxnzNq4xoCbGEERQMLs3B6CyMBO1BEVMnGtcdMbaf8paY+IkYM0aQnqN5H27qsy7cD9kpZZsvF/0a9S96J9D/LRuaMPltcttx1Rg+kjBnbGFoShoQYgABvMmvKlqQJyNBA5RIQKAdLNXNFr/5XdT59KoZHakLERfbRNmlkbYIIRw2RlZZBA/14btSsffb7r/4SQeNRO33LhRCSAibSZfWkISuCpLc4EBN1XasoGjlcimwO6zgyxZhB5nDowVimAe21QuCn+hZbjgHJgK8iTdJozd+eM=
+    - secure: PhKBOSYzoYzoKI9bro2x4XjFwYx13f3bIgiAQvaqahH3/E6drfEUkbXUVc9H+7akGE71/m1kujYIzD3KnBw+CNLbtOaVMj0G/TSZRJS655B28aOqbbw6vq3dkoiIk4Ewqz/a6uT+zxxtqvdoEwQTMw7f47tf597IOkz3V70UiLXg0jFFO8mUS5EdfakezeAqn6JYGhnb03cpPbMQiAazmvrO++dwbGnRnKKTBkTYL5lYn8bCId7o7U8OVXSnWGMtOfy7r+u12afRxsaTZoeXV0IOkksheaApvz/H1LqtHY3cQK6MGHEf4LoZF0JbpPrstZmE4lKBYnxwnsR3NQ9JIken3C9aKf/E91Prtz2KVl2P0buPByt/JlPAqD5xNrJ9/9RThzU3+Tbab4mLUwv8QEUfmsjiKaY1O6JEnI7WFzeY3l6zE3NFCafVeI675/b+1nGjEmISAfqdiDrpL25M8mV4xbQd7JV/HjVYO1HCDiFWB7FkJCWigPU9ECDIBA/9lfk1zwMZffULBhSRdEhj3Brm2N+dGFd/V3UN00IqBS6z5fjDN2ihMIa35zzDviVsD+WqQTtF6R1RfgyfK1Zi8VJNpf4NLsV+JGkMdFF2rXw9nm31fwuh7nSgFsHS3+LHZUSCBLAEcEo7DopRTMJkbIAtyyMy30Gwp9gGBUfdhdk=

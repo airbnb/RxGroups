@@ -1,5 +1,8 @@
 # RxGroups
 
+[![Build Status](https://travis-ci.org/airbnb/DeepLinkDispatch.svg)](https://travis-ci.org/airbnb/RxGroups)
+
+
 RxGroups lets you group RxJava `Observable`s together in groups and tie them to your Android Activity
 or Fragment lifecycle.
 
