@@ -39,15 +39,15 @@ modifyPom {
     name 'RxGroups library'
     description PROJECT_DESCRIPTION
     url PROJECT_URL
-    inceptionYear '2015'
+    inceptionYear '2016'
     version PROJECT_VERSION
     groupId PROJECT_GROUP_ID
     artifactId 'rxgroups'
 
     scm {
       url PROJECT_URL
-      connection 'scm:git@git.musta.ch:airbnb/rxgroups.git'
-      developerConnection 'scm:git@git.musta.ch:airbnb/rxgroups.git'
+      connection 'scm:git@github.com:airbnb/rxgroups.git'
+      developerConnection 'scm:git@github.com:airbnb/rxgroups.git'
     }
 
     licenses {
@@ -76,6 +76,6 @@ extraArchive {
 
 nexus {
   sign = !isCi()
-  repositoryUrl = 'http://airbnb-maven-master.d.musta.ch/nexus/content/repositories/releases/'
-  snapshotRepositoryUrl = 'http://airbnb-maven-master.d.musta.ch/nexus/content/repositories/snapshots/'
+  repositoryUrl = 'https://oss.sonatype.org/service/local/staging/deploy/maven2/'
+  snapshotRepositoryUrl = 'https://oss.sonatype.org/content/repositories/snapshots/'
 }
