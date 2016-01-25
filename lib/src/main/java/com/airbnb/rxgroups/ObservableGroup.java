@@ -211,7 +211,7 @@ public class ObservableGroup {
         + locked + ", destroyed=" + destroyed + '}';
   }
 
-  boolean isDestroyed() {
+  public boolean isDestroyed() {
     return destroyed;
   }
 }
