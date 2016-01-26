@@ -51,13 +51,8 @@ public class ObservableGroup {
    * Adds an {@link Observable} and {@link Observer} to this group and subscribes to it. If an
    * {@link Observable} with the same tag is already added, the previous one will be canceled and
    * removed before adding and subscribing to the new one.
-   *
-   * @return a {@link RequestSubscription} reference with which the {@link Observer} can stop
-   * receiving items before the {@link Observable} has completed.
-   * @throws IllegalStateException if an {@link Observable} with the same tag is already added and
-   *                               not yet completed.
    */
-  <T> RequestSubscription add(String tag, Observable<T> observable, Observer<? super T> observer) {
+  <T> void add(String tag, Observable<T> observable, Observer<? super T> observer) {
     checkNotDestroyed();
 
     ManagedObservable<?> previousObservable = groupMap.get(tag);
@@ -74,8 +69,6 @@ public class ObservableGroup {
     if (!locked) {
       managedObservable.unlock();
     }
-
-    return managedObservable;
   }
 
   /**
@@ -149,6 +142,15 @@ public class ObservableGroup {
     return observable.compose(new GroupResubscriptionTransformer<>(this, managedObservable));
   }
 
+  /**
+   * @return a {@link RequestSubscription} with which the {@link Observer} can unsubscribe
+   * from or cancel before {@link Observable}. If no {@link Observable} is found for the provided
+   * {@code tag}, {@code null} is returned instead.
+   */
+  public RequestSubscription subscription(String tag) {
+    return groupMap.get(tag);
+  }
+
   <T> void resubscribe(ManagedObservable<T> managedObservable, Observable<T> observable,
       Subscriber<? super T> subscriber) {
     managedObservable.resubscribe(observable, subscriber);
@@ -180,6 +182,11 @@ public class ObservableGroup {
     return managedObservable != null;
   }
 
+  /** Returns whether this group has been already destroyed or not. */
+  public boolean isDestroyed() {
+    return destroyed;
+  }
+
   private void checkNotDestroyed() {
     Preconditions.checkState(!destroyed, "Group is already destroyed! id=" + groupId);
   }
@@ -209,9 +216,5 @@ public class ObservableGroup {
   @Override public String toString() {
     return "ObservableGroup{" + "groupMap=" + groupMap + ", groupId=" + groupId + ", locked="
         + locked + ", destroyed=" + destroyed + '}';
-  }
-
-  public boolean isDestroyed() {
-    return destroyed;
   }
 }

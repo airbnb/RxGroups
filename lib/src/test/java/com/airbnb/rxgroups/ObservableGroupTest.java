@@ -62,9 +62,8 @@ public class ObservableGroupTest {
 
   @Test public void shouldBeSubscribed() {
     ObservableGroup group = observableManager.newGroup();
-    RequestSubscription subscription = group.add(
-        "foo", Observable.never(), new TestSubscriber<>());
-    assertThat(subscription.isCancelled()).isEqualTo(false);
+    group.add("foo", Observable.never(), new TestSubscriber<>());
+    assertThat(group.subscription("foo").isCancelled()).isEqualTo(false);
   }
 
   @Test public void shouldDeliverSuccessfulEvent() throws Exception {
@@ -119,21 +118,21 @@ public class ObservableGroupTest {
     Observable<String> observable2 = Observable.never();
     TestSubscriber<String> subscriber1 = new TestSubscriber<>();
 
-    RequestSubscription subscription1 = group.add("foo", observable1, subscriber1);
-    RequestSubscription subscription2 = group2.add("foo", observable2, subscriber1);
+    group.add("foo", observable1, subscriber1);
+    group2.add("foo", observable2, subscriber1);
 
     observableManager.destroy(group);
 
     assertThat(group.hasObservable("foo")).isEqualTo(false);
     assertThat(group2.hasObservable("foo")).isEqualTo(true);
-    assertThat(subscription1.isCancelled()).isEqualTo(true);
-    assertThat(subscription2.isCancelled()).isEqualTo(false);
+    assertThat(group.subscription("foo")).isNull();
+    assertThat(group2.subscription("foo").isCancelled()).isEqualTo(false);
 
     observableManager.destroy(group2);
     assertThat(group.hasObservable("foo")).isEqualTo(false);
     assertThat(group2.hasObservable("foo")).isEqualTo(false);
-    assertThat(subscription1.isCancelled()).isEqualTo(true);
-    assertThat(subscription2.isCancelled()).isEqualTo(true);
+    assertThat(group.subscription("foo")).isNull();
+    assertThat(group2.subscription("foo")).isNull();
   }
 
   @Test public void shouldClearObservablesWhenLocked() {
@@ -469,11 +468,10 @@ public class ObservableGroupTest {
     PublishSubject<String> observable2 = PublishSubject.create();
     TestSubscriber<String> observer1 = new TestSubscriber<>();
     TestSubscriber<String> observer2 = new TestSubscriber<>();
-    RequestSubscription subscription1 = group.add("foo", observable1, observer1);
-    RequestSubscription subscription2 = group.add("foo", observable2, observer2);
+    group.add("foo", observable1, observer1);
+    group.add("foo", observable2, observer2);
 
-    assertThat(subscription1.isCancelled()).isEqualTo(true);
-    assertThat(subscription2.isCancelled()).isEqualTo(false);
+    assertThat(group.subscription("foo").isCancelled()).isEqualTo(false);
     assertThat(group.hasObservable("foo")).isEqualTo(true);
 
     observable2.onNext("Hello World");
@@ -485,16 +483,15 @@ public class ObservableGroupTest {
 
   @Test public void testCancelAndReAddSubscription() {
     ObservableGroup group = observableManager.newGroup();
-    RequestSubscription subscription = group.add(
-        "tag", PublishSubject.<String>create(), new TestSubscriber<>());
+    group.add("tag", PublishSubject.<String>create(), new TestSubscriber<>());
     group.cancelAndRemove("tag");
-    assertThat(subscription.isCancelled()).isTrue();
+    assertThat(group.subscription("tag")).isNull();
 
     Observable<String> observable = PublishSubject.create();
     Observer<String> observer = new TestSubscriber<>();
 
-    RequestSubscription subscription2 = group.add("tag", observable, observer);
+    group.add("tag", observable, observer);
 
-    assertThat(subscription2.isCancelled()).isFalse();
+    assertThat(group.subscription("tag").isCancelled()).isFalse();
   }
 }
