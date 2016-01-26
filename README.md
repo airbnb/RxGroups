@@ -8,10 +8,6 @@ or Fragment lifecycle.
 
 ## Usage
 
-```groovy
-compile 'com.airbnb:rxgroups:0.2.0'
-```
-
 Start with `ObservableManager` in order to create or retrieve groups.
 
 ```java
@@ -96,6 +92,13 @@ public class MyActivity extends Activity {
   }
 }
 ```
+
+```groovy
+compile 'com.airbnb:rxgroups:0.2.1'
+```
+
+Snapshots of the development version are available in
+[Sonatype's `snapshots` repository](https://oss.sonatype.org/content/repositories/snapshots/).
 
 License
 --------
