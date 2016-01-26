@@ -144,8 +144,8 @@ public class ObservableGroup {
 
   /**
    * @return a {@link RequestSubscription} with which the {@link Observer} can unsubscribe
-   * from or cancel before {@link Observable}. If no {@link Observable} is found for the provided
-   * {@code tag}, {@code null} is returned instead.
+   * from or cancel before the {@link Observable} has completed. If no {@link Observable} is found
+   * for the provided {@code tag}, {@code null} is returned instead.
    */
   public RequestSubscription subscription(String tag) {
     return groupMap.get(tag);
