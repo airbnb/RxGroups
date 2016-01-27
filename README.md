@@ -94,7 +94,7 @@ public class MyActivity extends Activity {
 ```
 
 ```groovy
-compile 'com.airbnb:rxgroups:0.2.1'
+compile 'com.airbnb:rxgroups:0.2.2'
 ```
 
 Snapshots of the development version are available in
