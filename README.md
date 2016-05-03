@@ -43,10 +43,7 @@ public class MyActivity extends Activity {
 
     output = (TextView) findViewById(R.id.txt_output);
 
-    // Make sure no events are received until we are ready to display them. Locking the group
-    // will cache any results so they can be delivered immediately when you unlock() if there are
-    // any available.
-    observableGroup.lock();
+    
 
     observableManager = application.observableManager();
     if (savedInstanceState == null) {
@@ -54,7 +51,12 @@ public class MyActivity extends Activity {
     } else {
       observableGroup = observableManager.getGroup(savedInstanceState.getLong(GROUP_ID));
     }
-
+    
+    // Make sure no events are received until we are ready to display them. Locking the group
+    // will cache any results so they can be delivered immediately when you unlock() if there are
+    // any available.
+    observableGroup.lock();
+    
     if (observableGroup.hasObservable(OBSERVABLE_TAG)) {
       // We've already subscribed to this observable before and it's still emitting items.
       // Maybe the screen was rotated or the activity was paused and then resumed. Let's get it
