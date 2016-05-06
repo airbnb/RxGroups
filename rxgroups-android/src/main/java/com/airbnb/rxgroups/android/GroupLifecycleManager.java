@@ -50,6 +50,7 @@ public class GroupLifecycleManager {
   }
 
   public void restoreState(@Nullable Bundle savedState, @Nullable Object target) {
+    hasSavedState = false;
     // Only need to resubscribe if restoring from saved state
     boolean shouldResubscribe = target != null && savedState != null;
 
@@ -57,6 +58,10 @@ public class GroupLifecycleManager {
       int hashCode = savedState.getInt(KEY_MANAGER_HASHCODE);
       long groupId = savedState.getLong(KEY_GROUP_ID);
 
+      // First check the instance hashCode before restoring state. If it's not the same instance,
+      // then we have to create a new group since the previous one is already destroyed.
+      // Android can sometimes reuse the same instance after saving state and we can't reliably
+      // determine when that happens. This is a workaround for that behavior.
       if (hashCode != observableManager.hashCode()) {
         group = observableManager.newGroup();
       } else {
@@ -131,10 +136,6 @@ public class GroupLifecycleManager {
     group.cancelAndRemove(tagFactory.tag(klass));
   }
 
-  private void onCreate() {
-    hasSavedState = false;
-  }
-
   private void onDestroy(boolean isFinishing) {
     pendingSubscriptions.clear();
 
@@ -146,6 +147,13 @@ public class GroupLifecycleManager {
   }
 
   public void onDestroy(@Nullable Activity activity) {
+    // We need to track whether the current Activity is finishing or not in order to decide if we
+    // should destroy the ObservableGroup. If the Activity is not finishing, then we should not
+    // destroy it, since we know that we're probably restoring state at some point and reattaching
+    // to the existing ObservableGroup. If saveState() was not called, then it's likely that we're
+    // being destroyed and are not ever coming back. However, this isn't perfect, especially
+    // when using fragments in a ViewPager. We might want to allow users to explicitly destroy it
+    // instead, in order to mitigate this issue.
     onDestroy(!hasSavedState || activity != null && activity.isFinishing());
   }
 
