@@ -43,6 +43,10 @@ public class GroupLifecycleManager {
     this(observableManager, tagFactory, new LifecycleResubscription());
   }
 
+  public ObservableGroup group() {
+    return group;
+  }
+
   public void saveState(Bundle outState) {
     hasSavedState = true;
     outState.putInt(KEY_MANAGER_HASHCODE, observableManager.hashCode());
@@ -50,7 +54,6 @@ public class GroupLifecycleManager {
   }
 
   public void restoreState(@Nullable Bundle savedState, @Nullable Object target) {
-    hasSavedState = false;
     // Only need to resubscribe if restoring from saved state
     boolean shouldResubscribe = target != null && savedState != null;
 
@@ -159,6 +162,10 @@ public class GroupLifecycleManager {
 
   public void onDestroy(Fragment fragment) {
     onDestroy(fragment.getActivity());
+  }
+
+  public void onCreate() {
+    // currenty no-op
   }
 
   public void onResume() {

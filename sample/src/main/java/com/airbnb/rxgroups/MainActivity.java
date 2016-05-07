@@ -11,18 +11,19 @@ import android.view.View;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.airbnb.rxgroups.android.DefaultObservableTagFactory;
+import com.airbnb.rxgroups.android.GroupLifecycleManager;
+
 import rx.Observable;
 import rx.Observer;
 import rx.android.schedulers.AndroidSchedulers;
 
 public class MainActivity extends AppCompatActivity {
-  private static final String GROUP_ID = "GROUP_ID";
+  private static final String IS_RUNNING = "IS_RUNNING";
   private static final String OBSERVABLE_TAG = "timer";
   private static final String TAG = "MainActivity";
-  private static final String IS_RUNNING = "IS_RUNNING";
 
-  private ObservableGroup observableGroup;
-  private ObservableManager observableManager;
+  private GroupLifecycleManager groupLifecycleManager;
   private TextView output;
   private Observable<Long> timerObservable;
   private boolean isRunning;
@@ -47,6 +48,7 @@ public class MainActivity extends AppCompatActivity {
   private Drawable unlockDrawable;
   private FloatingActionButton startStop;
   private FloatingActionButton lockUnlock;
+  private ObservableGroup observableGroup;
 
   @Override protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
@@ -65,28 +67,23 @@ public class MainActivity extends AppCompatActivity {
     lockUnlock.setOnClickListener(this::onClickLockUnlockGroup);
 
     SampleApplication application = (SampleApplication) getApplication();
-    observableManager = application.observableManager();
+    groupLifecycleManager = new GroupLifecycleManager(application.observableManager(),
+        DefaultObservableTagFactory.INSTANCE);
     timerObservable = application.timerObservable();
+    groupLifecycleManager.restoreState(savedInstanceState, this);
+    observableGroup = groupLifecycleManager.group();
 
-    if (savedInstanceState == null) {
-      observableGroup = observableManager.newGroup();
-    } else {
+    if (savedInstanceState != null) {
       // This doesn't quite work 100% of the time, since in some specific scenarios (eg.: your app
       // was killed while in background), when your activity is recreated, your process is also
       // recreated, which causes ObservableManager to be empty (no groups). In this case, getGroup()
       // would crash since it's obviously not there. It is left as an exercise for the reader on
       // how to work around this situation.
-      observableGroup = observableManager.getGroup(savedInstanceState.getLong(GROUP_ID));
       if (savedInstanceState.getBoolean(IS_RUNNING)) {
         isRunning = true;
         startStop.setImageDrawable(alarmOffDrawable);
       }
     }
-
-    // Make sure no events are received until we are ready to display them. Locking the group
-    // will cache any results so they can be delivered immediately when you unlock() if there are
-    // any available
-    observableGroup.lock();
 
     if (observableGroup.hasObservable(OBSERVABLE_TAG)) {
       observableGroup.<Long>observable(OBSERVABLE_TAG)
@@ -131,34 +128,25 @@ public class MainActivity extends AppCompatActivity {
 
   @Override protected void onSaveInstanceState(Bundle outState) {
     super.onSaveInstanceState(outState);
-    outState.putLong(GROUP_ID, observableGroup.id());
+    groupLifecycleManager.saveState(outState);
     outState.putBoolean(IS_RUNNING, isRunning);
   }
 
   @Override protected void onResume() {
     super.onResume();
     Log.d(TAG, "onResume()");
-    // Go ahead and unlock our group, so we can receive Observable events.
-    observableGroup.unlock();
+    groupLifecycleManager.onResume();
   }
 
   @Override protected void onPause() {
     super.onPause();
     Log.d(TAG, "onPause()");
-    observableGroup.lock();
+    groupLifecycleManager.onPause();
   }
 
   @Override protected void onDestroy() {
     super.onDestroy();
     Log.d(TAG, "onDestroy()");
-    if (isFinishing()) {
-      // Unsubscribe Observers and clear references. No more events will be received and the
-      // destroyed ObservableGroup is now unusable.
-      observableManager.destroy(observableGroup);
-    } else {
-      // Activity is not finishing (maybe just rotating?) so just unsubscribe for now and assume
-      // that it will be resubscribed later
-      observableGroup.unsubscribe();
-    }
+    groupLifecycleManager.onDestroy(this);
   }
 }

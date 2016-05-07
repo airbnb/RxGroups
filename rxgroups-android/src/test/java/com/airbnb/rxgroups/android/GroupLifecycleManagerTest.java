@@ -35,7 +35,7 @@ public class GroupLifecycleManagerTest extends BaseTest {
   private final ObserverInfo observerInfo = new ObserverInfo(Object.class, testSubscriber);
   private final ObservableManager observableManager = mock(ObservableManager.class);
   private final ObservableGroup group = mock(ObservableGroup.class);
-  private final DefaultObservableTagFactory tagFactory = new DefaultObservableTagFactory();
+  private final DefaultObservableTagFactory tagFactory = DefaultObservableTagFactory.INSTANCE;
   private final Object target = new Object();
   private final String tag = tagFactory.tag(target.getClass());
 
