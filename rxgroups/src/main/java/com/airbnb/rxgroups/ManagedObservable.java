@@ -86,25 +86,6 @@ class ManagedObservable<T> implements RequestSubscription {
     return tag;
   }
 
-  @Override public boolean equals(Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
-
-    ManagedObservable<?> that = (ManagedObservable<?>) o;
-
-    if (!tag.equals(that.tag)) return false;
-    //noinspection SimplifiableIfStatement
-    if (!proxy.equals(that.proxy)) return false;
-    return !(observer != null ? !observer.equals(that.observer) : that.observer != null);
-  }
-
-  @Override public int hashCode() {
-    int result = tag.hashCode();
-    result = 31 * result + proxy.hashCode();
-    result = 31 * result + (observer != null ? observer.hashCode() : 0);
-    return result;
-  }
-
   @Override public String toString() {
     return "ManagedObservable{"
         + "tag='" + tag + '\''

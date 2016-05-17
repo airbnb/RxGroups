@@ -3,10 +3,13 @@ package com.airbnb.rxgroups.android;
 import android.app.Activity;
 import android.app.Fragment;
 import android.os.Bundle;
+import android.os.Parcel;
+import android.os.Parcelable;
 import android.util.Log;
 
 import com.airbnb.rxgroups.ObservableGroup;
 import com.airbnb.rxgroups.ObservableManager;
+import com.airbnb.rxgroups.Preconditions;
 
 import javax.annotation.Nullable;
 
@@ -19,69 +22,80 @@ import rx.subscriptions.CompositeSubscription;
 
 public class GroupLifecycleManager {
   private static final String TAG = "GroupLifecycleManager";
-  private static final String KEY_MANAGER_HASHCODE = "KEY_MANAGER_HASHCODE";
-  private static final String KEY_GROUP_ID = "KEY_GROUP_ID";
+  private static final String KEY_STATE = "KEY_GROUPLIFECYCLEMANAGER_STATE";
 
   private final CompositeSubscription pendingSubscriptions = new CompositeSubscription();
   private final LifecycleResubscription resubscription;
   private final ObservableManager observableManager;
   private final ObservableTagFactory tagFactory;
-  private ObservableGroup group;
+  private final ObservableGroup group;
   private boolean hasSavedState;
 
-  public GroupLifecycleManager(ObservableManager observableManager,
+  private GroupLifecycleManager(ObservableManager observableManager, ObservableGroup group,
       ObservableTagFactory tagFactory, LifecycleResubscription resubscription) {
     this.observableManager = observableManager;
+    this.group = group;
     this.tagFactory = tagFactory;
     this.resubscription = resubscription;
-    group = observableManager.newGroup();
-    group.lock();
   }
 
-  public GroupLifecycleManager(ObservableManager observableManager,
-      ObservableTagFactory tagFactory) {
-    this(observableManager, tagFactory, new LifecycleResubscription());
+  public static GroupLifecycleManager onCreate(ObservableManager observableManager,
+      ObservableTagFactory tagFactory, LifecycleResubscription resubscription) {
+    return onCreate(observableManager, tagFactory, resubscription, null, null);
+  }
+
+  public static GroupLifecycleManager onCreate(ObservableManager observableManager,
+      ObservableTagFactory tagFactory, @Nullable Bundle savedState, @Nullable Object target) {
+    return onCreate(observableManager, tagFactory, new LifecycleResubscription(), savedState,
+        target);
+  }
+
+  public static GroupLifecycleManager onCreate(ObservableManager observableManager,
+      ObservableTagFactory tagFactory, LifecycleResubscription resubscription,
+      @Nullable Bundle savedState, @Nullable Object target) {
+    // Only need to resubscribe if restoring from saved state
+    boolean shouldResubscribe = target != null && savedState != null;
+    ObservableGroup group;
+
+    if (savedState != null) {
+      State state = savedState.getParcelable(KEY_STATE);
+
+      Preconditions.checkState(state != null, "Must call onSaveInstanceState() first");
+
+      // First check the instance hashCode before restoring state. If it's not the same instance,
+      // then we have to create a new group since the previous one is already destroyed.
+      // Android can sometimes reuse the same instance after saving state and we can't reliably
+      // determine when that happens. This is a workaround for that behavior.
+      if (state.managerHashCode != observableManager.hashCode()) {
+        group = observableManager.newGroup();
+      } else {
+        group = observableManager.getGroup(state.groupId);
+        if (group.isDestroyed()) {
+          Log.w(TAG, "Tried to reuse GroupLifecycleManager with a destroyed group");
+          group = observableManager.newGroup();
+          shouldResubscribe = false;
+        }
+      }
+    } else {
+      group = observableManager.newGroup();
+    }
+
+    group.lock();
+
+    GroupLifecycleManager manager = new GroupLifecycleManager(observableManager, group, tagFactory,
+        resubscription);
+
+    if (shouldResubscribe) {
+      manager.subscribe(target);
+    }
+
+    return manager;
   }
 
   public ObservableGroup group() {
     return group;
   }
 
-  public void saveState(Bundle outState) {
-    hasSavedState = true;
-    outState.putInt(KEY_MANAGER_HASHCODE, observableManager.hashCode());
-    outState.putLong(KEY_GROUP_ID, group.id());
-  }
-
-  public void restoreState(@Nullable Bundle savedState, @Nullable Object target) {
-    // Only need to resubscribe if restoring from saved state
-    boolean shouldResubscribe = target != null && savedState != null;
-
-    if (savedState != null) {
-      int hashCode = savedState.getInt(KEY_MANAGER_HASHCODE);
-      long groupId = savedState.getLong(KEY_GROUP_ID);
-
-      // First check the instance hashCode before restoring state. If it's not the same instance,
-      // then we have to create a new group since the previous one is already destroyed.
-      // Android can sometimes reuse the same instance after saving state and we can't reliably
-      // determine when that happens. This is a workaround for that behavior.
-      if (hashCode != observableManager.hashCode()) {
-        group = observableManager.newGroup();
-      } else {
-        ObservableGroup group = observableManager.getGroup(groupId);
-        if (group.isDestroyed()) {
-          Log.w(TAG, "Tried to reuse GroupLifecycleManager with a destroyed group");
-          group = observableManager.newGroup();
-          shouldResubscribe = false;
-        }
-        this.group = group;
-      }
-    }
-
-    if (shouldResubscribe) {
-      subscribe(target);
-    }
-  }
 
   /**
    * Returns whether the provided {@link Class} exists for the {@link ObservableGroup}.
@@ -164,10 +178,6 @@ public class GroupLifecycleManager {
     onDestroy(fragment.getActivity());
   }
 
-  public void onCreate() {
-    // currenty no-op
-  }
-
   public void onResume() {
     hasSavedState = false;
     unlock();
@@ -183,5 +193,41 @@ public class GroupLifecycleManager {
 
   public void unlock() {
     group.unlock();
+  }
+
+  public void onSaveInstanceState(Bundle outState) {
+    hasSavedState = true;
+    outState.putParcelable(KEY_STATE, new State(observableManager.hashCode(), group.id()));
+  }
+
+  static class State implements Parcelable {
+    final int managerHashCode;
+    final long groupId;
+
+    State(int managerHashCode, long groupId) {
+      this.managerHashCode = managerHashCode;
+      this.groupId = groupId;
+    }
+
+    @Override public int describeContents() {
+      return 0;
+    }
+
+    @Override public void writeToParcel(Parcel dest, int flags) {
+      dest.writeInt(managerHashCode);
+      dest.writeLong(groupId);
+    }
+
+    public static final Parcelable.Creator<State> CREATOR = new Parcelable.Creator<State>() {
+      @Override
+      public State[] newArray(int size) {
+        return new State[size];
+      }
+
+      @Override
+      public State createFromParcel(Parcel source) {
+        return new State(source.readInt(), source.readLong());
+      }
+    };
   }
 }

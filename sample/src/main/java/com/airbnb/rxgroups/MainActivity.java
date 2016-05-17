@@ -67,10 +67,9 @@ public class MainActivity extends AppCompatActivity {
     lockUnlock.setOnClickListener(this::onClickLockUnlockGroup);
 
     SampleApplication application = (SampleApplication) getApplication();
-    groupLifecycleManager = new GroupLifecycleManager(application.observableManager(),
-        DefaultObservableTagFactory.INSTANCE);
+    groupLifecycleManager = GroupLifecycleManager.onCreate(application.observableManager(),
+        DefaultObservableTagFactory.INSTANCE, savedInstanceState, this);
     timerObservable = application.timerObservable();
-    groupLifecycleManager.restoreState(savedInstanceState, this);
     observableGroup = groupLifecycleManager.group();
 
     if (savedInstanceState != null) {
@@ -128,7 +127,7 @@ public class MainActivity extends AppCompatActivity {
 
   @Override protected void onSaveInstanceState(Bundle outState) {
     super.onSaveInstanceState(outState);
-    groupLifecycleManager.saveState(outState);
+    groupLifecycleManager.onSaveInstanceState(outState);
     outState.putBoolean(IS_RUNNING, isRunning);
   }
 
