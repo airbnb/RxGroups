@@ -1,4 +1,4 @@
-package com.airbnb.rxgroups.android;
+package com.airbnb.rxgroups;
 
 import android.app.Activity;
 import android.app.Fragment;
@@ -6,10 +6,6 @@ import android.os.Bundle;
 import android.os.Parcel;
 import android.os.Parcelable;
 import android.util.Log;
-
-import com.airbnb.rxgroups.ObservableGroup;
-import com.airbnb.rxgroups.ObservableManager;
-import com.airbnb.rxgroups.Preconditions;
 
 import javax.annotation.Nullable;
 
@@ -20,6 +16,7 @@ import rx.functions.Action1;
 import rx.functions.Func1;
 import rx.subscriptions.CompositeSubscription;
 
+@SuppressWarnings("WeakerAccess")
 public class GroupLifecycleManager {
   private static final String TAG = "GroupLifecycleManager";
   private static final String KEY_STATE = "KEY_GROUPLIFECYCLEMANAGER_STATE";
@@ -27,31 +24,29 @@ public class GroupLifecycleManager {
   private final CompositeSubscription pendingSubscriptions = new CompositeSubscription();
   private final LifecycleResubscription resubscription;
   private final ObservableManager observableManager;
-  private final ObservableTagFactory tagFactory;
   private final ObservableGroup group;
   private boolean hasSavedState;
 
   private GroupLifecycleManager(ObservableManager observableManager, ObservableGroup group,
-      ObservableTagFactory tagFactory, LifecycleResubscription resubscription) {
+      LifecycleResubscription resubscription) {
     this.observableManager = observableManager;
     this.group = group;
-    this.tagFactory = tagFactory;
     this.resubscription = resubscription;
   }
 
   public static GroupLifecycleManager onCreate(ObservableManager observableManager,
-      ObservableTagFactory tagFactory, LifecycleResubscription resubscription) {
-    return onCreate(observableManager, tagFactory, resubscription, null, null);
+      LifecycleResubscription resubscription) {
+    return onCreate(observableManager, resubscription, null, null);
   }
 
   public static GroupLifecycleManager onCreate(ObservableManager observableManager,
-      ObservableTagFactory tagFactory, @Nullable Bundle savedState, @Nullable Object target) {
-    return onCreate(observableManager, tagFactory, new LifecycleResubscription(), savedState,
+      @Nullable Bundle savedState, @Nullable Object target) {
+    return onCreate(observableManager, new LifecycleResubscription(), savedState,
         target);
   }
 
   public static GroupLifecycleManager onCreate(ObservableManager observableManager,
-      ObservableTagFactory tagFactory, LifecycleResubscription resubscription,
+      LifecycleResubscription resubscription,
       @Nullable Bundle savedState, @Nullable Object target) {
     // Only need to resubscribe if restoring from saved state
     boolean shouldResubscribe = target != null && savedState != null;
@@ -82,7 +77,7 @@ public class GroupLifecycleManager {
 
     group.lock();
 
-    GroupLifecycleManager manager = new GroupLifecycleManager(observableManager, group, tagFactory,
+    GroupLifecycleManager manager = new GroupLifecycleManager(observableManager, group,
         resubscription);
 
     if (shouldResubscribe) {
@@ -96,16 +91,15 @@ public class GroupLifecycleManager {
     return group;
   }
 
+  <T> Observable.Transformer<? super T, T> transform(String tag) {
+    return group.transform(tag);
+  }
 
   /**
    * Returns whether the provided {@link Class} exists for the {@link ObservableGroup}.
    * Observables will only be removed from their respective groups once {@link
    * Observer#onCompleted()} has been called.
    */
-  public boolean hasObservable(Class<?> klass) {
-    return hasObservable(tagFactory.tag(klass));
-  }
-
   public boolean hasObservable(String tag) {
     return group.hasObservable(tag);
   }
@@ -118,11 +112,11 @@ public class GroupLifecycleManager {
     Subscription subscription = resubscription.observers(target)
         .filter(new Func1<LifecycleResubscription.ObserverInfo, Boolean>() {
           @Override public Boolean call(LifecycleResubscription.ObserverInfo observerInfo) {
-            return hasObservable(observerInfo.klass);
+            return hasObservable(observerInfo.tag);
           }
         }).subscribe(new Action1<LifecycleResubscription.ObserverInfo>() {
           @Override public void call(LifecycleResubscription.ObserverInfo observerInfo) {
-            resubscribe(observerInfo.klass, observerInfo.listener);
+            resubscribe(observerInfo.tag, observerInfo.observer);
           }
         });
 
@@ -134,11 +128,7 @@ public class GroupLifecycleManager {
    * they will be immediately delivered if the group is
    * unlocked. Any previously subscribed Observers will be unsubscribed before the new one.
    */
-  public void resubscribe(Class<?> klass, Observer<?> observer) {
-    resubscribe(tagFactory.tag(klass), observer);
-  }
-
-  @SuppressWarnings({ "unchecked", "rawtypes" })
+  @SuppressWarnings({ "rawtypes", "unchecked" })
   public void resubscribe(String tag, Observer<?> observer) {
     Observable observable = group.observable(tag);
     observable.subscribe(observer);
@@ -149,8 +139,8 @@ public class GroupLifecycleManager {
    * If the request is not running then nothing
    * happens.
    */
-  public void cancelAndRemove(Class<?> klass) {
-    group.cancelAndRemove(tagFactory.tag(klass));
+  public void cancelAndRemove(String tag) {
+    group.cancelAndRemove(tag);
   }
 
   private void onDestroy(boolean isFinishing) {
@@ -187,11 +177,11 @@ public class GroupLifecycleManager {
     lock();
   }
 
-  public void lock() {
+  private void lock() {
     group.lock();
   }
 
-  public void unlock() {
+  private void unlock() {
     group.unlock();
   }
 

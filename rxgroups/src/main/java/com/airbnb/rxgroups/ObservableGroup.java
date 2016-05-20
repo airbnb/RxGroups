@@ -76,7 +76,7 @@ public class ObservableGroup {
    * automatically added to this {@link ObservableGroup} with the provided {@code tag} when
    * subscribed to.
    */
-  public <T> Observable.Transformer<? super T, T> transform(String tag) {
+  <T> Observable.Transformer<? super T, T> transform(String tag) {
     return new GroupSubscriptionTransformer<>(this, tag);
   }
 
@@ -135,8 +135,9 @@ public class ObservableGroup {
    * already emitted events, they will be immediately delivered. If it is locked then no events
    * will be delivered until it is unlocked.
    */
-  @SuppressWarnings({ "rawtypes", "unchecked" }) public <T> Observable<T> observable(String tag) {
+  public <T> Observable<T> observable(String tag) {
     checkNotDestroyed();
+    //noinspection unchecked
     ManagedObservable<T> managedObservable = (ManagedObservable<T>) groupMap.get(tag);
     Observable<T> observable = managedObservable.observable();
     return observable.compose(new GroupResubscriptionTransformer<>(this, managedObservable));

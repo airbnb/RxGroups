@@ -1,4 +1,4 @@
-package com.airbnb.rxgroups.android;
+package com.airbnb.rxgroups;
 
 import org.junit.BeforeClass;
 import org.robolectric.shadows.ShadowLog;

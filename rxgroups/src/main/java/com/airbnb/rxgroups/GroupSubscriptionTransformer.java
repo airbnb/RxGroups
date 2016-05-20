@@ -27,7 +27,7 @@ class GroupSubscriptionTransformer<T> implements Observable.Transformer<T, T> {
   private final ObservableGroup group;
   private final String tag;
 
-  GroupSubscriptionTransformer(ObservableGroup group, String tag) {
+    GroupSubscriptionTransformer(ObservableGroup group, String tag) {
     this.group = group;
     this.tag = tag;
   }

@@ -1,11 +1,10 @@
-package com.airbnb.rxgroups.android;
+package com.airbnb.rxgroups;
 
 import android.app.Activity;
 import android.os.Build;
 
-import com.airbnb.rxgroups.ObservableGroup;
-import com.airbnb.rxgroups.ObservableManager;
-import com.airbnb.rxgroups.android.LifecycleResubscription.ObserverInfo;
+import com.airbnb.rxgroups.LifecycleResubscription.ObserverInfo;
+import com.airbnb.rxgroups.android.BuildConfig;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -32,12 +31,11 @@ public class GroupLifecycleManagerTest extends BaseTest {
   private final TestScheduler scheduler = Schedulers.test();
   private final TestSubject<Object> testSubject = TestSubject.create(scheduler);
   private final TestSubscriber<String> testSubscriber = new TestSubscriber<>();
-  private final ObserverInfo observerInfo = new ObserverInfo(Object.class, testSubscriber);
+  private final String tag = "test";
+  private final ObserverInfo observerInfo = new ObserverInfo(tag, testSubscriber);
   private final ObservableManager observableManager = mock(ObservableManager.class);
   private final ObservableGroup group = mock(ObservableGroup.class);
-  private final DefaultObservableTagFactory tagFactory = DefaultObservableTagFactory.INSTANCE;
   private final Object target = new Object();
-  private final String tag = tagFactory.tag(target.getClass());
 
   @Test public void testSubscribe() {
     when(observableManager.newGroup()).thenReturn(group);
@@ -45,7 +43,7 @@ public class GroupLifecycleManagerTest extends BaseTest {
     when(group.observable(tag)).thenReturn(testSubject);
     when(resubscription.observers(target)).thenReturn(Observable.just(observerInfo));
 
-    GroupLifecycleManager.onCreate(observableManager, tagFactory, resubscription).subscribe(target);
+    GroupLifecycleManager.onCreate(observableManager, resubscription).subscribe(target);
 
     assertThat(testSubject.hasObservers()).isTrue();
 
@@ -64,7 +62,7 @@ public class GroupLifecycleManagerTest extends BaseTest {
     when(group.observable(tag)).thenReturn(testSubject);
     when(resubscription.observers(target)).thenReturn(Observable.just(observerInfo));
 
-    GroupLifecycleManager.onCreate(observableManager, tagFactory, resubscription).subscribe(target);
+    GroupLifecycleManager.onCreate(observableManager, resubscription).subscribe(target);
 
     assertThat(testSubject.hasObservers()).isFalse();
 
@@ -83,7 +81,7 @@ public class GroupLifecycleManagerTest extends BaseTest {
     when(group.observable(tag)).thenReturn(testSubject);
     when(resubscription.observers(target)).thenReturn(Observable.<ObserverInfo>empty());
 
-    GroupLifecycleManager.onCreate(observableManager, tagFactory, resubscription).subscribe(target);
+    GroupLifecycleManager.onCreate(observableManager, resubscription).subscribe(target);
 
     assertThat(testSubject.hasObservers()).isFalse();
 
@@ -99,7 +97,7 @@ public class GroupLifecycleManagerTest extends BaseTest {
     when(resubscription.observers(target)).thenReturn(Observable.just(observerInfo));
 
     GroupLifecycleManager lifecycleManager =
-        GroupLifecycleManager.onCreate(observableManager, tagFactory, resubscription);
+        GroupLifecycleManager.onCreate(observableManager, resubscription);
     lifecycleManager.subscribe(target);
 
     Activity activity = mock(Activity.class);

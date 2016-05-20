@@ -11,24 +11,22 @@ import android.view.View;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.airbnb.rxgroups.android.DefaultObservableTagFactory;
-import com.airbnb.rxgroups.android.GroupLifecycleManager;
-
 import rx.Observable;
 import rx.Observer;
 import rx.android.schedulers.AndroidSchedulers;
 
 public class MainActivity extends AppCompatActivity {
   private static final String IS_RUNNING = "IS_RUNNING";
-  private static final String OBSERVABLE_TAG = "timer";
   private static final String TAG = "MainActivity";
+  private static final String OBSERVABLE_TAG = "timer";
 
   private GroupLifecycleManager groupLifecycleManager;
   private TextView output;
   private Observable<Long> timerObservable;
   private boolean isRunning;
   private boolean isLocked;
-  private final Observer<Long> observer = new Observer<Long>() {
+
+  @AutoResubscribe(OBSERVABLE_TAG) final Observer<Long> observer = new Observer<Long>() {
     @Override public void onCompleted() {
       Log.d(TAG, "onCompleted()");
     }
@@ -67,28 +65,14 @@ public class MainActivity extends AppCompatActivity {
     lockUnlock.setOnClickListener(this::onClickLockUnlockGroup);
 
     SampleApplication application = (SampleApplication) getApplication();
-    groupLifecycleManager = GroupLifecycleManager.onCreate(application.observableManager(),
-        DefaultObservableTagFactory.INSTANCE, savedInstanceState, this);
+    ObservableManager manager = application.observableManager();
+    groupLifecycleManager = GroupLifecycleManager.onCreate(manager, savedInstanceState, this);
     timerObservable = application.timerObservable();
     observableGroup = groupLifecycleManager.group();
 
-    if (savedInstanceState != null) {
-      // This doesn't quite work 100% of the time, since in some specific scenarios (eg.: your app
-      // was killed while in background), when your activity is recreated, your process is also
-      // recreated, which causes ObservableManager to be empty (no groups). In this case, getGroup()
-      // would crash since it's obviously not there. It is left as an exercise for the reader on
-      // how to work around this situation.
-      if (savedInstanceState.getBoolean(IS_RUNNING)) {
-        isRunning = true;
-        startStop.setImageDrawable(alarmOffDrawable);
-      }
-    }
-
-    if (observableGroup.hasObservable(OBSERVABLE_TAG)) {
-      observableGroup.<Long>observable(OBSERVABLE_TAG)
-          .onBackpressureBuffer()
-          .observeOn(AndroidSchedulers.mainThread())
-          .subscribe(observer);
+    if (savedInstanceState != null && savedInstanceState.getBoolean(IS_RUNNING)) {
+      isRunning = true;
+      startStop.setImageDrawable(alarmOffDrawable);
     }
   }
 
@@ -113,9 +97,9 @@ public class MainActivity extends AppCompatActivity {
       isRunning = true;
       startStop.setImageDrawable(alarmOffDrawable);
       timerObservable
-          .compose(observableGroup.<Long>transform(OBSERVABLE_TAG))
           .observeOn(AndroidSchedulers.mainThread())
           .onBackpressureBuffer()
+          .compose(groupLifecycleManager.<Long>transform(OBSERVABLE_TAG))
           .subscribe(observer);
     } else {
       Toast.makeText(this, "Stopped timer", Toast.LENGTH_SHORT).show();

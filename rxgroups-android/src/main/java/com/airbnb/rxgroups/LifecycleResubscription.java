@@ -1,4 +1,4 @@
-package com.airbnb.rxgroups.android;
+package com.airbnb.rxgroups;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
@@ -72,21 +72,21 @@ class LifecycleResubscription {
     }
 
     return Observable.from(field.getAnnotation(AutoResubscribe.class).value())
-        .map(new Func1<Class<?>, ObserverInfo>() {
-          @Override public ObserverInfo call(Class<?> klass) {
-            return new ObserverInfo(klass, observer);
+        .map(new Func1<String, ObserverInfo>() {
+          @Override public ObserverInfo call(String tag) {
+            return new ObserverInfo(tag, observer);
           }
         });
   }
 
   /** Helper class to match an Observer to the Observable type it can be subscribed to. */
   static class ObserverInfo {
-    final Class<?> klass;
-    final Observer<?> listener;
+    final String tag;
+    final Observer<?> observer;
 
-    ObserverInfo(Class<?> klass, Observer<?> listener) {
-      this.klass = klass;
-      this.listener = listener;
+    ObserverInfo(String tag, Observer<?> observer) {
+      this.tag = tag;
+      this.observer = observer;
     }
 
     @Override
@@ -101,16 +101,16 @@ class LifecycleResubscription {
       ObserverInfo that = (ObserverInfo) o;
 
       //noinspection SimplifiableIfStatement
-      if (!klass.equals(that.klass)) {
+      if (!tag.equals(that.tag)) {
         return false;
       }
-      return listener.equals(that.listener);
+      return observer.equals(that.observer);
     }
 
     @Override
     public int hashCode() {
-      int result = klass.hashCode();
-      result = 31 * result + listener.hashCode();
+      int result = tag.hashCode();
+      result = 31 * result + observer.hashCode();
       return result;
     }
   }

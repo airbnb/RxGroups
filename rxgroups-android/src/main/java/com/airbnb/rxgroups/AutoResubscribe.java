@@ -1,4 +1,4 @@
-package com.airbnb.rxgroups.android;
+package com.airbnb.rxgroups;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -12,6 +12,6 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.FIELD)
 public @interface AutoResubscribe {
-  /** The types to subscribe to */
-  Class<?>[] value();
+  /** The tag(s) to resubscribe to */
+  String[] value();
 }

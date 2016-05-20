@@ -1,4 +1,4 @@
-package com.airbnb.rxgroups.android;
+package com.airbnb.rxgroups;
 
 import rx.Scheduler;
 import rx.android.plugins.RxAndroidSchedulersHook;
