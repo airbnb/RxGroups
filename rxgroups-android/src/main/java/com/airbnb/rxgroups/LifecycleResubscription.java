@@ -68,7 +68,7 @@ class LifecycleResubscription {
       observer = (Observer<?>) field.get(target);
     } catch (IllegalAccessException e) {
       throw new RuntimeException(
-          String.format("Error accessing observer %s. Make sure it's public.", field), e);
+          String.format("Error accessing observer %s. Make sure it's no private.", field), e);
     }
 
     return Observable.from(field.getAnnotation(AutoResubscribe.class).value())
