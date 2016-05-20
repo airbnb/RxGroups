@@ -21,6 +21,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import rx.Observable;
 import rx.Observer;
 import rx.Subscriber;
+import rx.functions.Action0;
 
 /**
  * A helper class for {@link ObservableManager} that groups {@link Observable}s to be managed
@@ -52,7 +53,7 @@ public class ObservableGroup {
    * {@link Observable} with the same tag is already added, the previous one will be canceled and
    * removed before adding and subscribing to the new one.
    */
-  <T> void add(String tag, Observable<T> observable, Observer<? super T> observer) {
+  <T> void add(final String tag, Observable<T> observable, Observer<? super T> observer) {
     checkNotDestroyed();
 
     ManagedObservable<?> previousObservable = groupMap.get(tag);
@@ -62,7 +63,11 @@ public class ObservableGroup {
     }
 
     ManagedObservable<T> managedObservable =
-        new ManagedObservable<>(tag, observable, observer, () -> groupMap.remove(tag));
+        new ManagedObservable<>(tag, observable, observer, new Action0() {
+          @Override public void call() {
+            groupMap.remove(tag);
+          }
+        });
 
     groupMap.put(tag, managedObservable);
 

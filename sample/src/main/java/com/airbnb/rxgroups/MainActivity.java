@@ -61,8 +61,16 @@ public class MainActivity extends AppCompatActivity {
     output = (TextView) findViewById(R.id.txt_output);
     setSupportActionBar(toolbar);
 
-    startStop.setOnClickListener(this::onClickStartStopTimer);
-    lockUnlock.setOnClickListener(this::onClickLockUnlockGroup);
+    startStop.setOnClickListener(new View.OnClickListener() {
+      @Override public void onClick(View v) {
+        onClickStartStopTimer(v);
+      }
+    });
+    lockUnlock.setOnClickListener(new View.OnClickListener() {
+      @Override public void onClick(View v) {
+        onClickLockUnlockGroup(v);
+      }
+    });
 
     SampleApplication application = (SampleApplication) getApplication();
     ObservableManager manager = application.observableManager();
