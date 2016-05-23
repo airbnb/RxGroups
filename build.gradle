@@ -7,6 +7,7 @@ buildscript {
   dependencies {
     classpath 'com.bmuschko:gradle-nexus-plugin:2.3.1'
     classpath 'com.android.tools.build:gradle:2.2.0-alpha1'
+    classpath 'me.tatarka.retrolambda.projectlombok:lombok.ast:0.2.3.a2'
   }
 
   // Exclude the Lombok version that the android plugin depends on (fix for Retrolambda).
