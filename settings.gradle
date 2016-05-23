@@ -1,1 +1,1 @@
-include ':lib', ':sample'
+include ':rxgroups', ':sample', ':rxgroups-android'

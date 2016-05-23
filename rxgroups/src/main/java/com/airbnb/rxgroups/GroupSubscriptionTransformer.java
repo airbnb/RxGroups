@@ -17,6 +17,7 @@ package com.airbnb.rxgroups;
 
 import rx.Observable;
 import rx.Observer;
+import rx.Subscriber;
 
 /**
  * Transforms an existing {@link Observable} by returning a new {@link Observable} that is
@@ -32,25 +33,29 @@ class GroupSubscriptionTransformer<T> implements Observable.Transformer<T, T> {
     this.tag = tag;
   }
 
-  @Override public Observable<T> call(Observable<T> observable) {
-    return Observable.<T>create(subscriber -> group.add(tag, observable, new Observer<T>() {
-      @Override public void onCompleted() {
-        if (!subscriber.isUnsubscribed()) {
-          subscriber.onCompleted();
-        }
-      }
+  @Override public Observable<T> call(final Observable<T> observable) {
+    return Observable.<T>create(new Observable.OnSubscribe<T>() {
+      @Override public void call(final Subscriber<? super T> subscriber) {
+        group.add(tag, observable, new Observer<T>() {
+          @Override public void onCompleted() {
+            if (!subscriber.isUnsubscribed()) {
+              subscriber.onCompleted();
+            }
+          }
 
-      @Override public void onError(Throwable e) {
-        if (!subscriber.isUnsubscribed()) {
-          subscriber.onError(e);
-        }
-      }
+          @Override public void onError(Throwable e) {
+            if (!subscriber.isUnsubscribed()) {
+              subscriber.onError(e);
+            }
+          }
 
-      @Override public void onNext(T t) {
-        if (!subscriber.isUnsubscribed()) {
-          subscriber.onNext(t);
-        }
+          @Override public void onNext(T t) {
+            if (!subscriber.isUnsubscribed()) {
+              subscriber.onNext(t);
+            }
+          }
+        });
       }
-    }));
+    });
   }
 }

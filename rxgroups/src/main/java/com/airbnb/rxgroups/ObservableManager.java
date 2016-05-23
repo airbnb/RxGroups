@@ -63,21 +63,4 @@ public class ObservableManager {
     group.destroy();
     observableGroupMap.remove(group.id());
   }
-
-  @Override public boolean equals(Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
-
-    ObservableManager that = (ObservableManager) o;
-
-    //noinspection SimplifiableIfStatement
-    if (nextId.get() != that.nextId.get()) return false;
-    return observableGroupMap.equals(that.observableGroupMap);
-  }
-
-  @Override public int hashCode() {
-    int result = observableGroupMap.hashCode();
-    result = 31 * result + (int) (nextId.get() ^ (nextId.get() >>> 32));
-    return result;
-  }
 }

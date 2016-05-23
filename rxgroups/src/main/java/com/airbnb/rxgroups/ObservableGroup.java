@@ -21,6 +21,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import rx.Observable;
 import rx.Observer;
 import rx.Subscriber;
+import rx.functions.Action0;
 
 /**
  * A helper class for {@link ObservableManager} that groups {@link Observable}s to be managed
@@ -52,7 +53,7 @@ public class ObservableGroup {
    * {@link Observable} with the same tag is already added, the previous one will be canceled and
    * removed before adding and subscribing to the new one.
    */
-  <T> void add(String tag, Observable<T> observable, Observer<? super T> observer) {
+  <T> void add(final String tag, Observable<T> observable, Observer<? super T> observer) {
     checkNotDestroyed();
 
     ManagedObservable<?> previousObservable = groupMap.get(tag);
@@ -62,7 +63,11 @@ public class ObservableGroup {
     }
 
     ManagedObservable<T> managedObservable =
-        new ManagedObservable<>(tag, observable, observer, () -> groupMap.remove(tag));
+        new ManagedObservable<>(tag, observable, observer, new Action0() {
+          @Override public void call() {
+            groupMap.remove(tag);
+          }
+        });
 
     groupMap.put(tag, managedObservable);
 
@@ -76,7 +81,7 @@ public class ObservableGroup {
    * automatically added to this {@link ObservableGroup} with the provided {@code tag} when
    * subscribed to.
    */
-  public <T> Observable.Transformer<? super T, T> transform(String tag) {
+  <T> Observable.Transformer<? super T, T> transform(String tag) {
     return new GroupSubscriptionTransformer<>(this, tag);
   }
 
@@ -135,8 +140,9 @@ public class ObservableGroup {
    * already emitted events, they will be immediately delivered. If it is locked then no events
    * will be delivered until it is unlocked.
    */
-  @SuppressWarnings({ "rawtypes", "unchecked" }) public <T> Observable<T> observable(String tag) {
+  public <T> Observable<T> observable(String tag) {
     checkNotDestroyed();
+    //noinspection unchecked
     ManagedObservable<T> managedObservable = (ManagedObservable<T>) groupMap.get(tag);
     Observable<T> observable = managedObservable.observable();
     return observable.compose(new GroupResubscriptionTransformer<>(this, managedObservable));
@@ -189,28 +195,6 @@ public class ObservableGroup {
 
   private void checkNotDestroyed() {
     Preconditions.checkState(!destroyed, "Group is already destroyed! id=" + groupId);
-  }
-
-  @Override public boolean equals(Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
-
-    ObservableGroup that = (ObservableGroup) o;
-
-    if (groupId != that.groupId) return false;
-    if (locked != that.locked) return false;
-    //noinspection SimplifiableIfStatement
-    if (destroyed != that.destroyed) return false;
-    return groupMap.equals(that.groupMap);
-
-  }
-
-  @Override public int hashCode() {
-    int result = groupMap.hashCode();
-    result = 31 * result + (int) (groupId ^ (groupId >>> 32));
-    result = 31 * result + (locked ? 1 : 0);
-    result = 31 * result + (destroyed ? 1 : 0);
-    return result;
   }
 
   @Override public String toString() {
