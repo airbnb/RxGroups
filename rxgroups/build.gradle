@@ -11,8 +11,8 @@ checkstyle {
 targetCompatibility = '1.7'
 sourceCompatibility = '1.7'
 
-project.group = 'com.airbnb.rxgroups'
-project.version = PROJECT_VERSION
+project.group = GROUP
+project.version = VERSION_NAME
 
 dependencies {
   compile 'io.reactivex:rxjava:1.1.5'

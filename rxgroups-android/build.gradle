@@ -1,4 +1,5 @@
 apply plugin: 'com.android.library'
+apply from: 'gradle-maven-push.gradle'
 
 android {
   compileSdkVersion 23
@@ -11,7 +12,7 @@ android {
 }
 
 dependencies {
-  compile(project(':rxgroups'))
+  compile project(':rxgroups')
   compile 'io.reactivex:rxandroid:1.2.0'
 
   testCompile "junit:junit:4.12"
