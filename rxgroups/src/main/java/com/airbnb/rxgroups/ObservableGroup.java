@@ -81,7 +81,7 @@ public class ObservableGroup {
    * automatically added to this {@link ObservableGroup} with the provided {@code tag} when
    * subscribed to.
    */
-  <T> Observable.Transformer<? super T, T> transform(String tag) {
+  public <T> Observable.Transformer<? super T, T> transform(String tag) {
     return new GroupSubscriptionTransformer<>(this, tag);
   }
 

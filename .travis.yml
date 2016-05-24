@@ -1,46 +1,36 @@
 language: android
-
 android:
   components:
-    - tools
-    - platform-tools
-    - build-tools-23.0.2
-    - android-23
-    - extra-google-google_play_services
-    - extra-android-m2repository
-    - extra-android-support
-    - extra-google-m2repository
-
+  - tools
+  - platform-tools
+  - build-tools-23.0.2
+  - android-23
+  - extra-google-google_play_services
+  - extra-android-m2repository
+  - extra-android-support
+  - extra-google-m2repository
 after_success:
-  - .buildscript/deploy_snapshot.sh
-
+- ".buildscript/deploy_snapshot.sh"
 jdk:
-  - oraclejdk8
-
+- oraclejdk8
 branches:
   except:
-    - gh-pages
-
+  - gh-pages
 notifications:
   email: false
-
-script: ./gradlew check
-
+script: "./gradlew check"
 before_install:
-  - export JAVA7_HOME=/usr/lib/jvm/java-7-oracle
-  - export JAVA8_HOME=/usr/lib/jvm/java-8-oracle
-  - export JAVA_HOME=$JAVA8_HOME
-
+- export JAVA7_HOME=/usr/lib/jvm/java-7-oracle
+- export JAVA8_HOME=/usr/lib/jvm/java-8-oracle
+- export JAVA_HOME=$JAVA8_HOME
 sudo: false
-
 before_cache:
-  - rm -f $HOME/.gradle/caches/modules-2/modules-2.lock
-
+- rm -f $HOME/.gradle/caches/modules-2/modules-2.lock
 cache:
   directories:
-    - $HOME/.gradle/caches/
-    - $HOME/.gradle/wrapper/
+  - "$HOME/.gradle/caches/"
+  - "$HOME/.gradle/wrapper/"
 env:
   global:
-    - secure: dM6IRKdqQiPLqeyIAFXnPHskSbvDo737f65QJvEoLlvkeU9+GNDze3FONmyR9lCHqMqfGKNPe9Nln17quwCx68F18vieGCXI1/fgyQhDdBfmxzFGEPkZzt7FzED+LdzRL024aeDWgXyGhJ6pXdUse/NdMzIHSEnaT/lk5uyooyz/wbncpftBcetdxjK53ahfQdGDtD0HL5iriX9hrxJn9U6vUOn59FxbSCp/YHD5WxROYOLc2rDNbPNq2UfKO0zXya0/W2g8L20u60EJ+8hhi76ngdKsUzbDRCXldo/9UpbT0rGwDoD1jRw/lbmlWjcGJX5syHcEurQkjPDG1geOGW62a5LtD5BhpMGDhWd+QcSj1Sp3whvObSW6YGfp/2vxXrJT3Mgfvv1rOM7toxnzNq4xoCbGEERQMLs3B6CyMBO1BEVMnGtcdMbaf8paY+IkYM0aQnqN5H27qsy7cD9kpZZsvF/0a9S96J9D/LRuaMPltcttx1Rg+kjBnbGFoShoQYgABvMmvKlqQJyNBA5RIQKAdLNXNFr/5XdT59KoZHakLERfbRNmlkbYIIRw2RlZZBA/14btSsffb7r/4SQeNRO33LhRCSAibSZfWkISuCpLc4EBN1XasoGjlcimwO6zgyxZhB5nDowVimAe21QuCn+hZbjgHJgK8iTdJozd+eM=
-    - secure: PhKBOSYzoYzoKI9bro2x4XjFwYx13f3bIgiAQvaqahH3/E6drfEUkbXUVc9H+7akGE71/m1kujYIzD3KnBw+CNLbtOaVMj0G/TSZRJS655B28aOqbbw6vq3dkoiIk4Ewqz/a6uT+zxxtqvdoEwQTMw7f47tf597IOkz3V70UiLXg0jFFO8mUS5EdfakezeAqn6JYGhnb03cpPbMQiAazmvrO++dwbGnRnKKTBkTYL5lYn8bCId7o7U8OVXSnWGMtOfy7r+u12afRxsaTZoeXV0IOkksheaApvz/H1LqtHY3cQK6MGHEf4LoZF0JbpPrstZmE4lKBYnxwnsR3NQ9JIken3C9aKf/E91Prtz2KVl2P0buPByt/JlPAqD5xNrJ9/9RThzU3+Tbab4mLUwv8QEUfmsjiKaY1O6JEnI7WFzeY3l6zE3NFCafVeI675/b+1nGjEmISAfqdiDrpL25M8mV4xbQd7JV/HjVYO1HCDiFWB7FkJCWigPU9ECDIBA/9lfk1zwMZffULBhSRdEhj3Brm2N+dGFd/V3UN00IqBS6z5fjDN2ihMIa35zzDviVsD+WqQTtF6R1RfgyfK1Zi8VJNpf4NLsV+JGkMdFF2rXw9nm31fwuh7nSgFsHS3+LHZUSCBLAEcEo7DopRTMJkbIAtyyMy30Gwp9gGBUfdhdk=
+  - secure: MLFsb2JU7WV8cxAqnA4US2jp28GwfNwDuoEtDTVQlrD2kgJ+ViWTqlMxNNUAYkCUaTsIieWQ0HsBCbvGgZetHQws7F9hC1ZzG8CL+AFBsD8+QYETuf9vddnxI8/jrx6c1q+Pl70ENi2aRClcjCPch/fDIUUHwLjFIUYePARmdY66KHvKIR0buZPkcyh9Q1VRK0P0tQHzqVRTmQd+Bzc0K4lfLE2DVgF9Dul53x5u5NmoWh0VtXnHbV0nVrC3+W1R9u2AP2Dpzk8eC2lBicB1jLhMDE88rpSpebC7z3Hzw+XImkaO7lk5sJYcT5MflMKUPaEN/+w4kT2gyA19BLLVgcnKppTtViaJacHsQbWtG8NBkz3vfhO/ISkcXuGbTg8yxlFUvIv9zOuIzIOfYdbrWpr3Gl0GIQvIvNQAMAJGupTELq2GTswYcx3/O5iN4yljx7ruoPtz9AzFHAa42wFXOY5FzaQ6gGyqZpP99yLPDEdbricdjxKWqt5LmdMsDt5VHsD6e2v5tS2y0+tPAlkNjR1IyNZmc7AZ8GSqD1EvKeVWZKLCuUWJOb7b5F0hwRAnCfR1AQbEB6OgGUFsUwOx9WHsw2jVAYeVKn/Jpqf4nPPynbw9lse6+HrfEfsavO1nNNPibRE6Ian+Pia3bamabkfVxiTo37PGUkcIZFEc2ww=
+  - secure: Ssox6xEZML/ftPpvpnGjdDVY0UWlzxP61gePbdvuMZU0Ws7W+K7hu28Ltva+tPrj1sog+hfXVgXSTPGQr8b7bhNB1TB/83AICpGlLrkkVceH4iU4Eol8WV1r5C8EKnlnTz5/39SwHXbkX8c9jEeUrEHVmXuYYJxD9tQzkVdlFbsRHFgENMahWh9La3d68zfu93xfwtfaFtoQSrWypoZtKc5RwV8F8sIBSYVDUg0XFNsFbbLb5JkqpO24dd5L1FuLq7XGj8XozeXGu+ph6jQ3VD371T3gK7fhkG/gkbJxnFYLNKeP94Va8WsLtcoINhm0e1BKCsQ4BWnl52x7P1yJuAtHuGD7gtX8+TInHmWbOmtJLRmB8fn0bhHgflw0ugUvVIROlbQN1W+sG21iyUmJafHY8DEdDFjVkgzwR5hnjpK1RnfoGvtKJkWhQbMD+f3l9f011+M0XXy57+glhu984vAl3shWKgDowEmqFZ1Ow6Whun3OCib7xiy+QbGXP13yVVJnpYLVkC6ZENzjW7udhQl8/ek7nnF96dpc+KhIsc4RHEUfb7dVplEVf8iMmc0tpalbdIbon54FdWcA+8Io7T5yHBlQKBoJWgjugOl4rBikBU0rwUeDZIMJlK4TDVH7t7MM0BbbrwckGKkZXralrf83cQnNCvQ52L+13FgZKAQ=

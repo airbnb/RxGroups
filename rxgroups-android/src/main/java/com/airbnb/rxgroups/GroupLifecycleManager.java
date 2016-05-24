@@ -91,7 +91,7 @@ public class GroupLifecycleManager {
     return group;
   }
 
-  <T> Observable.Transformer<? super T, T> transform(String tag) {
+  public <T> Observable.Transformer<? super T, T> transform(String tag) {
     return group.transform(tag);
   }
 
