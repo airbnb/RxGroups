@@ -33,31 +33,31 @@ if (JavaVersion.current().isJava8Compatible()) {
 modifyPom {
   project {
     name 'RxGroups library'
-    description PROJECT_DESCRIPTION
-    url PROJECT_URL
+    description POM_DESCRIPTION
+    url POM_SCM_URL
     inceptionYear '2016'
-    version PROJECT_VERSION
-    groupId PROJECT_GROUP_ID
+    version VERSION_NAME
+    groupId GROUP
     artifactId 'rxgroups'
 
     scm {
-      url PROJECT_URL
-      connection 'scm:git@github.com:airbnb/rxgroups.git'
-      developerConnection 'scm:git@github.com:airbnb/rxgroups.git'
+      url POM_SCM_URL
+      connection POM_SCM_CONNECTION
+      developerConnection POM_SCM_DEV_CONNECTION
     }
 
     licenses {
       license {
-        name 'The Apache Software License, Version 2.0'
-        url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
-        distribution 'repo'
+        name POM_LICENSE_NAME
+        url POM_LICENSE_URL
+        distribution POM_LICENSE_DIST
       }
     }
 
     developers {
       developer {
-        id 'airbnb'
-        name 'Airbnb'
+        id POM_DEVELOPER_ID
+        name POM_DEVELOPER_NAME
         email 'android@airbnb.com'
       }
     }
