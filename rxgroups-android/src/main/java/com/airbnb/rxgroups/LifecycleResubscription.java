@@ -93,25 +93,30 @@ class LifecycleResubscription {
         //noinspection TryWithIdenticalCatches
         try {
           Class<?> fieldClass = observer.getClass();
-          Method tagMethod = fieldClass.getDeclaredMethod("tag");
+          Method tagMethod = fieldClass.getDeclaredMethod("resubscriptionTag");
           Object tag = tagMethod.invoke(observer);
-          if (tag instanceof String) {
-            return Observable.just(new ObserverInfo((String) tag, observer));
-          } else if (tag instanceof String[]) {
-            return Observable.from((String[]) tag).map(new Func1<String, ObserverInfo>() {
-              @Override public ObserverInfo call(String s) {
-                return new ObserverInfo(s, observer);
-              }
-            });
-          } else {
-            throw new RuntimeException("Method tag() must return either String or String[]");
+          Class<?> rawParameterType = Utils.getRawType(tag.getClass());
+          Func1<Object, ObserverInfo> collectionMapper = new Func1<Object, ObserverInfo>() {
+            @Override public ObserverInfo call(Object s) {
+              return new ObserverInfo(s.toString(), observer);
+            }
+          };
+          //noinspection ConstantConditions
+          if (Iterable.class.isAssignableFrom(rawParameterType)) {
+            return Observable.from((Iterable<?>) tag).map(collectionMapper);
           }
+          if (rawParameterType.isArray()) {
+            return Observable.from(Utils.boxIfPrimitiveArray(tag)).map(collectionMapper);
+          }
+          return Observable.just(new ObserverInfo(tag.toString(), observer));
         } catch (NoSuchMethodException e) {
-          throw new RuntimeException("Please define a method named 'tag' that returns a String", e);
+          throw new RuntimeException("Please define a method named 'resubscriptionTag()'", e);
         } catch (InvocationTargetException e) {
-          throw new RuntimeException("Error accessing method tag(). Make sure it's not private", e);
+          throw new RuntimeException(
+              "Error accessing method 'resubscriptionTag()'. Make sure it's not private", e);
         } catch (IllegalAccessException e) {
-          throw new RuntimeException("Error accessing method tag(). Make sure it's not private", e);
+          throw new RuntimeException(
+              "Error accessing method 'resubscriptionTag()'. Make sure it's not private", e);
         }
       }
     });
@@ -150,6 +155,13 @@ class LifecycleResubscription {
       int result = tag.hashCode();
       result = 31 * result + observer.hashCode();
       return result;
+    }
+
+    @Override public String toString() {
+      return "ObserverInfo{" +
+          "tag='" + tag + '\'' +
+          ", observer=" + observer +
+          '}';
     }
   }
 }

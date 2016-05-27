@@ -19,6 +19,8 @@ import com.airbnb.rxgroups.LifecycleResubscription.ObserverInfo;
 
 import org.junit.Test;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import rx.Observer;
@@ -30,9 +32,9 @@ public class LifecycleResubscriptionTest extends BaseTest {
   private final LifecycleResubscription resubscription = new LifecycleResubscription();
   private final TestSubscriber<ObserverInfo> testSubscriber = new TestSubscriber<>();
 
-  @Test public void testObservers() {
-    Foo foo = new Foo();
-    resubscription.observers(foo).subscribe(testSubscriber);
+  @Test public void simpleString() {
+    SimpleString simpleString = new SimpleString();
+    resubscription.observers(simpleString).subscribe(testSubscriber);
 
     testSubscriber.awaitTerminalEvent(1, TimeUnit.SECONDS);
     testSubscriber.assertValueCount(2);
@@ -40,12 +42,12 @@ public class LifecycleResubscriptionTest extends BaseTest {
     testSubscriber.assertNoErrors();
 
     assertThat(testSubscriber.getOnNextEvents()).containsOnly(
-        new ObserverInfo("Object", foo.observer1),
-        new ObserverInfo("String", foo.observer2));
+        new ObserverInfo("Object", simpleString.observer1),
+        new ObserverInfo("String", simpleString.observer2));
   }
 
-  @Test public void testGetFieldsOnSuperClass() {
-    SubFoo subFoo = new SubFoo();
+  @Test public void superclass() {
+    SubSimpleString subFoo = new SubSimpleString();
     resubscription.observers(subFoo).subscribe(testSubscriber);
 
     testSubscriber.awaitTerminalEvent(1, TimeUnit.SECONDS);
@@ -59,9 +61,9 @@ public class LifecycleResubscriptionTest extends BaseTest {
         new ObserverInfo("Long", subFoo.bar));
   }
 
-  @Test public void testMultipleRequestsPerListener() {
-    Bar bar = new Bar();
-    resubscription.observers(bar).subscribe(testSubscriber);
+  @Test public void stringArrayTags() {
+    StringArray stringArray = new StringArray();
+    resubscription.observers(stringArray).subscribe(testSubscriber);
 
     testSubscriber.awaitTerminalEvent(1, TimeUnit.SECONDS);
     testSubscriber.assertNoErrors();
@@ -69,56 +71,101 @@ public class LifecycleResubscriptionTest extends BaseTest {
     testSubscriber.assertCompleted();
 
     assertThat(testSubscriber.getOnNextEvents()).containsOnly(
-        new ObserverInfo("Class", bar.baz),
-        new ObserverInfo("Double", bar.baz));
+        new ObserverInfo("Class", stringArray.baz),
+        new ObserverInfo("Double", stringArray.baz));
   }
 
-  @Test public void testTagMethodHasWrongReturnType() {
-    Baz baz = new Baz();
-    resubscription.observers(baz).subscribe(testSubscriber);
+  @Test public void integerTag() {
+    Int anInt = new Int();
+    resubscription.observers(anInt).subscribe(testSubscriber);
 
     testSubscriber.awaitTerminalEvent(1, TimeUnit.SECONDS);
-    testSubscriber.assertError(RuntimeException.class);
+    testSubscriber.assertNoErrors();
+    testSubscriber.assertCompleted();
+
+    assertThat(testSubscriber.getOnNextEvents()).containsOnly(new ObserverInfo("2", anInt.lol));
   }
 
-  static class Foo {
+  @Test public void iterable() {
+    ObjectList objectList = new ObjectList();
+    resubscription.observers(objectList).subscribe(testSubscriber);
+
+    testSubscriber.awaitTerminalEvent(1, TimeUnit.SECONDS);
+    testSubscriber.assertNoErrors();
+    testSubscriber.assertCompleted();
+
+    assertThat(testSubscriber.getOnNextEvents()).containsOnly(
+        new ObserverInfo("1", objectList.fooBar),
+        new ObserverInfo("foo", objectList.fooBar));
+  }
+
+  @Test public void array() {
+    DoubleArray doubleArray = new DoubleArray();
+    resubscription.observers(doubleArray).subscribe(testSubscriber);
+
+    testSubscriber.awaitTerminalEvent(1, TimeUnit.SECONDS);
+    testSubscriber.assertNoErrors();
+    testSubscriber.assertCompleted();
+
+    assertThat(testSubscriber.getOnNextEvents()).containsOnly(
+        new ObserverInfo("1000.0", doubleArray.fooBar),
+        new ObserverInfo("2.0", doubleArray.fooBar));
+  }
+
+  static class SimpleString {
     @AutoResubscribe Observer<String> observer1 = new TestSubscriber<String>() {
-      String tag() {
+      String resubscriptionTag() {
         return "Object";
       }
     };
     @AutoResubscribe Observer<String> observer2 = new TestSubscriber<String>() {
-      String tag() {
+      String resubscriptionTag() {
         return "String";
       }
     };
   }
 
-  private static class SubFoo extends Foo {
+  private static class SubSimpleString extends SimpleString {
     @AutoResubscribe Observer<String> foo = new TestSubscriber<String>() {
-      String tag() {
+      String resubscriptionTag() {
         return "Integer";
       }
     };
     @AutoResubscribe Observer<String> bar = new TestSubscriber<String>() {
-      String tag() {
+      String resubscriptionTag() {
         return "Long";
       }
     };
   }
 
-  private static class Bar {
+  private static class StringArray {
     @AutoResubscribe Observer<String> baz = new TestSubscriber<String>() {
-      String[] tag() {
+      String[] resubscriptionTag() {
         return new String[] {"Class", "Double" };
       }
     };
   }
 
-  private static class Baz {
+  private static class Int {
     @AutoResubscribe Observer<String> lol = new TestSubscriber<String>() {
-      int tag() {
+      int resubscriptionTag() {
         return 2;
+      }
+    };
+  }
+
+  private static class ObjectList {
+    @AutoResubscribe Observer<String> fooBar = new TestSubscriber<String>() {
+      List<Object> resubscriptionTag() {
+        return Arrays.<Object>asList(1, "foo");
+      }
+    };
+  }
+
+  private static class DoubleArray {
+    @AutoResubscribe Observer<String> fooBar = new TestSubscriber<String>() {
+      double[] resubscriptionTag() {
+        return new double[] { 1000D, 2D };
       }
     };
   }

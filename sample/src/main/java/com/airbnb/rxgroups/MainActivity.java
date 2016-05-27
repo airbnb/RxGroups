@@ -27,7 +27,6 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import rx.Observable;
-import rx.Observer;
 import rx.android.schedulers.AndroidSchedulers;
 
 public class MainActivity extends AppCompatActivity {
@@ -41,7 +40,12 @@ public class MainActivity extends AppCompatActivity {
   private boolean isRunning;
   private boolean isLocked;
 
-  @AutoResubscribe final Observer<Long> observer = new Observer<Long>() {
+  @AutoResubscribe
+  final ResubscriptionObserver<Long> observer = new ResubscriptionObserver<Long>() {
+    @Override public Object resubscriptionTag() {
+      return OBSERVABLE_TAG;
+    }
+
     @Override public void onCompleted() {
       Log.d(TAG, "onCompleted()");
     }
@@ -53,10 +57,6 @@ public class MainActivity extends AppCompatActivity {
     @Override public void onNext(Long l) {
       Log.d(TAG, "Current Thread=" + Thread.currentThread().getName() + ", onNext()=" + l);
       output.setText(output.getText() + " " + l);
-    }
-
-    public String tag() {
-      return OBSERVABLE_TAG;
     }
   };
   private Drawable alarmOffDrawable;
