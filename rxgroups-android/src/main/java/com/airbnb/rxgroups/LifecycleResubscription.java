@@ -30,6 +30,8 @@ import rx.android.schedulers.AndroidSchedulers;
 import rx.functions.Func1;
 import rx.schedulers.Schedulers;
 
+import static android.R.attr.tag;
+
 class LifecycleResubscription {
   /**
    * Returns all {@link ObserverInfo} fields on the target (eg fragment, activity, view) that are
@@ -85,39 +87,40 @@ class LifecycleResubscription {
       observer = (Observer<?>) field.get(target);
     } catch (IllegalAccessException e) {
       throw new RuntimeException(
-          String.format("Error accessing observer %s. Make sure it's not private.", field), e);
+          String.format("Error accessing observer %s. Make sure it's public.", field), e);
     }
 
     return Observable.just(field).flatMap(new Func1<Field, Observable<ObserverInfo>>() {
       @Override public Observable<ObserverInfo> call(Field field) {
+        Object tag;
         //noinspection TryWithIdenticalCatches
         try {
           Class<?> fieldClass = observer.getClass();
           Method tagMethod = fieldClass.getDeclaredMethod("resubscriptionTag");
-          Object tag = tagMethod.invoke(observer);
-          Class<?> rawParameterType = Utils.getRawType(tag.getClass());
-          Func1<Object, ObserverInfo> collectionMapper = new Func1<Object, ObserverInfo>() {
-            @Override public ObserverInfo call(Object s) {
-              return new ObserverInfo(s.toString(), observer);
-            }
-          };
-          //noinspection ConstantConditions
-          if (Iterable.class.isAssignableFrom(rawParameterType)) {
-            return Observable.from((Iterable<?>) tag).map(collectionMapper);
-          }
-          if (rawParameterType.isArray()) {
-            return Observable.from(Utils.boxIfPrimitiveArray(tag)).map(collectionMapper);
-          }
-          return Observable.just(new ObserverInfo(tag.toString(), observer));
+          tag = tagMethod.invoke(observer);
         } catch (NoSuchMethodException e) {
           throw new RuntimeException("Please define a method named 'resubscriptionTag()'", e);
         } catch (InvocationTargetException e) {
-          throw new RuntimeException(
-              "Error accessing method 'resubscriptionTag()'. Make sure it's not private", e);
+          throw new RuntimeException("Exception thrown from 'resubscriptionTag()'", e);
         } catch (IllegalAccessException e) {
           throw new RuntimeException(
-              "Error accessing method 'resubscriptionTag()'. Make sure it's not private", e);
+              "Method 'resubscriptionTag()' is not accessible. Make sure it's public.", e);
         }
+
+        Class<?> rawParameterType = Utils.getRawType(tag.getClass());
+        Func1<Object, ObserverInfo> collectionMapper = new Func1<Object, ObserverInfo>() {
+          @Override public ObserverInfo call(Object s) {
+            return new ObserverInfo(s.toString(), observer);
+          }
+        };
+        //noinspection ConstantConditions
+        if (Iterable.class.isAssignableFrom(rawParameterType)) {
+          return Observable.from((Iterable<?>) tag).map(collectionMapper);
+        }
+        if (rawParameterType.isArray()) {
+          return Observable.from(Utils.boxIfPrimitiveArray(tag)).map(collectionMapper);
+        }
+        return Observable.just(new ObserverInfo(tag.toString(), observer));
       }
     });
   }
