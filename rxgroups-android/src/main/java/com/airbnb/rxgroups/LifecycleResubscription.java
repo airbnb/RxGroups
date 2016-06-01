@@ -1,6 +1,23 @@
+/*
+ * Copyright (C) 2016 Airbnb, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.airbnb.rxgroups;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -12,6 +29,8 @@ import rx.Observer;
 import rx.android.schedulers.AndroidSchedulers;
 import rx.functions.Func1;
 import rx.schedulers.Schedulers;
+
+import static android.R.attr.tag;
 
 class LifecycleResubscription {
   /**
@@ -62,21 +81,48 @@ class LifecycleResubscription {
     return !qualifiedName.startsWith("android.") && !qualifiedName.startsWith("java.");
   }
 
-  private Observable<ObserverInfo> observerInfoList(Object target, Field field) {
+  private Observable<ObserverInfo> observerInfoList(final Object target, Field field) {
     final Observer<?> observer;
     try {
       observer = (Observer<?>) field.get(target);
     } catch (IllegalAccessException e) {
       throw new RuntimeException(
-          String.format("Error accessing observer %s. Make sure it's no private.", field), e);
+          String.format("Error accessing observer %s. Make sure it's public.", field), e);
     }
 
-    return Observable.from(field.getAnnotation(AutoResubscribe.class).value())
-        .map(new Func1<String, ObserverInfo>() {
-          @Override public ObserverInfo call(String tag) {
-            return new ObserverInfo(tag, observer);
+    return Observable.just(field).flatMap(new Func1<Field, Observable<ObserverInfo>>() {
+      @Override public Observable<ObserverInfo> call(Field field) {
+        Object tag;
+        //noinspection TryWithIdenticalCatches
+        try {
+          Class<?> fieldClass = observer.getClass();
+          Method tagMethod = fieldClass.getDeclaredMethod("resubscriptionTag");
+          tag = tagMethod.invoke(observer);
+        } catch (NoSuchMethodException e) {
+          throw new RuntimeException("Please define a method named 'resubscriptionTag()'", e);
+        } catch (InvocationTargetException e) {
+          throw new RuntimeException("Exception thrown from 'resubscriptionTag()'", e);
+        } catch (IllegalAccessException e) {
+          throw new RuntimeException(
+              "Method 'resubscriptionTag()' is not accessible. Make sure it's public.", e);
+        }
+
+        Class<?> rawParameterType = Utils.getRawType(tag.getClass());
+        Func1<Object, ObserverInfo> collectionMapper = new Func1<Object, ObserverInfo>() {
+          @Override public ObserverInfo call(Object s) {
+            return new ObserverInfo(s.toString(), observer);
           }
-        });
+        };
+        //noinspection ConstantConditions
+        if (Iterable.class.isAssignableFrom(rawParameterType)) {
+          return Observable.from((Iterable<?>) tag).map(collectionMapper);
+        }
+        if (rawParameterType.isArray()) {
+          return Observable.from(Utils.boxIfPrimitiveArray(tag)).map(collectionMapper);
+        }
+        return Observable.just(new ObserverInfo(tag.toString(), observer));
+      }
+    });
   }
 
   /** Helper class to match an Observer to the Observable type it can be subscribed to. */
@@ -112,6 +158,13 @@ class LifecycleResubscription {
       int result = tag.hashCode();
       result = 31 * result + observer.hashCode();
       return result;
+    }
+
+    @Override public String toString() {
+      return "ObserverInfo{" +
+          "tag='" + tag + '\'' +
+          ", observer=" + observer +
+          '}';
     }
   }
 }

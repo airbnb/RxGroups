@@ -1,1 +1,1 @@
-include ':rxgroups', ':sample', ':rxgroups-android'
+include ':rxgroups', ':rxgroups-android', ':sample'

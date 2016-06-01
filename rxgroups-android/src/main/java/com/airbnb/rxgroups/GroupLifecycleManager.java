@@ -1,3 +1,18 @@
+/*
+ * Copyright (C) 2016 Airbnb, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.airbnb.rxgroups;
 
 import android.app.Activity;
@@ -16,6 +31,9 @@ import rx.functions.Action1;
 import rx.functions.Func1;
 import rx.subscriptions.CompositeSubscription;
 
+/**
+ * TODO
+ */
 @SuppressWarnings("WeakerAccess")
 public class GroupLifecycleManager {
   private static final String TAG = "GroupLifecycleManager";
@@ -34,20 +52,29 @@ public class GroupLifecycleManager {
     this.resubscription = resubscription;
   }
 
+  /**
+   * TODO
+   */
   public static GroupLifecycleManager onCreate(ObservableManager observableManager,
       LifecycleResubscription resubscription) {
     return onCreate(observableManager, resubscription, null, null);
   }
 
+  /**
+   * TODO
+   */
   public static GroupLifecycleManager onCreate(ObservableManager observableManager,
       @Nullable Bundle savedState, @Nullable Object target) {
     return onCreate(observableManager, new LifecycleResubscription(), savedState,
         target);
   }
 
+  /**
+   * TODO
+   */
   public static GroupLifecycleManager onCreate(ObservableManager observableManager,
-      LifecycleResubscription resubscription,
-      @Nullable Bundle savedState, @Nullable Object target) {
+      LifecycleResubscription resubscription, @Nullable Bundle savedState,
+      @Nullable Object target) {
     // Only need to resubscribe if restoring from saved state
     boolean shouldResubscribe = target != null && savedState != null;
     ObservableGroup group;
@@ -87,10 +114,16 @@ public class GroupLifecycleManager {
     return manager;
   }
 
+  /**
+   * TODO
+   */
   public ObservableGroup group() {
     return group;
   }
 
+  /**
+   * TODO
+   */
   public <T> Observable.Transformer<? super T, T> transform(String tag) {
     return group.transform(tag);
   }
@@ -153,6 +186,9 @@ public class GroupLifecycleManager {
     }
   }
 
+  /**
+   * TODO
+   */
   public void onDestroy(@Nullable Activity activity) {
     // We need to track whether the current Activity is finishing or not in order to decide if we
     // should destroy the ObservableGroup. If the Activity is not finishing, then we should not
@@ -164,15 +200,24 @@ public class GroupLifecycleManager {
     onDestroy(!hasSavedState || activity != null && activity.isFinishing());
   }
 
+  /**
+   * TODO
+   */
   public void onDestroy(Fragment fragment) {
     onDestroy(fragment.getActivity());
   }
 
+  /**
+   * TODO
+   */
   public void onResume() {
     hasSavedState = false;
     unlock();
   }
 
+  /**
+   * TODO
+   */
   public void onPause() {
     lock();
   }
@@ -185,6 +230,9 @@ public class GroupLifecycleManager {
     group.unlock();
   }
 
+  /**
+   * TODO
+   */
   public void onSaveInstanceState(Bundle outState) {
     hasSavedState = true;
     outState.putParcelable(KEY_STATE, new State(observableManager.hashCode(), group.id()));

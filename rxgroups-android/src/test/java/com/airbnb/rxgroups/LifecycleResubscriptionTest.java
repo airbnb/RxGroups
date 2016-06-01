@@ -1,9 +1,26 @@
+/*
+ * Copyright (C) 2016 Airbnb, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.airbnb.rxgroups;
 
 import com.airbnb.rxgroups.LifecycleResubscription.ObserverInfo;
 
 import org.junit.Test;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import rx.Observer;
@@ -15,9 +32,9 @@ public class LifecycleResubscriptionTest extends BaseTest {
   private final LifecycleResubscription resubscription = new LifecycleResubscription();
   private final TestSubscriber<ObserverInfo> testSubscriber = new TestSubscriber<>();
 
-  @Test public void testObservers() {
-    TestFragment testFragment = new TestFragment();
-    resubscription.observers(testFragment).subscribe(testSubscriber);
+  @Test public void simpleString() {
+    SimpleString simpleString = new SimpleString();
+    resubscription.observers(simpleString).subscribe(testSubscriber);
 
     testSubscriber.awaitTerminalEvent(1, TimeUnit.SECONDS);
     testSubscriber.assertValueCount(2);
@@ -25,52 +42,131 @@ public class LifecycleResubscriptionTest extends BaseTest {
     testSubscriber.assertNoErrors();
 
     assertThat(testSubscriber.getOnNextEvents()).containsOnly(
-        new ObserverInfo("Object.class", testFragment.observer1),
-        new ObserverInfo("String.class", testFragment.observer2));
+        new ObserverInfo("Object", simpleString.observer1),
+        new ObserverInfo("String", simpleString.observer2));
   }
 
-  @Test public void testGetFieldsOnSuperClass() {
-    SubTestFragment subTestFragment = new SubTestFragment();
-    resubscription.observers(subTestFragment).subscribe(testSubscriber);
+  @Test public void superclass() {
+    SubSimpleString subFoo = new SubSimpleString();
+    resubscription.observers(subFoo).subscribe(testSubscriber);
 
     testSubscriber.awaitTerminalEvent(1, TimeUnit.SECONDS);
     testSubscriber.assertCompleted();
     testSubscriber.assertNoErrors();
 
     assertThat(testSubscriber.getOnNextEvents()).containsOnly(
-        new ObserverInfo("Object.class", subTestFragment.observer1),
-        new ObserverInfo("String.class", subTestFragment.observer2),
-        new ObserverInfo("Integer.class", subTestFragment.foo),
-        new ObserverInfo("Long.class", subTestFragment.bar));
+        new ObserverInfo("Object", subFoo.observer1),
+        new ObserverInfo("String", subFoo.observer2),
+        new ObserverInfo("Integer", subFoo.foo),
+        new ObserverInfo("Long", subFoo.bar));
   }
 
-  @Test
-  public void testMultipleRequestsPerListener() {
-    MultiRequestTestFragment fragment = new MultiRequestTestFragment();
-    resubscription.observers(fragment).subscribe(testSubscriber);
+  @Test public void stringArrayTags() {
+    StringArray stringArray = new StringArray();
+    resubscription.observers(stringArray).subscribe(testSubscriber);
 
     testSubscriber.awaitTerminalEvent(1, TimeUnit.SECONDS);
+    testSubscriber.assertNoErrors();
     testSubscriber.assertValueCount(2);
     testSubscriber.assertCompleted();
-    testSubscriber.assertNoErrors();
 
     assertThat(testSubscriber.getOnNextEvents()).containsOnly(
-        new ObserverInfo("Class.class", fragment.baz),
-        new ObserverInfo("Double.class", fragment.baz));
+        new ObserverInfo("Class", stringArray.baz),
+        new ObserverInfo("Double", stringArray.baz));
   }
 
-  static class TestFragment {
-    @AutoResubscribe("Object.class") Observer<String> observer1 = new TestSubscriber<>();
-    @AutoResubscribe("String.class") Observer<String> observer2 = new TestSubscriber<>();
+  @Test public void integerTag() {
+    Int anInt = new Int();
+    resubscription.observers(anInt).subscribe(testSubscriber);
+
+    testSubscriber.awaitTerminalEvent(1, TimeUnit.SECONDS);
+    testSubscriber.assertNoErrors();
+    testSubscriber.assertCompleted();
+
+    assertThat(testSubscriber.getOnNextEvents()).containsOnly(new ObserverInfo("2", anInt.lol));
   }
 
-  private static class SubTestFragment extends TestFragment {
-    @AutoResubscribe("Integer.class") Observer<String> foo = new TestSubscriber<>();
-    @AutoResubscribe("Long.class") Observer<String> bar = new TestSubscriber<>();
+  @Test public void iterable() {
+    ObjectList objectList = new ObjectList();
+    resubscription.observers(objectList).subscribe(testSubscriber);
+
+    testSubscriber.awaitTerminalEvent(1, TimeUnit.SECONDS);
+    testSubscriber.assertNoErrors();
+    testSubscriber.assertCompleted();
+
+    assertThat(testSubscriber.getOnNextEvents()).containsOnly(
+        new ObserverInfo("1", objectList.fooBar),
+        new ObserverInfo("foo", objectList.fooBar));
   }
 
-  private static class MultiRequestTestFragment {
-    @AutoResubscribe({ "Class.class", "Double.class" }) Observer<String> baz =
-        new TestSubscriber<>();
+  @Test public void array() {
+    DoubleArray doubleArray = new DoubleArray();
+    resubscription.observers(doubleArray).subscribe(testSubscriber);
+
+    testSubscriber.awaitTerminalEvent(1, TimeUnit.SECONDS);
+    testSubscriber.assertNoErrors();
+    testSubscriber.assertCompleted();
+
+    assertThat(testSubscriber.getOnNextEvents()).containsOnly(
+        new ObserverInfo("1000.0", doubleArray.fooBar),
+        new ObserverInfo("2.0", doubleArray.fooBar));
+  }
+
+  static class SimpleString {
+    @AutoResubscribe Observer<String> observer1 = new TestSubscriber<String>() {
+      String resubscriptionTag() {
+        return "Object";
+      }
+    };
+    @AutoResubscribe Observer<String> observer2 = new TestSubscriber<String>() {
+      String resubscriptionTag() {
+        return "String";
+      }
+    };
+  }
+
+  private static class SubSimpleString extends SimpleString {
+    @AutoResubscribe Observer<String> foo = new TestSubscriber<String>() {
+      String resubscriptionTag() {
+        return "Integer";
+      }
+    };
+    @AutoResubscribe Observer<String> bar = new TestSubscriber<String>() {
+      String resubscriptionTag() {
+        return "Long";
+      }
+    };
+  }
+
+  private static class StringArray {
+    @AutoResubscribe Observer<String> baz = new TestSubscriber<String>() {
+      String[] resubscriptionTag() {
+        return new String[] {"Class", "Double" };
+      }
+    };
+  }
+
+  private static class Int {
+    @AutoResubscribe Observer<String> lol = new TestSubscriber<String>() {
+      int resubscriptionTag() {
+        return 2;
+      }
+    };
+  }
+
+  private static class ObjectList {
+    @AutoResubscribe Observer<String> fooBar = new TestSubscriber<String>() {
+      List<Object> resubscriptionTag() {
+        return Arrays.<Object>asList(1, "foo");
+      }
+    };
+  }
+
+  private static class DoubleArray {
+    @AutoResubscribe Observer<String> fooBar = new TestSubscriber<String>() {
+      double[] resubscriptionTag() {
+        return new double[] { 1000D, 2D };
+      }
+    };
   }
 }
