@@ -30,8 +30,6 @@ import rx.android.schedulers.AndroidSchedulers;
 import rx.functions.Func1;
 import rx.schedulers.Schedulers;
 
-import static android.R.attr.tag;
-
 class LifecycleResubscription {
   /**
    * Returns all {@link ObserverInfo} fields on the target (eg fragment, activity, view) that are
@@ -96,7 +94,7 @@ class LifecycleResubscription {
         //noinspection TryWithIdenticalCatches
         try {
           Class<?> fieldClass = observer.getClass();
-          Method tagMethod = fieldClass.getDeclaredMethod("resubscriptionTag");
+          Method tagMethod = fieldClass.getMethod("resubscriptionTag");
           tag = tagMethod.invoke(observer);
         } catch (NoSuchMethodException e) {
           throw new RuntimeException("Please define a method named 'resubscriptionTag()'", e);
