@@ -1,3 +1,7 @@
+* 0.3.1 (06/09/2016)
+
+* Fix: PR #15 - Look for `resubscriptionTag()` method in superclasses
+
 * 0.3.0 (06/09/2016)
 
 * New: `rxgroups-android` module including `AutoResubscribe` and `GroupLifecycleManager`

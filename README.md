@@ -82,7 +82,7 @@ public class MyActivity extends Activity {
 ### Download with Gradle
 
 ```groovy
-compile 'com.airbnb:rxgroups-android:0.3.0'
+compile 'com.airbnb:rxgroups-android:0.3.1'
 ```
 
 Check out the [Sample app](https://github.com/airbnb/RxGroups/blob/master/sample/src/main/java/com/airbnb/rxgroups/MainActivity.java) for more details and a complete example!
