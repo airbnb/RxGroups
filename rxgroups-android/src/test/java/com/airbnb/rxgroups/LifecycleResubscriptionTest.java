@@ -113,58 +113,58 @@ public class LifecycleResubscriptionTest extends BaseTest {
   }
 
   static class SimpleString {
-    @AutoResubscribe Observer<String> observer1 = new TestSubscriber<String>() {
-      String resubscriptionTag() {
+    public final @AutoResubscribe Observer<String> observer1 = new TestSubscriber<String>() {
+      public String resubscriptionTag() {
         return "Object";
       }
     };
-    @AutoResubscribe Observer<String> observer2 = new TestSubscriber<String>() {
-      String resubscriptionTag() {
+    public final @AutoResubscribe Observer<String> observer2 = new TestSubscriber<String>() {
+      public String resubscriptionTag() {
         return "String";
       }
     };
   }
 
   private static class SubSimpleString extends SimpleString {
-    @AutoResubscribe Observer<String> foo = new TestSubscriber<String>() {
-      String resubscriptionTag() {
+    public final @AutoResubscribe Observer<String> foo = new TestSubscriber<String>() {
+      public String resubscriptionTag() {
         return "Integer";
       }
     };
-    @AutoResubscribe Observer<String> bar = new TestSubscriber<String>() {
-      String resubscriptionTag() {
+    public final @AutoResubscribe Observer<String> bar = new TestSubscriber<String>() {
+      public String resubscriptionTag() {
         return "Long";
       }
     };
   }
 
   private static class StringArray {
-    @AutoResubscribe Observer<String> baz = new TestSubscriber<String>() {
-      String[] resubscriptionTag() {
+    public final @AutoResubscribe Observer<String> baz = new TestSubscriber<String>() {
+      public String[] resubscriptionTag() {
         return new String[] {"Class", "Double" };
       }
     };
   }
 
   private static class Int {
-    @AutoResubscribe Observer<String> lol = new TestSubscriber<String>() {
-      int resubscriptionTag() {
+    public final @AutoResubscribe Observer<String> lol = new TestSubscriber<String>() {
+      public int resubscriptionTag() {
         return 2;
       }
     };
   }
 
   private static class ObjectList {
-    @AutoResubscribe Observer<String> fooBar = new TestSubscriber<String>() {
-      List<Object> resubscriptionTag() {
+    public final @AutoResubscribe Observer<String> fooBar = new TestSubscriber<String>() {
+      public List<Object> resubscriptionTag() {
         return Arrays.<Object>asList(1, "foo");
       }
     };
   }
 
   private static class DoubleArray {
-    @AutoResubscribe Observer<String> fooBar = new TestSubscriber<String>() {
-      double[] resubscriptionTag() {
+    public final @AutoResubscribe Observer<String> fooBar = new TestSubscriber<String>() {
+      public double[] resubscriptionTag() {
         return new double[] { 1000D, 2D };
       }
     };
