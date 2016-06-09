@@ -3,6 +3,7 @@
 [![Build Status](https://travis-ci.org/airbnb/DeepLinkDispatch.svg)](https://travis-ci.org/airbnb/RxGroups)
 
 RxGroups lets you group RxJava `Observable`s together in groups and tie them to your Android lifecycle.
+
 ## Usage
 
 1. Add a `GroupLifecycleManager` field to your `Activity`, `Fragment`, `Dialog`, etc. and call its respective lifecycle methods according to your own (eg.: `onPause`, `onResume`, `onDestroy`, etc.);
@@ -10,8 +11,6 @@ RxGroups lets you group RxJava `Observable`s together in groups and tie them to 
 3. Before subscribing to your `Observable`, compose it with `observableGroup.transform()` to tell RxGroups what tag it should associate with that `Observable`;
 
 ### Example
-
-
 
 ```java
 public class MyActivity extends Activity {
@@ -78,6 +77,9 @@ public class MyActivity extends Activity {
 ```
 
 **Bonus**: If you return an Array or a List from your `Observer` `resubscriptionTag()` method, it will associate it with all the tags in the collection, allowing you to share the same `Observer` with multiple `Observables`.
+
+
+### Download with Gradle
 
 ```groovy
 compile 'com.airbnb:rxgroups:0.3.0'
