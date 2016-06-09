@@ -40,25 +40,25 @@ public class MainActivity extends AppCompatActivity {
   private boolean isRunning;
   private boolean isLocked;
 
-  @AutoResubscribe
-  final ResubscriptionObserver<Long> observer = new ResubscriptionObserver<Long>() {
-    @Override public Object resubscriptionTag() {
-      return OBSERVABLE_TAG;
-    }
+  @AutoResubscribe final ResubscriptionObserver<Long> observer =
+      new ResubscriptionObserver<Long>() {
+        @Override public Object resubscriptionTag() {
+          return OBSERVABLE_TAG;
+        }
 
-    @Override public void onCompleted() {
-      Log.d(TAG, "onCompleted()");
-    }
+        @Override public void onCompleted() {
+          Log.d(TAG, "onCompleted()");
+        }
 
-    @Override public void onError(Throwable e) {
-      Log.e(TAG, "onError()", e);
-    }
+        @Override public void onError(Throwable e) {
+          Log.e(TAG, "onError()", e);
+        }
 
-    @Override public void onNext(Long l) {
-      Log.d(TAG, "Current Thread=" + Thread.currentThread().getName() + ", onNext()=" + l);
-      output.setText(output.getText() + " " + l);
-    }
-  };
+        @Override public void onNext(Long l) {
+          Log.d(TAG, "Current Thread=" + Thread.currentThread().getName() + ", onNext()=" + l);
+          output.setText(output.getText() + " " + l);
+        }
+      };
   private Drawable alarmOffDrawable;
   private Drawable alarmDrawable;
   private Drawable lockDrawable;

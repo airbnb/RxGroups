@@ -2,28 +2,25 @@
 
 [![Build Status](https://travis-ci.org/airbnb/DeepLinkDispatch.svg)](https://travis-ci.org/airbnb/RxGroups)
 
-
-RxGroups lets you group RxJava `Observable`s together in groups and tie them to your Android Activity
-or Fragment lifecycle.
+RxGroups lets you group RxJava `Observable`s together in groups and tie them to your Android lifecycle.
 
 ## Usage
 
-Start with `ObservableManager` in order to create or retrieve groups.
+1. Add a `GroupLifecycleManager` field to your `Activity`, `Fragment`, `Dialog`, etc. and call its respective lifecycle methods according to your own (eg.: `onPause`, `onResume`, `onDestroy`, etc.);
+2. Annotate your `Observer` with `@AutoResubscribe` and add a method `resubscriptionTag()` to tell RxGroups what tag it should use for reattaching your `Observer` to it `Observable` automatically.
+3. Before subscribing to your `Observable`, compose it with `observableGroup.transform()` to tell RxGroups what tag it should associate with that `Observable`;
+
+### Example
 
 ```java
 public class MyActivity extends Activity {
   private static final String OBSERVABLE_TAG = "arbitrary_tag";
   private TextView output;
+  private GroupLifecycleManager groupLifecycleManager;
   private ObservableGroup observableGroup;
-
-  // The ObservableManager and your Observable need to be stored somewhere else, outside of your
-  // activity lifecycle, so they can survive lifecycle and configuration changes. You could keep
-  // them, for example, in your Application object or use a Singleton that is provided by Dagger,
-  // for example.
-  private ObservableManager observableManager;
   private Observable<Long> observable;
 
-  private final Observer<Long> observer = new Observer<Long>() {
+  @AutoResubscribe public final Observer<Long> observer = new Observer<Long>() {
     @Override public void onCompleted() {
       Log.d(TAG, "onCompleted()");
     }
@@ -35,6 +32,10 @@ public class MyActivity extends Activity {
     @Override public void onNext(Long l) {
       output.setText(output.getText() + " " + l);
     }
+
+    @Override public Object resubscriptionTag() {
+      return OBSERVABLE_TAG;
+    }
   };
 
   @Override protected void onCreate(Bundle savedInstanceState) {
@@ -42,62 +43,49 @@ public class MyActivity extends Activity {
     setContentView(R.layout.activity_main);
 
     output = (TextView) findViewById(R.id.txt_output);
+    SampleApplication application = (SampleApplication) getApplication();
+    ObservableManager manager = application.observableManager();
+    groupLifecycleManager = GroupLifecycleManager.onCreate(manager, savedInstanceState, this);
+    observableGroup = groupLifecycleManager.group();
 
-    
-
-    observableManager = application.observableManager();
-    if (savedInstanceState == null) {
-      observableGroup = observableManager.newGroup();
-    } else {
-      observableGroup = observableManager.getGroup(savedInstanceState.getLong(GROUP_ID));
-    }
-    
-    // Make sure no events are received until we are ready to display them. Locking the group
-    // will cache any results so they can be delivered immediately when you unlock() if there are
-    // any available.
-    observableGroup.lock();
-    
-    if (observableGroup.hasObservable(OBSERVABLE_TAG)) {
-      // We've already subscribed to this observable before and it's still emitting items.
-      // Maybe the screen was rotated or the activity was paused and then resumed. Let's get it
-      // and resubscribe to it.
-      observableGroup.<Long>observable(OBSERVABLE_TAG)
-          .observeOn(AndroidSchedulers.mainThread())
-          .subscribe(observer);
-    }
-
-    // Subscribe to the Observable when button is clicked. If you're already subscribed to it,
-    // then you might not want to subscribe again. This is up to you to decide.
     myButton.setOnClickListener(v -> observable
         .compose(observableGroup.<Long>transform(OBSERVABLE_TAG))
         .observeOn(AndroidSchedulers.mainThread())
         .subscribe(observer));
   }
 
+  @Override protected void onSaveInstanceState(Bundle outState) {
+    super.onSaveInstanceState(outState);
+    groupLifecycleManager.onSaveInstanceState(outState);
+  }
+
   @Override protected void onResume() {
     super.onResume();
-    // Go ahead and unlock our group, so we can receive Observable events.
-    observableGroup.unlock();
+    groupLifecycleManager.onResume();
+  }
+
+  @Override protected void onPause() {
+    super.onPause();
+    groupLifecycleManager.onPause();
   }
 
   @Override protected void onDestroy() {
     super.onDestroy();
-    if (isFinishing()) {
-      // Unsubscribe Observers and clear references. No more events will be received and the
-      // destroyed ObservableGroup is now unusable.
-      observableManager.destroy(observableGroup);
-    } else {
-      // Activity is not finishing (maybe just rotating?) so just unsubscribe for now and assume
-      // that it will be resubscribed later.
-      observableGroup.unsubscribe();
-    }
+    groupLifecycleManager.onDestroy(this);
   }
 }
 ```
 
+**Bonus**: If you return an Array or a List from your `Observer` `resubscriptionTag()` method, it will associate it with all the tags in the collection, allowing you to share the same `Observer` with multiple `Observables`.
+
+
+### Download with Gradle
+
 ```groovy
-compile 'com.airbnb:rxgroups:0.2.2'
+compile 'com.airbnb:rxgroups-android:0.3.0'
 ```
+
+Check out the [Sample app](https://github.com/airbnb/RxGroups/blob/master/sample/src/main/java/com/airbnb/rxgroups/MainActivity.java) for more details and a complete example!
 
 Snapshots of the development version are available in
 [Sonatype's `snapshots` repository](https://oss.sonatype.org/content/repositories/snapshots/).
