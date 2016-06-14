@@ -21,7 +21,7 @@ automatically after `onDestroy()`.
 
 1. Add a `GroupLifecycleManager` field to your `Activity`, `Fragment`, `Dialog`, etc. and call its respective lifecycle methods according to your own (eg.: `onPause`, `onResume`, `onDestroy`, etc.);
 2. Annotate your `ResubscriptionObserver` with `@AutoResubscribe` and use method `resubscriptionTag()` to tell RxGroups what tag it should use for reattaching your `Observer` to it `Observable` automatically.
-3. Before subscribing to your `Observable`, compose it with `observableGroup.transform()` to tell RxGroups what tag it should associate with that `Observable`;
+3. Before subscribing to your `Observable`, compose it with `observableGroup.transform()` to define a tag for that `Observable`;
 
 ### Example
 
@@ -90,7 +90,7 @@ public class MyActivity extends Activity {
 }
 ```
 
-**Optional**: If you don`t want to use a `ResubscriptionObserver `with `@AutoResubscribe` just use a
+**Optional**: If you don't want to use a `ResubscriptionObserver `with `@AutoResubscribe` just use a
 regular `Observer` anonymous class with a public method called `resubscriptionTag()`. Eg.:
 
 ```java
