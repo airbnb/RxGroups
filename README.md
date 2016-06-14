@@ -3,13 +3,25 @@
 [![Build Status](https://travis-ci.org/airbnb/DeepLinkDispatch.svg)](https://travis-ci.org/airbnb/RxGroups)
 
 RxGroups lets you group RxJava `Observable`s together in groups and tie them to your Android lifecycle.
+This is especially useful when used with [Retrofit](https://github.com/square/retrofit).
+
+For simple scenarios you can probably just let the original request be cancelled and fire a new one.
+However it's easy to see how this becomes a problem in more complex situations.
+
+Let's say your user is submitting a payment. You'll probably want to to guarantee that you can reattach
+to the same in-flight or completed request after rotating the screen or leaving the Activity and
+returning later.
+
+RxGroups will also automatically prevent events from being delivered to your `Activity` or `Fragment`
+before `onResume()` and after `onPause()`. If that happens, they will be automatically cached in memory
+and delivered once the user returns to your screen. If they never return, the memory is then reclaimed
+automatically after `onDestroy()`.
 
 ## Usage
 
 1. Add a `GroupLifecycleManager` field to your `Activity`, `Fragment`, `Dialog`, etc. and call its respective lifecycle methods according to your own (eg.: `onPause`, `onResume`, `onDestroy`, etc.);
 2. Annotate your `ResubscriptionObserver` with `@AutoResubscribe` and use method `resubscriptionTag()` to tell RxGroups what tag it should use for reattaching your `Observer` to it `Observable` automatically.
-3. Before subscribing to your `Observable`, compose it with `observableGroup.transform()` to tell RxGroups what tag it should associate with that `Observable`;
-4. If you don`t want to use a `ResubscriptionObserver `with `@AutoResubscribe` in favor of your own `Observer` instance , don`t forget to add a method called `resubscriptionTag()` to it; otherwise, your app will (probably) crash due to a Runtime Exception. You can use any `Object` tag to your `Observer`.
+3. Before subscribing to your `Observable`, compose it with `observableGroup.transform()` to define a tag for that `Observable`;
 
 ### Example
 
@@ -21,6 +33,7 @@ public class MyActivity extends Activity {
   private ObservableGroup observableGroup;
   private Observable<Long> observable;
 
+  // The Observer field must be public, otherwise RxGroups can't access it
   @AutoResubscribe public final ResubscriptionObserver<Long> observer = new ResubscriptionObserver<Long>() {
     @Override public void onCompleted() {
       Log.d(TAG, "onCompleted()");
@@ -77,8 +90,30 @@ public class MyActivity extends Activity {
 }
 ```
 
-**Bonus**: If you return an Array or a List from your `Observer` `resubscriptionTag()` method, it will associate it with all the tags in the collection, allowing you to share the same `Observer` with multiple `Observables`.
+**Optional**: If you don't want to use a `ResubscriptionObserver `with `@AutoResubscribe` just use a
+regular `Observer` anonymous class with a public method called `resubscriptionTag()`. Eg.:
 
+```java
+@AutoResubscribe public final Observer<Long> observer = new Observer<Long>() {
+    @Override public void onCompleted() {
+    }
+
+    @Override public void onError(Throwable e) {
+    }
+
+    @Override public void onNext(Long l) {
+    }
+
+    public Object resubscriptionTag() {
+      return Arrays.asList("tag1", "tag2", "tag3");
+    }
+  };
+```
+
+If the method doesn't exist or is not `public`, RxGroups will throw a `RuntimeException` letting you know.
+You can use any `Object` tag for your `Observer`, including arrays and `List`, In that case, it will
+associate the `Observer` with all the tags in the collection, allowing you to share the same
+`Observer` with multiple `Observables`.
 
 ### Download with Gradle
 
