@@ -7,8 +7,9 @@ RxGroups lets you group RxJava `Observable`s together in groups and tie them to 
 ## Usage
 
 1. Add a `GroupLifecycleManager` field to your `Activity`, `Fragment`, `Dialog`, etc. and call its respective lifecycle methods according to your own (eg.: `onPause`, `onResume`, `onDestroy`, etc.);
-2. Annotate your `Observer` with `@AutoResubscribe` and add a method `resubscriptionTag()` to tell RxGroups what tag it should use for reattaching your `Observer` to it `Observable` automatically.
+2. Annotate your `ResubscriptionObserver` with `@AutoResubscribe` and use method `resubscriptionTag()` to tell RxGroups what tag it should use for reattaching your `Observer` to it `Observable` automatically.
 3. Before subscribing to your `Observable`, compose it with `observableGroup.transform()` to tell RxGroups what tag it should associate with that `Observable`;
+4. If you don`t want to use a `ResubscriptionObserver `with `@AutoResubscribe` in favor of your own `Observer` instance , don`t forget to add a method called `resubscriptionTag()` to it; otherwise, your app will (probably) crash due to a Runtime Exception. You can use any `Object` tag to your `Observer`.
 
 ### Example
 
@@ -20,7 +21,7 @@ public class MyActivity extends Activity {
   private ObservableGroup observableGroup;
   private Observable<Long> observable;
 
-  @AutoResubscribe public final Observer<Long> observer = new Observer<Long>() {
+  @AutoResubscribe public final ResubscriptionObserver<Long> observer = new ResubscriptionObserver<Long>() {
     @Override public void onCompleted() {
       Log.d(TAG, "onCompleted()");
     }
