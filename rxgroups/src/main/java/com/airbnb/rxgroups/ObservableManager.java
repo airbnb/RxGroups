@@ -32,7 +32,10 @@ public class ObservableManager {
   private final Map<Long, ObservableGroup> observableGroupMap = new ConcurrentHashMap<>();
   private final AtomicLong nextId = new AtomicLong(1);
 
-  /** @return an existing group or a new group with the provided groupId */
+  /**
+   * @return an existing group or a new group with the provided groupId. Throws {@link
+   * IllegalStateException} if no group with the provided groupId exists or it is already destroyed
+   */
   public ObservableGroup getGroup(long groupId) {
     ObservableGroup observableGroup = observableGroupMap.get(groupId);
 
@@ -45,6 +48,10 @@ public class ObservableManager {
     }
 
     return observableGroup;
+  }
+
+  public boolean hasGroup(long groupId) {
+    return observableGroupMap.get(groupId) != null;
   }
 
   /** @return a new {@link ObservableGroup} with a unique groupId */

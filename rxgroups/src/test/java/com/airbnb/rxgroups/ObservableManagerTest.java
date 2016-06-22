@@ -21,11 +21,26 @@ import static junit.framework.TestCase.fail;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class ObservableManagerTest {
-  ObservableManager observableManager = new ObservableManager();
+  private final ObservableManager observableManager = new ObservableManager();
 
   @Test public void testNewGroup() {
     ObservableGroup group = observableManager.newGroup();
     assertThat(group.id()).isEqualTo(1);
+  }
+
+  @Test public void hasNoGroups() {
+    assertThat(observableManager.hasGroup(1)).isFalse();
+  }
+
+  @Test public void hasGroup() {
+    ObservableGroup group = observableManager.newGroup();
+    assertThat(observableManager.hasGroup(group.id())).isTrue();
+  }
+
+  @Test public void hasNoDestroyedGroups() {
+    ObservableGroup group = observableManager.newGroup();
+    observableManager.destroy(group);
+    assertThat(observableManager.hasGroup(group.id())).isFalse();
   }
 
   @Test public void testGetGroup() {

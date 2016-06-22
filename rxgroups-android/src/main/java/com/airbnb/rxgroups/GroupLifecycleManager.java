@@ -20,7 +20,6 @@ import android.app.Fragment;
 import android.os.Bundle;
 import android.os.Parcel;
 import android.os.Parcelable;
-import android.util.Log;
 
 import javax.annotation.Nullable;
 
@@ -52,26 +51,20 @@ public class GroupLifecycleManager {
     this.resubscription = resubscription;
   }
 
-  /**
-   * TODO
-   */
+  /** Call this method from your Activity or Fragment's onCreate method */
   public static GroupLifecycleManager onCreate(ObservableManager observableManager,
       LifecycleResubscription resubscription) {
     return onCreate(observableManager, resubscription, null, null);
   }
 
-  /**
-   * TODO
-   */
+  /** Call this method from your Activity or Fragment's onCreate method */
   public static GroupLifecycleManager onCreate(ObservableManager observableManager,
       @Nullable Bundle savedState, @Nullable Object target) {
     return onCreate(observableManager, new LifecycleResubscription(), savedState,
         target);
   }
 
-  /**
-   * TODO
-   */
+  /** Call this method from your Activity or Fragment's onDestroy method */
   public static GroupLifecycleManager onCreate(ObservableManager observableManager,
       LifecycleResubscription resubscription, @Nullable Bundle savedState,
       @Nullable Object target) {
@@ -88,15 +81,14 @@ public class GroupLifecycleManager {
       // then we have to create a new group since the previous one is already destroyed.
       // Android can sometimes reuse the same instance after saving state and we can't reliably
       // determine when that happens. This is a workaround for that behavior.
-      if (state.managerHashCode != observableManager.hashCode()) {
+      // Also if the process is killed while in the background, the observableManager instance will
+      // be recreated and could have the same hashCode as before, however it will be empty since all
+      // the group will be gone.
+      if (state.managerHashCode != observableManager.hashCode()
+          || !observableManager.hasGroup(state.groupId)) {
         group = observableManager.newGroup();
       } else {
         group = observableManager.getGroup(state.groupId);
-        if (group.isDestroyed()) {
-          Log.w(TAG, "Tried to reuse GroupLifecycleManager with a destroyed group");
-          group = observableManager.newGroup();
-          shouldResubscribe = false;
-        }
       }
     } else {
       group = observableManager.newGroup();
@@ -114,9 +106,7 @@ public class GroupLifecycleManager {
     return manager;
   }
 
-  /**
-   * TODO
-   */
+  /** @return the {@link ObservableGroup} associated to this instance */
   public ObservableGroup group() {
     return group;
   }
@@ -186,9 +176,7 @@ public class GroupLifecycleManager {
     }
   }
 
-  /**
-   * TODO
-   */
+  /** Call this method from your Activity or Fragment's onDestroy method */
   public void onDestroy(@Nullable Activity activity) {
     // We need to track whether the current Activity is finishing or not in order to decide if we
     // should destroy the ObservableGroup. If the Activity is not finishing, then we should not
@@ -200,24 +188,18 @@ public class GroupLifecycleManager {
     onDestroy(!hasSavedState || activity != null && activity.isFinishing());
   }
 
-  /**
-   * TODO
-   */
+  /** Call this method from your Activity or Fragment's onDestroy method */
   public void onDestroy(Fragment fragment) {
     onDestroy(fragment.getActivity());
   }
 
-  /**
-   * TODO
-   */
+  /** Call this method from your Activity or Fragment's onResume method */
   public void onResume() {
     hasSavedState = false;
     unlock();
   }
 
-  /**
-   * TODO
-   */
+  /** Call this method from your Activity or Fragment's onPause method */
   public void onPause() {
     lock();
   }
@@ -230,9 +212,7 @@ public class GroupLifecycleManager {
     group.unlock();
   }
 
-  /**
-   * TODO
-   */
+  /** Call this method from your Activity or Fragment's onSaveInstanceState method */
   public void onSaveInstanceState(Bundle outState) {
     hasSavedState = true;
     outState.putParcelable(KEY_STATE, new State(observableManager.hashCode(), group.id()));
