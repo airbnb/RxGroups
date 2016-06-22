@@ -51,7 +51,7 @@ public class ObservableManager {
   }
 
   public boolean hasGroup(long groupId) {
-    return observableGroupMap.get(groupId) != null;
+    return observableGroupMap.containsKey(groupId);
   }
 
   /** @return a new {@link ObservableGroup} with a unique groupId */
