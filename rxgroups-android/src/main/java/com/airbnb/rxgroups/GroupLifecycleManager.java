@@ -64,7 +64,7 @@ public class GroupLifecycleManager {
         target);
   }
 
-  /** Call this method from your Activity or Fragment's onDestroy method */
+  /** Call this method from your Activity or Fragment's onCreate method */
   public static GroupLifecycleManager onCreate(ObservableManager observableManager,
       LifecycleResubscription resubscription, @Nullable Bundle savedState,
       @Nullable Object target) {
