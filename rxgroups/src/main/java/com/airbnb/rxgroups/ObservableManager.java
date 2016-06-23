@@ -36,8 +36,8 @@ public class ObservableManager {
   private final UUID uuid = UUID.randomUUID();
 
   /**
-   * @return an existing group or a new group with the provided groupId. Throws {@link
-   * IllegalStateException} if no group with the provided groupId exists or it is already destroyed
+   * @return an existing group provided groupId. Throws {@link IllegalStateException} if no group
+   * with the provided groupId exists or it is already destroyed.
    */
   public ObservableGroup getGroup(long groupId) {
     ObservableGroup observableGroup = observableGroupMap.get(groupId);
