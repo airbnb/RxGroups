@@ -21,6 +21,8 @@ import android.os.Bundle;
 import android.os.Parcel;
 import android.os.Parcelable;
 
+import java.util.UUID;
+
 import javax.annotation.Nullable;
 
 import rx.Observable;
@@ -35,7 +37,6 @@ import rx.subscriptions.CompositeSubscription;
  */
 @SuppressWarnings("WeakerAccess")
 public class GroupLifecycleManager {
-  private static final String TAG = "GroupLifecycleManager";
   private static final String KEY_STATE = "KEY_GROUPLIFECYCLEMANAGER_STATE";
 
   private final CompositeSubscription pendingSubscriptions = new CompositeSubscription();
@@ -84,8 +85,7 @@ public class GroupLifecycleManager {
       // Also if the process is killed while in the background, the observableManager instance will
       // be recreated and could have the same hashCode as before, however it will be empty since all
       // the group will be gone.
-      if (state.managerHashCode != observableManager.hashCode()
-          || !observableManager.hasGroup(state.groupId)) {
+      if (state.managerId != observableManager.id()) {
         group = observableManager.newGroup();
       } else {
         group = observableManager.getGroup(state.groupId);
@@ -215,15 +215,15 @@ public class GroupLifecycleManager {
   /** Call this method from your Activity or Fragment's onSaveInstanceState method */
   public void onSaveInstanceState(Bundle outState) {
     hasSavedState = true;
-    outState.putParcelable(KEY_STATE, new State(observableManager.hashCode(), group.id()));
+    outState.putParcelable(KEY_STATE, new State(observableManager.id(), group.id()));
   }
 
   static class State implements Parcelable {
-    final int managerHashCode;
+    final UUID managerId;
     final long groupId;
 
-    State(int managerHashCode, long groupId) {
-      this.managerHashCode = managerHashCode;
+    State(UUID managerId, long groupId) {
+      this.managerId = managerId;
       this.groupId = groupId;
     }
 
@@ -232,7 +232,7 @@ public class GroupLifecycleManager {
     }
 
     @Override public void writeToParcel(Parcel dest, int flags) {
-      dest.writeInt(managerHashCode);
+      dest.writeSerializable(managerId);
       dest.writeLong(groupId);
     }
 
@@ -244,7 +244,7 @@ public class GroupLifecycleManager {
 
       @Override
       public State createFromParcel(Parcel source) {
-        return new State(source.readInt(), source.readLong());
+        return new State((UUID) source.readSerializable(), source.readLong());
       }
     };
   }

@@ -28,21 +28,6 @@ public class ObservableManagerTest {
     assertThat(group.id()).isEqualTo(1);
   }
 
-  @Test public void hasNoGroups() {
-    assertThat(observableManager.hasGroup(1)).isFalse();
-  }
-
-  @Test public void hasGroup() {
-    ObservableGroup group = observableManager.newGroup();
-    assertThat(observableManager.hasGroup(group.id())).isTrue();
-  }
-
-  @Test public void hasNoDestroyedGroups() {
-    ObservableGroup group = observableManager.newGroup();
-    observableManager.destroy(group);
-    assertThat(observableManager.hasGroup(group.id())).isFalse();
-  }
-
   @Test public void testGetGroup() {
     ObservableGroup originalGroup = observableManager.newGroup();
     ObservableGroup group = observableManager.getGroup(originalGroup.id());
