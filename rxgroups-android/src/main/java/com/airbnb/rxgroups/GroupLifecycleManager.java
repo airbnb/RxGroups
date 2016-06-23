@@ -78,13 +78,10 @@ public class GroupLifecycleManager {
 
       Preconditions.checkState(state != null, "Must call onSaveInstanceState() first");
 
-      // First check the instance hashCode before restoring state. If it's not the same instance,
+      // First check the instance ID before restoring state. If it's not the same instance,
       // then we have to create a new group since the previous one is already destroyed.
       // Android can sometimes reuse the same instance after saving state and we can't reliably
       // determine when that happens. This is a workaround for that behavior.
-      // Also if the process is killed while in the background, the observableManager instance will
-      // be recreated and could have the same hashCode as before, however it will be empty since all
-      // the group will be gone.
       if (state.managerId != observableManager.id()) {
         group = observableManager.newGroup();
       } else {
