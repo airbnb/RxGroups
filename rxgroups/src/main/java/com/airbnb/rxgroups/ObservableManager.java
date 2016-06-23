@@ -16,6 +16,7 @@
 package com.airbnb.rxgroups;
 
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -27,12 +28,17 @@ import rx.Observable;
  * Subscribe to observables, and then lock or unlock their observers to control when you get the
  * event back. Events will be held in a queue until an Observer is added and the group is unlocked.
  */
+@SuppressWarnings("WeakerAccess")
 public class ObservableManager {
   /** Map ids to a group of observables. */
   private final Map<Long, ObservableGroup> observableGroupMap = new ConcurrentHashMap<>();
   private final AtomicLong nextId = new AtomicLong(1);
+  private final UUID uuid = UUID.randomUUID();
 
-  /** @return an existing group or a new group with the provided groupId */
+  /**
+   * @return an existing group provided groupId. Throws {@link IllegalStateException} if no group
+   * with the provided groupId exists or it is already destroyed.
+   */
   public ObservableGroup getGroup(long groupId) {
     ObservableGroup observableGroup = observableGroupMap.get(groupId);
 
@@ -53,6 +59,10 @@ public class ObservableManager {
     ObservableGroup observableGroup = new ObservableGroup(id);
     observableGroupMap.put(id, observableGroup);
     return observableGroup;
+  }
+
+  UUID id() {
+    return uuid;
   }
 
   /**

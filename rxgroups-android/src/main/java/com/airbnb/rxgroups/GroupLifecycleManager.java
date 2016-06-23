@@ -20,7 +20,8 @@ import android.app.Fragment;
 import android.os.Bundle;
 import android.os.Parcel;
 import android.os.Parcelable;
-import android.util.Log;
+
+import java.util.UUID;
 
 import javax.annotation.Nullable;
 
@@ -36,7 +37,6 @@ import rx.subscriptions.CompositeSubscription;
  */
 @SuppressWarnings("WeakerAccess")
 public class GroupLifecycleManager {
-  private static final String TAG = "GroupLifecycleManager";
   private static final String KEY_STATE = "KEY_GROUPLIFECYCLEMANAGER_STATE";
 
   private final CompositeSubscription pendingSubscriptions = new CompositeSubscription();
@@ -52,26 +52,20 @@ public class GroupLifecycleManager {
     this.resubscription = resubscription;
   }
 
-  /**
-   * TODO
-   */
+  /** Call this method from your Activity or Fragment's onCreate method */
   public static GroupLifecycleManager onCreate(ObservableManager observableManager,
       LifecycleResubscription resubscription) {
     return onCreate(observableManager, resubscription, null, null);
   }
 
-  /**
-   * TODO
-   */
+  /** Call this method from your Activity or Fragment's onCreate method */
   public static GroupLifecycleManager onCreate(ObservableManager observableManager,
       @Nullable Bundle savedState, @Nullable Object target) {
     return onCreate(observableManager, new LifecycleResubscription(), savedState,
         target);
   }
 
-  /**
-   * TODO
-   */
+  /** Call this method from your Activity or Fragment's onCreate method */
   public static GroupLifecycleManager onCreate(ObservableManager observableManager,
       LifecycleResubscription resubscription, @Nullable Bundle savedState,
       @Nullable Object target) {
@@ -84,19 +78,14 @@ public class GroupLifecycleManager {
 
       Preconditions.checkState(state != null, "Must call onSaveInstanceState() first");
 
-      // First check the instance hashCode before restoring state. If it's not the same instance,
+      // First check the instance ID before restoring state. If it's not the same instance,
       // then we have to create a new group since the previous one is already destroyed.
       // Android can sometimes reuse the same instance after saving state and we can't reliably
       // determine when that happens. This is a workaround for that behavior.
-      if (state.managerHashCode != observableManager.hashCode()) {
+      if (state.managerId != observableManager.id()) {
         group = observableManager.newGroup();
       } else {
         group = observableManager.getGroup(state.groupId);
-        if (group.isDestroyed()) {
-          Log.w(TAG, "Tried to reuse GroupLifecycleManager with a destroyed group");
-          group = observableManager.newGroup();
-          shouldResubscribe = false;
-        }
       }
     } else {
       group = observableManager.newGroup();
@@ -114,9 +103,7 @@ public class GroupLifecycleManager {
     return manager;
   }
 
-  /**
-   * TODO
-   */
+  /** @return the {@link ObservableGroup} associated to this instance */
   public ObservableGroup group() {
     return group;
   }
@@ -186,9 +173,7 @@ public class GroupLifecycleManager {
     }
   }
 
-  /**
-   * TODO
-   */
+  /** Call this method from your Activity or Fragment's onDestroy method */
   public void onDestroy(@Nullable Activity activity) {
     // We need to track whether the current Activity is finishing or not in order to decide if we
     // should destroy the ObservableGroup. If the Activity is not finishing, then we should not
@@ -200,24 +185,18 @@ public class GroupLifecycleManager {
     onDestroy(!hasSavedState || activity != null && activity.isFinishing());
   }
 
-  /**
-   * TODO
-   */
+  /** Call this method from your Activity or Fragment's onDestroy method */
   public void onDestroy(Fragment fragment) {
     onDestroy(fragment.getActivity());
   }
 
-  /**
-   * TODO
-   */
+  /** Call this method from your Activity or Fragment's onResume method */
   public void onResume() {
     hasSavedState = false;
     unlock();
   }
 
-  /**
-   * TODO
-   */
+  /** Call this method from your Activity or Fragment's onPause method */
   public void onPause() {
     lock();
   }
@@ -230,20 +209,18 @@ public class GroupLifecycleManager {
     group.unlock();
   }
 
-  /**
-   * TODO
-   */
+  /** Call this method from your Activity or Fragment's onSaveInstanceState method */
   public void onSaveInstanceState(Bundle outState) {
     hasSavedState = true;
-    outState.putParcelable(KEY_STATE, new State(observableManager.hashCode(), group.id()));
+    outState.putParcelable(KEY_STATE, new State(observableManager.id(), group.id()));
   }
 
   static class State implements Parcelable {
-    final int managerHashCode;
+    final UUID managerId;
     final long groupId;
 
-    State(int managerHashCode, long groupId) {
-      this.managerHashCode = managerHashCode;
+    State(UUID managerId, long groupId) {
+      this.managerId = managerId;
       this.groupId = groupId;
     }
 
@@ -252,7 +229,7 @@ public class GroupLifecycleManager {
     }
 
     @Override public void writeToParcel(Parcel dest, int flags) {
-      dest.writeInt(managerHashCode);
+      dest.writeSerializable(managerId);
       dest.writeLong(groupId);
     }
 
@@ -264,7 +241,7 @@ public class GroupLifecycleManager {
 
       @Override
       public State createFromParcel(Parcel source) {
-        return new State(source.readInt(), source.readLong());
+        return new State((UUID) source.readSerializable(), source.readLong());
       }
     };
   }

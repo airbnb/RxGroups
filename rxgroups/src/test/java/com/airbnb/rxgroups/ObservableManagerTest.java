@@ -21,7 +21,7 @@ import static junit.framework.TestCase.fail;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class ObservableManagerTest {
-  ObservableManager observableManager = new ObservableManager();
+  private final ObservableManager observableManager = new ObservableManager();
 
   @Test public void testNewGroup() {
     ObservableGroup group = observableManager.newGroup();
