@@ -1,3 +1,7 @@
+# 0.3.2 (06/23/2016)
+
+* Fix: PR #18: GroupLifecycleManager crash when app is backgrounded
+
 # 0.3.1 (06/09/2016)
 
 * Fix: PR #15 - Look for `resubscriptionTag()` method in superclasses

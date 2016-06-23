@@ -29,9 +29,10 @@ automatically after `onDestroy()`.
 public class MyActivity extends Activity {
   private static final String OBSERVABLE_TAG = "arbitrary_tag";
   private TextView output;
+  private FloatingActionButton button;
   private GroupLifecycleManager groupLifecycleManager;
   private ObservableGroup observableGroup;
-  private Observable<Long> observable;
+  private Observable<Long> observable = Observable.interval(1, 1, TimeUnit.SECONDS);
 
   // The Observer field must be public, otherwise RxGroups can't access it
   @AutoResubscribe public final ResubscriptionObserver<Long> observer = new ResubscriptionObserver<Long>() {
@@ -55,14 +56,14 @@ public class MyActivity extends Activity {
   @Override protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
     setContentView(R.layout.activity_main);
-
     output = (TextView) findViewById(R.id.txt_output);
+    button = (FloatingActionButton) findViewById(R.id.fab);
     SampleApplication application = (SampleApplication) getApplication();
     ObservableManager manager = application.observableManager();
     groupLifecycleManager = GroupLifecycleManager.onCreate(manager, savedInstanceState, this);
     observableGroup = groupLifecycleManager.group();
 
-    myButton.setOnClickListener(v -> observable
+    button.setOnClickListener(v -> observable
         .compose(observableGroup.<Long>transform(OBSERVABLE_TAG))
         .observeOn(AndroidSchedulers.mainThread())
         .subscribe(observer));
@@ -118,7 +119,7 @@ associate the `Observer` with all the tags in the collection, allowing you to sh
 ### Download with Gradle
 
 ```groovy
-compile 'com.airbnb:rxgroups-android:0.3.1'
+compile 'com.airbnb:rxgroups-android:0.3.2'
 ```
 
 Check out the [Sample app](https://github.com/airbnb/RxGroups/blob/master/sample/src/main/java/com/airbnb/rxgroups/MainActivity.java) for more details and a complete example!
