@@ -63,7 +63,12 @@ class LifecycleResubscription {
 
     // Get all fields on the target object, including inherited fields
     while (shouldCheckClass(classToCheck)) {
-      list.addAll(Arrays.asList(classToCheck.getDeclaredFields()));
+      //noinspection OverlyBroadCatchBlock
+      try {
+        list.addAll(Arrays.asList(classToCheck.getDeclaredFields()));
+      } catch (Exception ignored) {
+        // ClassLoader.loadClass() can throw ClassNotFoundException
+      }
       classToCheck = classToCheck.getSuperclass();
     }
 
