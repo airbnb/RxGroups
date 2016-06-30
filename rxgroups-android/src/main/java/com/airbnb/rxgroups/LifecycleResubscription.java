@@ -67,7 +67,9 @@ class LifecycleResubscription {
       try {
         list.addAll(Arrays.asList(classToCheck.getDeclaredFields()));
       } catch (Exception ignored) {
-        // ClassLoader.loadClass() can throw ClassNotFoundException
+        // ClassLoader.loadClass() can throw ClassNotFoundException when a Class field type belongs
+        // to an Android API level newer than the current one. That is usually fine, but for some
+        // reason getDeclaredFields() tries to load that class and it fails.
       }
       classToCheck = classToCheck.getSuperclass();
     }
