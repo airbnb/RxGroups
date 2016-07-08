@@ -182,6 +182,9 @@ public class GroupLifecycleManager {
     // being destroyed and are not ever coming back. However, this isn't perfect, especially
     // when using fragments in a ViewPager. We might want to allow users to explicitly destroy it
     // instead, in order to mitigate this issue.
+    // Also in some situations it seems like an Activity can be recreated even though its
+    // isFinishing() property is set to true. For this reason, we must also check
+    // isChangingConfigurations() to make sure it's safe to destroy the group.
     onDestroy(!hasSavedState
         || (activity != null && activity.isFinishing() && !activity.isChangingConfigurations()));
   }
