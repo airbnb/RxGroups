@@ -1,3 +1,7 @@
+# 0.3.4 (07/11/2016)
+
+* Fix: Prevent crash when Activity is recreated after it's finished and is changing configurations.
+
 # 0.3.3 (06/30/2016)
 
 * Fix: Catch exceptions from reflective call in `LifecycleResubscription#fields()`
