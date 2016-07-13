@@ -1,3 +1,7 @@
+# 0.3.5 (07/13/2016)
+
+* Fix: Correctly catch `NoClassDefFoundError` in `LifecycleResubscription`
+
 # 0.3.4 (07/11/2016)
 
 * Fix: Prevent crash when Activity is recreated after it's finished and is changing configurations.

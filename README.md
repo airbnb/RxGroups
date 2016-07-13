@@ -119,7 +119,7 @@ associate the `Observer` with all the tags in the collection, allowing you to sh
 ### Download with Gradle
 
 ```groovy
-compile 'com.airbnb:rxgroups-android:0.3.4'
+compile 'com.airbnb:rxgroups-android:0.3.5'
 ```
 
 Check out the [Sample app](https://github.com/airbnb/RxGroups/blob/master/sample/src/main/java/com/airbnb/rxgroups/MainActivity.java) for more details and a complete example!
