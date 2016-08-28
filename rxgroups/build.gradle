@@ -15,7 +15,7 @@ project.group = GROUP
 project.version = VERSION_NAME
 
 dependencies {
-  compile 'io.reactivex:rxjava:1.1.5'
+  compile 'io.reactivex:rxjava:1.1.9'
   compile 'com.google.code.findbugs:jsr305:3.0.0'
 
   testCompile 'junit:junit:4.12'

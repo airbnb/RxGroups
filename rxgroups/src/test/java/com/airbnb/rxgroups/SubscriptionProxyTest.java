@@ -22,7 +22,6 @@ import java.util.concurrent.TimeUnit;
 import rx.Observable;
 import rx.Subscriber;
 import rx.functions.Action0;
-import rx.observers.TestSubscriber;
 import rx.subjects.PublishSubject;
 import rx.subjects.ReplaySubject;
 import rx.subscriptions.Subscriptions;
@@ -33,9 +32,9 @@ public class SubscriptionProxyTest {
   @Test public void testInitialState() {
     Observable<Integer> observable = Observable.create(new Observable.OnSubscribe<Integer>() {
       @Override
-      public void call(Subscriber<? super Integer> subscriber) {
-        subscriber.onNext(1234);
-        subscriber.onCompleted();
+      public void call(Subscriber<? super Integer> observer) {
+        observer.onNext(1234);
+        observer.onCompleted();
       }
     });
     SubscriptionProxy<Integer> proxy = SubscriptionProxy.create(observable);
@@ -44,11 +43,11 @@ public class SubscriptionProxyTest {
   }
 
   @Test public void testSubscriptionState() {
-    TestSubscriber<String> subscriber = new TestSubscriber<>();
+    TestObserver<String> observer = new TestObserver<>();
     PublishSubject<String> subject = PublishSubject.create();
     SubscriptionProxy<String> proxy = SubscriptionProxy.create(subject);
 
-    proxy.subscribe(subscriber);
+    proxy.subscribe(observer);
     assertThat(proxy.isUnsubscribed()).isEqualTo(false);
     assertThat(proxy.isCancelled()).isEqualTo(false);
 
@@ -64,40 +63,40 @@ public class SubscriptionProxyTest {
   }
 
   @Test public void testSubscribe() {
-    TestSubscriber<Integer> subscriber = new TestSubscriber<>();
+    TestObserver<Integer> observer = new TestObserver<>();
     Observable<Integer> observable = Observable.create(new Observable.OnSubscribe<Integer>() {
       @Override
-      public void call(Subscriber<? super Integer> subscriber) {
-        subscriber.onNext(1234);
-        subscriber.onCompleted();
+      public void call(Subscriber<? super Integer> observer) {
+        observer.onNext(1234);
+        observer.onCompleted();
       }
     });
     SubscriptionProxy<Integer> proxy = SubscriptionProxy.create(observable);
 
-    proxy.subscribe(subscriber);
+    proxy.subscribe(observer);
 
-    subscriber.assertCompleted();
-    subscriber.assertValue(1234);
+    observer.assertCompleted();
+    observer.assertValue(1234);
   }
 
   @Test public void testUnsubscribe() {
-    TestSubscriber<String> subscriber = new TestSubscriber<>();
+    TestObserver<String> observer = new TestObserver<>();
     PublishSubject<String> subject = PublishSubject.create();
     SubscriptionProxy<String> proxy = SubscriptionProxy.create(subject);
 
-    proxy.subscribe(subscriber);
+    proxy.subscribe(observer);
     proxy.unsubscribe();
 
     subject.onNext("Avanti!");
     subject.onCompleted();
 
     assertThat(proxy.isUnsubscribed()).isEqualTo(true);
-    subscriber.awaitTerminalEvent(10, TimeUnit.MILLISECONDS);
-    subscriber.assertNotCompleted();
-    subscriber.assertNoValues();
+    observer.awaitTerminalEvent(10, TimeUnit.MILLISECONDS);
+    observer.assertNotCompleted();
+    observer.assertNoValues();
   }
 
-  static class TestOnUnsubscribe implements Action0 {
+  private static class TestOnUnsubscribe implements Action0 {
     boolean called = false;
 
     @Override public void call() {
@@ -106,16 +105,16 @@ public class SubscriptionProxyTest {
   }
 
   @Test public void testCancelShouldUnsubscribeFromSourceObservable() {
-    TestSubscriber<String> subscriber = new TestSubscriber<>();
+    TestObserver<String> observer = new TestObserver<>();
     final TestOnUnsubscribe onUnsubscribe = new TestOnUnsubscribe();
     Observable<String> observable = Observable.create(new Observable.OnSubscribe<String>() {
-      @Override public void call(final Subscriber<? super String> subscriber) {
-        subscriber.add(Subscriptions.create(onUnsubscribe));
+      @Override public void call(final Subscriber<? super String> observer) {
+        observer.add(Subscriptions.create(onUnsubscribe));
       }
     });
     SubscriptionProxy<String> proxy = SubscriptionProxy.create(observable);
 
-    proxy.subscribe(subscriber);
+    proxy.subscribe(observer);
     proxy.cancel();
 
     assertThat(proxy.isUnsubscribed()).isEqualTo(true);
@@ -124,16 +123,16 @@ public class SubscriptionProxyTest {
   }
 
   @Test public void testUnsubscribeShouldNotUnsubscribeFromSourceObservable() {
-    TestSubscriber<String> subscriber = new TestSubscriber<>();
+    TestObserver<String> observer = new TestObserver<>();
     final TestOnUnsubscribe onUnsubscribe = new TestOnUnsubscribe();
     Observable<String> observable = Observable.create(new Observable.OnSubscribe<String>() {
-      @Override public void call(final Subscriber<? super String> subscriber) {
-        subscriber.add(Subscriptions.create(onUnsubscribe));
+      @Override public void call(final Subscriber<? super String> observer) {
+        observer.add(Subscriptions.create(onUnsubscribe));
       }
     }).share();
     SubscriptionProxy<String> proxy = SubscriptionProxy.create(observable);
 
-    proxy.subscribe(subscriber);
+    proxy.subscribe(observer);
     proxy.unsubscribe();
 
     assertThat(proxy.isUnsubscribed()).isEqualTo(true);
@@ -142,41 +141,41 @@ public class SubscriptionProxyTest {
   }
 
   @Test public void testUnsubscribeBeforeEmit() {
-    TestSubscriber<String> subscriber = new TestSubscriber<>();
+    TestObserver<String> observer = new TestObserver<>();
     ReplaySubject<String> subject = ReplaySubject.create();
     SubscriptionProxy<String> proxy = SubscriptionProxy.create(subject);
 
-    proxy.subscribe(subscriber);
+    proxy.subscribe(observer);
     proxy.unsubscribe();
 
-    subscriber.assertNotCompleted();
-    subscriber.assertNoValues();
+    observer.assertNotCompleted();
+    observer.assertNoValues();
 
     subject.onNext("Avanti!");
     subject.onCompleted();
 
-    proxy.subscribe(subscriber);
-    subscriber.assertCompleted();
-    subscriber.assertValue("Avanti!");
+    proxy.subscribe(observer);
+    observer.assertCompleted();
+    observer.assertValue("Avanti!");
   }
 
   @Test public void shouldCacheResultsWhileUnsubscribedAndDeliverAfterResubscription() {
-    TestSubscriber<String> subscriber = new TestSubscriber<>();
+    TestObserver<String> observer = new TestObserver<>();
     ReplaySubject<String> subject = ReplaySubject.create();
     SubscriptionProxy<String> proxy = SubscriptionProxy.create(subject);
 
-    proxy.subscribe(subscriber);
+    proxy.subscribe(observer);
     proxy.unsubscribe();
 
-    subscriber.assertNoValues();
+    observer.assertNoValues();
 
     subject.onNext("Avanti!");
     subject.onCompleted();
 
-    proxy.subscribe(subscriber);
+    proxy.subscribe(observer);
 
-    subscriber.awaitTerminalEvent(3, TimeUnit.SECONDS);
-    subscriber.assertValue("Avanti!");
+    observer.awaitTerminalEvent(3, TimeUnit.SECONDS);
+    observer.assertValue("Avanti!");
   }
 
   @Test public void shouldRedeliverSameResultsToDifferentSubscriber() {
@@ -184,59 +183,59 @@ public class SubscriptionProxyTest {
     // Observable to a new Observer, which is a member of the new activity instance. In this
     // case, we may want to redeliver any previous results (if the request is still being
     // managed by ObservableManager).
-    TestSubscriber<String> subscriber = new TestSubscriber<>();
+    TestObserver<String> observer = new TestObserver<>();
     ReplaySubject<String> subject = ReplaySubject.create();
     SubscriptionProxy<String> proxy = SubscriptionProxy.create(subject);
 
-    proxy.subscribe(subscriber);
+    proxy.subscribe(observer);
 
     subject.onNext("Avanti!");
     subject.onCompleted();
 
     proxy.unsubscribe();
 
-    TestSubscriber<String> newSubscriber = new TestSubscriber<>();
+    TestObserver<String> newSubscriber = new TestObserver<>();
     proxy.subscribe(newSubscriber);
 
     newSubscriber.awaitTerminalEvent(3, TimeUnit.SECONDS);
     newSubscriber.assertCompleted();
     newSubscriber.assertValue("Avanti!");
 
-    subscriber.assertCompleted();
-    subscriber.assertValue("Avanti!");
+    observer.assertCompleted();
+    observer.assertValue("Avanti!");
   }
 
   @Test public void multipleSubscribesForSameObserverShouldBeIgnored() {
-    TestSubscriber<String> subscriber = new TestSubscriber<>();
+    TestObserver<String> observer = new TestObserver<>();
     PublishSubject<String> subject = PublishSubject.create();
     SubscriptionProxy<String> proxy = SubscriptionProxy.create(subject);
 
-    proxy.subscribe(subscriber);
-    proxy.subscribe(subscriber);
+    proxy.subscribe(observer);
+    proxy.subscribe(observer);
     proxy.unsubscribe();
 
     subject.onNext("Avanti!");
     subject.onCompleted();
 
     assertThat(proxy.isUnsubscribed()).isEqualTo(true);
-    subscriber.awaitTerminalEvent(10, TimeUnit.MILLISECONDS);
-    subscriber.assertNotCompleted();
-    subscriber.assertNoValues();
+    observer.awaitTerminalEvent(10, TimeUnit.MILLISECONDS);
+    observer.assertNotCompleted();
+    observer.assertNoValues();
   }
 
   @Test public void shouldKeepDeliveringEventsAfterResubscribed() {
-    TestSubscriber<String> subscriber = new TestSubscriber<>();
+    TestObserver<String> observer = new TestObserver<>();
     ReplaySubject<String> subject = ReplaySubject.create();
     SubscriptionProxy<String> proxy = SubscriptionProxy.create(subject);
 
-    proxy.subscribe(subscriber);
+    proxy.subscribe(observer);
     subject.onNext("Avanti 1");
     proxy.unsubscribe();
-    subscriber = new TestSubscriber<>();
-    proxy.subscribe(subscriber);
+    observer = new TestObserver<>();
+    proxy.subscribe(observer);
 
     subject.onNext("Avanti!");
 
-    subscriber.assertValues("Avanti 1", "Avanti!");
+    observer.assertValues("Avanti 1", "Avanti!");
   }
 }
