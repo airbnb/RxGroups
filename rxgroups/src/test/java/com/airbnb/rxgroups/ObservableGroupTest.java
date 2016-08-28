@@ -19,7 +19,6 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.io.IOException;
-import java.util.Collections;
 
 import rx.Observable;
 import rx.Observer;
@@ -218,14 +217,13 @@ public class ObservableGroupTest {
     subject.onNext("Hello World");
     subject.onCompleted();
 
-    assertThat(testObserver.getOnCompletedEvents()).isEmpty();
-    assertThat(testObserver.getOnNextEvents()).isEmpty();
+    testObserver.assertNotCompleted();
+    testObserver.assertNoValues();
 
     group.<String>observable("foo").subscribe(testObserver);
 
     testObserver.assertCompleted();
-    assertThat(testObserver.getOnNextEvents())
-        .isEqualTo(Collections.singletonList("Hello World"));
+    testObserver.assertValue("Hello World");
     assertThat(group.hasObservable("foo")).isEqualTo(false);
   }
 
@@ -419,7 +417,7 @@ public class ObservableGroupTest {
 
     testObserver.assertTerminalEvent();
     testObserver.assertNoErrors();
-    testObserver.assertReceivedOnNext(Collections.singletonList("Chespirito"));
+    testObserver.assertValue("Chespirito");
     assertThat(group.hasObservable("tag")).isEqualTo(false);
   }
 

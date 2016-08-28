@@ -13,8 +13,8 @@ import rx.exceptions.CompositeException;
 
 class TestObserver<T> implements Observer<T> {
   private final Observer<T> delegate;
-  private final List<T> onNextEvents = new ArrayList<T>();
-  private final List<Throwable> onErrorEvents = new ArrayList<Throwable>();
+  private final List<T> onNextEvents = new ArrayList<>();
+  private final List<Throwable> onErrorEvents = new ArrayList<>();
   private final List<Notification<T>> onCompletedEvents = new ArrayList<>();
   private final CountDownLatch latch = new CountDownLatch(1);
 
@@ -275,6 +275,5 @@ class TestObserver<T> implements Observer<T> {
     @Override public void onNext(Object t) {
       // deliberately ignored
     }
-
   };
 }
