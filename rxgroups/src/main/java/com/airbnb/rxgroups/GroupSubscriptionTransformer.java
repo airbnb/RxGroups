@@ -15,9 +15,10 @@
  */
 package com.airbnb.rxgroups;
 
+import rx.AsyncEmitter;
 import rx.Observable;
 import rx.Observer;
-import rx.Subscriber;
+import rx.functions.Action1;
 
 /**
  * Transforms an existing {@link Observable} by returning a new {@link Observable} that is
@@ -34,28 +35,22 @@ class GroupSubscriptionTransformer<T> implements Observable.Transformer<T, T> {
   }
 
   @Override public Observable<T> call(final Observable<T> observable) {
-    return Observable.<T>create(new Observable.OnSubscribe<T>() {
-      @Override public void call(final Subscriber<? super T> subscriber) {
+    return Observable.fromAsync(new Action1<AsyncEmitter<T>>() {
+      @Override public void call(final AsyncEmitter<T> emitter) {
         group.add(tag, observable, new Observer<T>() {
           @Override public void onCompleted() {
-            if (!subscriber.isUnsubscribed()) {
-              subscriber.onCompleted();
-            }
+            emitter.onCompleted();
           }
 
           @Override public void onError(Throwable e) {
-            if (!subscriber.isUnsubscribed()) {
-              subscriber.onError(e);
-            }
+            emitter.onError(e);
           }
 
           @Override public void onNext(T t) {
-            if (!subscriber.isUnsubscribed()) {
-              subscriber.onNext(t);
-            }
+            emitter.onNext(t);
           }
         });
       }
-    });
+    }, AsyncEmitter.BackpressureMode.BUFFER);
   }
 }
