@@ -35,7 +35,7 @@ class GroupSubscriptionTransformer<T> implements Observable.Transformer<T, T> {
   }
 
   @Override public Observable<T> call(final Observable<T> observable) {
-    return Observable.fromAsync(new Action1<AsyncEmitter<T>>() {
+    return Observable.fromEmitter(new Action1<AsyncEmitter<T>>() {
       @Override public void call(final AsyncEmitter<T> emitter) {
         group.add(tag, observable, new Observer<T>() {
           @Override public void onCompleted() {
