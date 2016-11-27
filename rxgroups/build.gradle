@@ -17,6 +17,8 @@ project.version = VERSION_NAME
 dependencies {
   compile 'io.reactivex:rxjava:1.2.6'
   compile 'com.google.code.findbugs:jsr305:3.0.0'
+  compile 'com.google.auto.service:auto-service:1.0-rc2'
+  compile 'com.squareup:javapoet:1.8.0'
 
   testCompile 'junit:junit:4.12'
   testCompile 'org.assertj:assertj-core:1.7.0'

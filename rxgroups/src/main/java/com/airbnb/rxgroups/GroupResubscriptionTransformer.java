@@ -19,19 +19,16 @@ import rx.Observable;
 import rx.Subscriber;
 
 class GroupResubscriptionTransformer<T> implements Observable.Transformer<T, T> {
-  private final ObservableGroup group;
   private final ManagedObservable<T> managedObservable;
 
-  GroupResubscriptionTransformer(
-      ObservableGroup group, ManagedObservable<T> managedObservable) {
-    this.group = group;
+  GroupResubscriptionTransformer(ManagedObservable<T> managedObservable) {
     this.managedObservable = managedObservable;
   }
 
   @Override public Observable<T> call(final Observable<T> observable) {
-    return Observable.<T>create(new Observable.OnSubscribe<T>() {
+    return Observable.create(new Observable.OnSubscribe<T>() {
       @Override public void call(Subscriber<? super T> subscriber) {
-        group.resubscribe(managedObservable, observable, subscriber);
+        managedObservable.resubscribe(observable, subscriber);
       }
     });
   }

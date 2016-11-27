@@ -37,7 +37,7 @@ public class ObservableGroupTest {
 
   @Test public void shouldNotHaveObservable() {
     ObservableGroup group = observableManager.newGroup();
-    assertThat(group.hasObservable("test")).isEqualTo(false);
+    assertThat(group.hasObservables("test")).isEqualTo(false);
   }
 
   @Test public void shouldAddRequestById() {
@@ -47,9 +47,9 @@ public class ObservableGroupTest {
 
     group.add("foo", observable, new TestObserver<>());
 
-    assertThat(group.hasObservable("foo")).isEqualTo(true);
-    assertThat(group2.hasObservable("foo")).isEqualTo(false);
-    assertThat(group.hasObservable("bar")).isEqualTo(false);
+    assertThat(group.hasObservables("foo")).isEqualTo(true);
+    assertThat(group2.hasObservables("foo")).isEqualTo(false);
+    assertThat(group.hasObservables("bar")).isEqualTo(false);
   }
 
   @Test public void shouldNotBeCompleted() {
@@ -98,16 +98,16 @@ public class ObservableGroupTest {
     TestObserver<String> subscriber2 = new TestObserver<>();
 
     group.add("tag", observable1, subscriber1);
-    assertThat(group.hasObservable("tag")).isEqualTo(true);
-    assertThat(group.hasObservable("foo")).isEqualTo(false);
-    assertThat(group2.hasObservable("tag")).isEqualTo(false);
-    assertThat(group2.hasObservable("foo")).isEqualTo(false);
+    assertThat(group.hasObservables("tag")).isEqualTo(true);
+    assertThat(group.hasObservables("foo")).isEqualTo(false);
+    assertThat(group2.hasObservables("tag")).isEqualTo(false);
+    assertThat(group2.hasObservables("foo")).isEqualTo(false);
 
     group2.add("foo", observable2, subscriber2);
-    assertThat(group.hasObservable("tag")).isEqualTo(true);
-    assertThat(group.hasObservable("foo")).isEqualTo(false);
-    assertThat(group2.hasObservable("tag")).isEqualTo(false);
-    assertThat(group2.hasObservable("foo")).isEqualTo(true);
+    assertThat(group.hasObservables("tag")).isEqualTo(true);
+    assertThat(group.hasObservables("foo")).isEqualTo(false);
+    assertThat(group2.hasObservables("tag")).isEqualTo(false);
+    assertThat(group2.hasObservables("foo")).isEqualTo(true);
   }
 
   @Test public void shouldClearObservablesByGroupId() {
@@ -122,14 +122,14 @@ public class ObservableGroupTest {
 
     observableManager.destroy(group);
 
-    assertThat(group.hasObservable("foo")).isEqualTo(false);
-    assertThat(group2.hasObservable("foo")).isEqualTo(true);
+    assertThat(group.hasObservables("foo")).isEqualTo(false);
+    assertThat(group2.hasObservables("foo")).isEqualTo(true);
     assertThat(group.subscription("foo")).isNull();
     assertThat(group2.subscription("foo").isCancelled()).isEqualTo(false);
 
     observableManager.destroy(group2);
-    assertThat(group.hasObservable("foo")).isEqualTo(false);
-    assertThat(group2.hasObservable("foo")).isEqualTo(false);
+    assertThat(group.hasObservables("foo")).isEqualTo(false);
+    assertThat(group2.hasObservables("foo")).isEqualTo(false);
     assertThat(group.subscription("foo")).isNull();
     assertThat(group2.subscription("foo")).isNull();
   }
@@ -147,8 +147,8 @@ public class ObservableGroupTest {
     group.unsubscribe();
     observableManager.destroy(group);
 
-    assertThat(group.hasObservable("foo")).isEqualTo(false);
-    assertThat(group.hasObservable("bar")).isEqualTo(false);
+    assertThat(group.hasObservables("foo")).isEqualTo(false);
+    assertThat(group.hasObservables("bar")).isEqualTo(false);
   }
 
   @Test public void shouldClearQueuedResults() throws Exception {
@@ -162,7 +162,7 @@ public class ObservableGroupTest {
     subject.onCompleted();
     observableManager.destroy(group);
 
-    assertThat(group.hasObservable("foo")).isEqualTo(false);
+    assertThat(group.hasObservables("foo")).isEqualTo(false);
   }
 
   @Test public void shouldRemoveObservablesAfterTermination() throws Exception {
@@ -175,7 +175,7 @@ public class ObservableGroupTest {
     subject.onCompleted();
 
     subscriber.assertCompleted();
-    assertThat(group.hasObservable("foo")).isEqualTo(false);
+    assertThat(group.hasObservables("foo")).isEqualTo(false);
   }
 
   @Test public void shouldRemoveResponseAfterErrorDelivery() throws InterruptedException {
@@ -189,7 +189,7 @@ public class ObservableGroupTest {
 
     testObserver.assertError(Exception.class);
 
-    assertThat(group.hasObservable("foo")).isEqualTo(false);
+    assertThat(group.hasObservables("foo")).isEqualTo(false);
   }
 
   @Test public void shouldNotDeliverResultWhileUnsubscribed() throws Exception {
@@ -204,7 +204,7 @@ public class ObservableGroupTest {
     subject.onCompleted();
 
     testObserver.assertNotCompleted();
-    assertThat(group.hasObservable("foo")).isEqualTo(true);
+    assertThat(group.hasObservables("foo")).isEqualTo(true);
   }
 
   @Test public void shouldDeliverQueuedEventsWhenResubscribed() throws Exception {
@@ -224,7 +224,7 @@ public class ObservableGroupTest {
 
     testObserver.assertCompleted();
     testObserver.assertValue("Hello World");
-    assertThat(group.hasObservable("foo")).isEqualTo(false);
+    assertThat(group.hasObservables("foo")).isEqualTo(false);
   }
 
   @Test public void shouldDeliverQueuedErrorWhenResubscribed() throws Exception {
@@ -244,7 +244,7 @@ public class ObservableGroupTest {
     group.<String>observable("foo").subscribe(testObserver);
 
     testObserver.assertError(Exception.class);
-    assertThat(group.hasObservable("foo")).isEqualTo(false);
+    assertThat(group.hasObservables("foo")).isEqualTo(false);
   }
 
   @Test public void shouldNotDeliverEventsWhenResubscribedIfLocked() {
@@ -268,7 +268,7 @@ public class ObservableGroupTest {
     testObserver.assertCompleted();
     testObserver.assertNoErrors();
     testObserver.assertValue("Hello World");
-    assertThat(group.hasObservable("foo")).isEqualTo(false);
+    assertThat(group.hasObservables("foo")).isEqualTo(false);
   }
 
   @Test public void shouldUnsubscribeByContext() throws Exception {
@@ -287,7 +287,7 @@ public class ObservableGroupTest {
     testObserver.assertNoErrors();
     testObserver.assertValue("Gremio Foot-ball Porto Alegrense");
 
-    assertThat(group2.hasObservable("foo")).isEqualTo(false);
+    assertThat(group2.hasObservables("foo")).isEqualTo(false);
   }
 
   @Test public void shouldNotDeliverEventsAfterCancelled() throws Exception {
@@ -302,7 +302,7 @@ public class ObservableGroupTest {
     subject.onCompleted();
 
     testObserver.assertNotCompleted();
-    assertThat(group.hasObservable("foo")).isEqualTo(false);
+    assertThat(group.hasObservables("foo")).isEqualTo(false);
   }
 
   @Test public void shouldNotRemoveSubscribersForOtherIds() throws Exception {
@@ -363,8 +363,8 @@ public class ObservableGroupTest {
 
     testSubscriber1.assertNotCompleted();
     testSubscriber2.assertNotCompleted();
-    assertThat(group.hasObservable("foo")).isEqualTo(true);
-    assertThat(group.hasObservable("bar")).isEqualTo(true);
+    assertThat(group.hasObservables("foo")).isEqualTo(true);
+    assertThat(group.hasObservables("bar")).isEqualTo(true);
   }
 
   @Test public void shouldNotDeliverResultWhileLocked() throws Exception {
@@ -380,7 +380,7 @@ public class ObservableGroupTest {
 
     testObserver.assertNotCompleted();
     testObserver.assertNoValues();
-    assertThat(group.hasObservable("tag")).isEqualTo(true);
+    assertThat(group.hasObservables("tag")).isEqualTo(true);
   }
 
   @Test public void shouldAutoResubscribeAfterUnlock() throws InterruptedException {
@@ -399,7 +399,7 @@ public class ObservableGroupTest {
     testObserver.assertCompleted();
     testObserver.assertNoErrors();
     testObserver.assertValue("Chespirito");
-    assertThat(group.hasObservable("tag")).isEqualTo(false);
+    assertThat(group.hasObservables("tag")).isEqualTo(false);
   }
 
   @Test public void shouldAutoResubscribeAfterLockAndUnlock() {
@@ -418,7 +418,7 @@ public class ObservableGroupTest {
     testObserver.assertTerminalEvent();
     testObserver.assertNoErrors();
     testObserver.assertValue("Chespirito");
-    assertThat(group.hasObservable("tag")).isEqualTo(false);
+    assertThat(group.hasObservables("tag")).isEqualTo(false);
   }
 
   @Test public void testUnsubscribeWhenLocked() {
@@ -437,7 +437,7 @@ public class ObservableGroupTest {
 
     testObserver.assertNotCompleted();
     testObserver.assertNoValues();
-    assertThat(group.hasObservable("tag")).isEqualTo(true);
+    assertThat(group.hasObservables("tag")).isEqualTo(true);
   }
 
   @Test public void testAddThrowsAfterDestroyed() {
@@ -472,7 +472,7 @@ public class ObservableGroupTest {
     group.add("foo", observable2, observer2);
 
     assertThat(group.subscription("foo").isCancelled()).isEqualTo(false);
-    assertThat(group.hasObservable("foo")).isEqualTo(true);
+    assertThat(group.hasObservables("foo")).isEqualTo(true);
 
     observable2.onNext("Hello World");
     observable2.onCompleted();
