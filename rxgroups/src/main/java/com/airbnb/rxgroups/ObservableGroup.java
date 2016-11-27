@@ -21,7 +21,6 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import rx.Observable;
 import rx.Observer;
-import rx.Subscriber;
 import rx.functions.Action0;
 import rx.functions.Action1;
 
@@ -87,6 +86,7 @@ public class ObservableGroup {
         Map<String, ManagedObservable<?>> map = groupMap.get(observerTag);
         if (map == null) {
             map = new HashMap<>();
+            // TODO: (eli_hart 11/26/16) Is there a better data structure than hashmap?
             groupMap.put(observerTag, map);
         }
         return map;
@@ -105,18 +105,6 @@ public class ObservableGroup {
         return new GroupSubscriptionTransformer<>(this, observer.tag, null);
     }
 
-    public <T> Observable.Transformer<? super T, T> transform(String observerTag) {
-        return new GroupSubscriptionTransformer<>(this, observerTag, null);
-    }
-
-    private void forAllObservables(Action1<ManagedObservable<?>> action){
-        for (Map<String, ManagedObservable<?>> observableMap : groupMap.values()) {
-            for (ManagedObservable<?> managedObservable : observableMap.values()) {
-                action.call(managedObservable);
-            }
-        }
-    }
-
   /**
    * Cancels all subscriptions and releases references to Observables and Observers. No more
    * Observables can be added to this group after it has been destroyed and it becomes unusable.
@@ -132,6 +120,14 @@ public class ObservableGroup {
     }
     groupMap.clear();
   }
+
+    private void forAllObservables(Action1<ManagedObservable<?>> action){
+        for (Map<String, ManagedObservable<?>> observableMap : groupMap.values()) {
+            for (ManagedObservable<?> managedObservable : observableMap.values()) {
+                action.call(managedObservable);
+            }
+        }
+    }
 
   /**
    * Locks (prevents) Observables added to this group from emitting new events. Observables added
@@ -167,7 +163,7 @@ public class ObservableGroup {
   /**
    * Unsubscribes from all Observables managed by this group. Also clears any references to existing
    * {@link Observer} objects in order to avoid leaks. This does not disconnect from the upstream
-   * Observable, so it can be resumed upon calling {@link #observable(String)} if needed.
+   * Observable, so it can be resumed upon calling {@link #observable(AutoResubscribingObserver)} if needed.
    */
   public void unsubscribe() {
       forAllObservables(new Action1<ManagedObservable<?>>() {
@@ -184,25 +180,21 @@ public class ObservableGroup {
    * already emitted events, they will be immediately delivered. If it is locked then no events
    * will be delivered until it is unlocked.
    */
-  public <T> Observable<T> observable(String observerTag) {
-      return observable(observerTag, null);
-  }
-
     public <T> Observable<T> observable(AutoResubscribingObserver<? super T> observer) {
-        return observable(observer.tag, null);
+        return observable(observer, null);
     }
 
     public <T> Observable<T> observable(AutoResubscribingObserver<? super T> observer, String observableTag) {
-        return observable(observer.tag, observableTag);
-    }
-
-    public <T> Observable<T> observable(String observerTag, String observableTag) {
         checkNotDestroyed();
-        Map<String, ManagedObservable<?>> observables = getObservablesForObserver(observerTag);
+        Map<String, ManagedObservable<?>> observables = getObservablesForObserver(observer.tag);
         //noinspection unchecked
         ManagedObservable<T> managedObservable = (ManagedObservable<T>) observables.get(observableTag);
+        if (managedObservable == null) {
+            throw new IllegalStateException("No observable exists for observer: " + observer.tag + " and observable: " + observableTag);
+        }
+
         Observable<T> observable = managedObservable.observable();
-        return observable.compose(new GroupResubscriptionTransformer<>(this, managedObservable));
+        return observable.compose(new GroupResubscriptionTransformer<>(managedObservable));
     }
 
 
@@ -216,10 +208,12 @@ public class ObservableGroup {
       return observables.get(observableTag);
   }
 
-  <T> void resubscribe(ManagedObservable<T> managedObservable, Observable<T> observable,
-      Subscriber<? super T> subscriber) {
-    managedObservable.resubscribe(observable, subscriber);
-  }
+   <T> void resubscribe(AutoResubscribingObserver<? super T> observer) {
+        Map<String, ManagedObservable<?>> observables = getObservablesForObserver(observer);
+        for (String observableTag : observables.keySet()) {
+            observable(observer, observableTag).subscribe(observer);
+        }
+    }
 
   /**
    * Removes the supplied {@link Observable} from this group and cancels it subscription. No more
@@ -234,15 +228,19 @@ public class ObservableGroup {
         cancelAndRemove(observer.tag, null);
     }
 
-    public void cancelAndRemove(String observerTag) {
-        cancelAndRemove(observerTag, null);
+    public void cancelAllObservablesForObserver(AutoResubscribingObserver<?> observer) {
+        Map<String, ManagedObservable<?>> observables = getObservablesForObserver(observer);
+        for (ManagedObservable<?> managedObservable : observables.values()) {
+            managedObservable.cancel();
+        }
+        observables.clear();
     }
 
   /**
    * Removes the supplied {@link Observable} from this group and cancels it subscription. No more
    * events will be delivered to its subscriber.
    */
-  public void cancelAndRemove(String observerTag, String observableTag) {
+  private void cancelAndRemove(String observerTag, String observableTag) {
       Map<String, ManagedObservable<?>> observables = getObservablesForObserver(observerTag);
       ManagedObservable<?> managedObservable = observables.get(observableTag);
       if (managedObservable != null) {
@@ -255,6 +253,10 @@ public class ObservableGroup {
   public boolean hasObservable(AutoResubscribingObserver<?> observer, String observableTag) {
       return subscription(observer, observableTag) != null;
   }
+
+    public boolean hasObservables(AutoResubscribingObserver<?> observer) {
+        return !getObservablesForObserver(observer).isEmpty();
+    }
 
   /** Returns whether this group has been already destroyed or not. */
   public boolean isDestroyed() {
