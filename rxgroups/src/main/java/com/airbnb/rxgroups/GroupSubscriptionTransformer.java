@@ -22,22 +22,24 @@ import rx.functions.Action1;
 
 /**
  * Transforms an existing {@link Observable} by returning a new {@link Observable} that is
- * automatically added to the provided {@link ObservableGroup} with the specified {@code tag} when
+ * automatically added to the provided {@link ObservableGroup} with the specified {@code observableTag} when
  * subscribed to.
  */
 class GroupSubscriptionTransformer<T> implements Observable.Transformer<T, T> {
   private final ObservableGroup group;
-  private final String tag;
+  private final String observableTag;
+  private final String observerTag;
 
-  GroupSubscriptionTransformer(ObservableGroup group, String tag) {
+  GroupSubscriptionTransformer(ObservableGroup group, String observerTag, String observableTag) {
     this.group = group;
-    this.tag = tag;
+    this.observableTag = observableTag;
+    this.observerTag = observerTag;
   }
 
   @Override public Observable<T> call(final Observable<T> observable) {
     return Observable.fromEmitter(new Action1<AsyncEmitter<T>>() {
       @Override public void call(final AsyncEmitter<T> emitter) {
-        group.add(tag, observable, new Observer<T>() {
+        group.add(observerTag, observableTag, observable, new Observer<T>() {
           @Override public void onCompleted() {
             emitter.onCompleted();
           }
