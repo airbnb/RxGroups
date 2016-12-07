@@ -31,8 +31,8 @@ class ManagedObservable<T> implements RequestSubscription {
   private Observable<T> observable;
   private Observer<? super T> observer;
 
-  ManagedObservable(String observerTag, String observableTag, Observable<T> observable, Observer<? super T> observer,
-                    Action0 onTerminate) {
+  ManagedObservable(String observerTag, String observableTag, Observable<T> observable,
+                    Observer<? super T> observer, Action0 onTerminate) {
     this.observableTag = observableTag;
     this.observerTag = observerTag;
     this.observer = observer;
@@ -86,9 +86,9 @@ class ManagedObservable<T> implements RequestSubscription {
 
   @Override
   public String toString() {
-    return "ManagedObservable{" + "observableTag='" + observableTag + '\'' +
-            ", observerTag='" + observerTag + '\'' +
-            ", locked=" + locked +
-            '}';
+    return "ManagedObservable{" + "observableTag='" + observableTag + '\''
+        + ", observerTag='" + observerTag + '\''
+        + ", locked=" + locked
+        + '}';
   }
 }

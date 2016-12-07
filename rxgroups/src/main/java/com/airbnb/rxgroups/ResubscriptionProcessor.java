@@ -85,7 +85,8 @@ public class ResubscriptionProcessor extends AbstractProcessor {
         return true;
     }
 
-    private void processObserver(Element observer, LinkedHashMap<TypeElement, ClassToGenerateInfo> info) throws ResubscriptionProcessorException {
+    private void processObserver(Element observer, LinkedHashMap<TypeElement,
+            ClassToGenerateInfo> info) throws ResubscriptionProcessorException {
         validateAccessibleViaGeneratedCode(observer);
         TypeElement enclosingClass = (TypeElement) observer.getEnclosingElement();
         ClassToGenerateInfo targetClass = getOrCreateTargetClass(info, enclosingClass);
@@ -104,7 +105,8 @@ public class ResubscriptionProcessor extends AbstractProcessor {
         Set<Modifier> modifiers = attribute.getModifiers();
         if (modifiers.contains(PRIVATE) || modifiers.contains(STATIC)) {
             throwError(
-                    "%s annotations must not be on private or static fields. (class: %s, field: %s)",
+                    "%s annotations must not be on private or static fields. (class: %s, field: "
+                            + "%s)",
                     AutoResubscribe.class.getSimpleName(),
                     enclosingElement.getSimpleName(), attribute.getSimpleName());
         }
@@ -128,7 +130,8 @@ public class ResubscriptionProcessor extends AbstractProcessor {
 
         // Verify containing class visibility is not private.
         if (enclosingElement.getModifiers().contains(PRIVATE)) {
-            throwError("%s annotations may not be contained in private classes. (class: %s, field: %s)",
+            throwError("%s annotations may not be contained in private classes. (class: %s, "
+                            + "field: %s)",
                     AutoResubscribe.class.getSimpleName(),
                     enclosingElement.getSimpleName(), attribute.getSimpleName());
         }
@@ -175,8 +178,10 @@ public class ResubscriptionProcessor extends AbstractProcessor {
     private MethodSpec generateConstructor(ClassToGenerateInfo info) {
         MethodSpec.Builder builder = MethodSpec.constructorBuilder()
                 .addModifiers(PUBLIC)
-                .addParameter(ParameterSpec.builder(TypeName.get(info.originalClassName.asType()), "target").build())
-                .addParameter(ParameterSpec.builder(TypeName.get(ObservableGroup.class), "group").build());
+                .addParameter(ParameterSpec.builder(TypeName.get(info.originalClassName.asType())
+                        , "target").build())
+                .addParameter(ParameterSpec.builder(TypeName.get(ObservableGroup.class), "group")
+                        .build());
 
         for (String observerName : info.observerNames) {
             String tag = info.originalClassName.getSimpleName().toString() + "_" + observerName;

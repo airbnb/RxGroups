@@ -23,8 +23,7 @@ import rx.functions.Action1;
 /**
  * Transforms an existing {@link Observable} by returning a new {@link Observable} that is
  * automatically added to the provided {@link ObservableGroup} with the specified {@code
- * observableTag} when
- * subscribed to.
+ * observableTag} when subscribed to.
  */
 class GroupSubscriptionTransformer<T> implements Observable.Transformer<T, T> {
   private final ObservableGroup group;
