@@ -24,15 +24,17 @@ import rx.functions.Action0;
  * subscription state by tag.
  */
 class ManagedObservable<T> implements RequestSubscription {
-  private final String tag;
+  private final String observableTag;
+  private final String observerTag;
   private final SubscriptionProxy<T> proxy;
   private boolean locked = true;
   private Observable<T> observable;
   private Observer<? super T> observer;
 
-  ManagedObservable(String tag, Observable<T> observable, Observer<? super T> observer,
-      Action0 onTerminate) {
-    this.tag = tag;
+  ManagedObservable(String observerTag, String observableTag, Observable<T> observable,
+                    Observer<? super T> observer, Action0 onTerminate) {
+    this.observableTag = observableTag;
+    this.observerTag = observerTag;
     this.observer = observer;
     proxy = SubscriptionProxy.create(observable, onTerminate);
     this.observable = proxy.observable();
@@ -82,13 +84,11 @@ class ManagedObservable<T> implements RequestSubscription {
     }
   }
 
-  String tag() {
-    return tag;
-  }
-
-  @Override public String toString() {
-    return "ManagedObservable{"
-        + "tag='" + tag + '\''
+  @Override
+  public String toString() {
+    return "ManagedObservable{" + "observableTag='" + observableTag + '\''
+        + ", observerTag='" + observerTag + '\''
+        + ", locked=" + locked
         + '}';
   }
 }

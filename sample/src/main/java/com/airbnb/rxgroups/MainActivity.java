@@ -32,7 +32,6 @@ import rx.android.schedulers.AndroidSchedulers;
 public class MainActivity extends AppCompatActivity {
   private static final String IS_RUNNING = "IS_RUNNING";
   private static final String TAG = "MainActivity";
-  private static final String OBSERVABLE_TAG = "timer";
 
   private GroupLifecycleManager groupLifecycleManager;
   private TextView output;
@@ -40,12 +39,8 @@ public class MainActivity extends AppCompatActivity {
   private boolean isRunning;
   private boolean isLocked;
 
-  @AutoResubscribe final ResubscriptionObserver<Long> observer =
-      new ResubscriptionObserver<Long>() {
-        @Override public Object resubscriptionTag() {
-          return OBSERVABLE_TAG;
-        }
-
+  @AutoResubscribe final AutoResubscribingObserver<Long> observer =
+      new AutoResubscribingObserver<Long>() {
         @Override public void onCompleted() {
           Log.d(TAG, "onCompleted()");
         }
@@ -59,6 +54,7 @@ public class MainActivity extends AppCompatActivity {
           output.setText(output.getText() + " " + l);
         }
       };
+
   private Drawable alarmOffDrawable;
   private Drawable alarmDrawable;
   private Drawable lockDrawable;
@@ -126,13 +122,13 @@ public class MainActivity extends AppCompatActivity {
       timerObservable
           .observeOn(AndroidSchedulers.mainThread())
           .onBackpressureBuffer()
-          .compose(groupLifecycleManager.<Long>transform(OBSERVABLE_TAG))
+          .compose(groupLifecycleManager.<Long>transform(observer))
           .subscribe(observer);
     } else {
       Toast.makeText(this, "Stopped timer", Toast.LENGTH_SHORT).show();
       isRunning = false;
       startStop.setImageDrawable(alarmDrawable);
-      observableGroup.cancelAndRemove(OBSERVABLE_TAG);
+      observableGroup.cancelAndRemove(observer);
     }
   }
 
