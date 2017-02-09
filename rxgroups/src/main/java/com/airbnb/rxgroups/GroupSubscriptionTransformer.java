@@ -15,7 +15,7 @@
  */
 package com.airbnb.rxgroups;
 
-import rx.AsyncEmitter;
+import rx.Emitter;
 import rx.Observable;
 import rx.Observer;
 import rx.functions.Action1;
@@ -35,8 +35,8 @@ class GroupSubscriptionTransformer<T> implements Observable.Transformer<T, T> {
   }
 
   @Override public Observable<T> call(final Observable<T> observable) {
-    return Observable.fromEmitter(new Action1<AsyncEmitter<T>>() {
-      @Override public void call(final AsyncEmitter<T> emitter) {
+    return Observable.fromEmitter(new Action1<Emitter<T>>() {
+      @Override public void call(final Emitter<T> emitter) {
         group.add(tag, observable, new Observer<T>() {
           @Override public void onCompleted() {
             emitter.onCompleted();
@@ -51,6 +51,6 @@ class GroupSubscriptionTransformer<T> implements Observable.Transformer<T, T> {
           }
         });
       }
-    }, AsyncEmitter.BackpressureMode.BUFFER);
+    }, Emitter.BackpressureMode.BUFFER);
   }
 }
