@@ -25,7 +25,6 @@ import javax.annotation.processing.RoundEnvironment;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.Modifier;
-import javax.lang.model.element.Name;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
@@ -38,187 +37,202 @@ import static javax.lang.model.element.Modifier.STATIC;
 
 @AutoService(Processor.class)
 public class ResubscriptionProcessor extends AbstractProcessor {
-    static final String GENERATED_CLASS_NAME_SUFFIX = "_ObservableResubscriber";
-    private Filer filer;
-    private Messager messager;
-    private Elements elementUtils;
-    private Types typeUtils;
+  static final String GENERATED_CLASS_NAME_SUFFIX = "_ObservableResubscriber";
+  private Filer filer;
+  private Messager messager;
+  private Elements elementUtils;
+  private Types typeUtils;
+  private final List<Exception> loggedExceptions = new ArrayList<>();
 
-    @Override
-    public synchronized void init(ProcessingEnvironment processingEnv) {
-        super.init(processingEnv);
-        filer = processingEnv.getFiler();
-        messager = processingEnv.getMessager();
-        elementUtils = processingEnv.getElementUtils();
-        typeUtils = processingEnv.getTypeUtils();
+  @Override
+  public synchronized void init(ProcessingEnvironment processingEnv) {
+    super.init(processingEnv);
+    filer = processingEnv.getFiler();
+    messager = processingEnv.getMessager();
+    elementUtils = processingEnv.getElementUtils();
+    typeUtils = processingEnv.getTypeUtils();
+  }
+
+  @Override
+  public Set<String> getSupportedAnnotationTypes() {
+    return ImmutableSet.of(AutoResubscribe.class.getCanonicalName());
+  }
+
+  @Override
+  public SourceVersion getSupportedSourceVersion() {
+    return SourceVersion.latestSupported();
+  }
+
+  @Override
+  public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
+    LinkedHashMap<TypeElement, ClassToGenerateInfo> modelClassMap = new LinkedHashMap<>();
+    for (Element observer : roundEnv.getElementsAnnotatedWith(AutoResubscribe.class)) {
+      try {
+        processObserver(observer, modelClassMap);
+      } catch (Exception e) {
+        logError(e);
+      }
     }
 
-    @Override
-    public Set<String> getSupportedAnnotationTypes() {
-        return ImmutableSet.of(AutoResubscribe.class.getCanonicalName());
+    for (Map.Entry<TypeElement, ClassToGenerateInfo> modelEntry : modelClassMap.entrySet()) {
+      try {
+        generateClass(modelEntry.getValue());
+      } catch (Exception e) {
+        logError(e);
+      }
     }
 
-    @Override
-    public SourceVersion getSupportedSourceVersion() {
-        return SourceVersion.latestSupported();
+    if (roundEnv.processingOver()) {
+      for (Exception loggedException : loggedExceptions) {
+        messager.printMessage(Diagnostic.Kind.ERROR, loggedException.toString());
+      }
     }
 
-    @Override
-    public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
-        LinkedHashMap<TypeElement, ClassToGenerateInfo> modelClassMap = new LinkedHashMap<>();
-        try {
-            for (Element observer : roundEnv.getElementsAnnotatedWith(AutoResubscribe.class)) {
-                processObserver(observer, modelClassMap);
-            }
-        } catch (ResubscriptionProcessorException e) {
-            writeError(e);
-        }
+    // Let other processors access our annotations as well
+    return false;
+  }
 
+  private void processObserver(Element observer, LinkedHashMap<TypeElement, ClassToGenerateInfo>
+          info) {
+    validateObserverField(observer);
+    TypeElement enclosingClass = (TypeElement) observer.getEnclosingElement();
+    ClassToGenerateInfo targetClass = getOrCreateTargetClass(info, enclosingClass);
 
-        for (Map.Entry<TypeElement, ClassToGenerateInfo> modelEntry : modelClassMap.entrySet()) {
-            try {
-                generateClass(modelEntry.getValue());
-            } catch (IOException e) {
-                writeError(e);
-            }
-        }
-        return true;
+    String observerName = observer.getSimpleName().toString();
+    targetClass.addObserver(observerName);
+  }
+
+  private void validateObserverField(Element observerFieldElement) {
+
+    TypeElement enclosingClass = (TypeElement) observerFieldElement.getEnclosingElement();
+
+    if (!ProcessorUtils.isResubscribingObserver(observerFieldElement)) {
+      logError("%s annotation may only be on %s types. (class: %s, field: %s)",
+              AutoResubscribe.class.getSimpleName(), AutoResubscribingObserver.class,
+              enclosingClass.getSimpleName(), observerFieldElement.getSimpleName());
     }
 
-    private void processObserver(Element observer, LinkedHashMap<TypeElement,
-            ClassToGenerateInfo> info) throws ResubscriptionProcessorException {
-        validateAccessibleViaGeneratedCode(observer);
-        TypeElement enclosingClass = (TypeElement) observer.getEnclosingElement();
-        ClassToGenerateInfo targetClass = getOrCreateTargetClass(info, enclosingClass);
-
-        Name observerName = observer.getSimpleName();
-        // TODO: (eli_hart 11/26/16) validate observer element is actually the correct class
-        targetClass.addObserver(observerName.toString());
+    // Verify method modifiers.
+    Set<Modifier> modifiers = observerFieldElement.getModifiers();
+    if (modifiers.contains(PRIVATE) || modifiers.contains(STATIC)) {
+      logError(
+              "%s annotations must not be on private or static fields. (class: %s, field: "
+                      + "%s)",
+              AutoResubscribe.class.getSimpleName(),
+              enclosingClass.getSimpleName(), observerFieldElement.getSimpleName());
     }
 
-    private void validateAccessibleViaGeneratedCode(Element attribute) throws
-            ResubscriptionProcessorException {
-
-        TypeElement enclosingElement = (TypeElement) attribute.getEnclosingElement();
-
-        // Verify method modifiers.
-        Set<Modifier> modifiers = attribute.getModifiers();
-        if (modifiers.contains(PRIVATE) || modifiers.contains(STATIC)) {
-            throwError(
-                    "%s annotations must not be on private or static fields. (class: %s, field: "
-                            + "%s)",
-                    AutoResubscribe.class.getSimpleName(),
-                    enclosingElement.getSimpleName(), attribute.getSimpleName());
-        }
-
-        // Nested classes must be static
-        if (enclosingElement.getNestingKind().isNested()) {
-            if (!enclosingElement.getModifiers().contains(STATIC)) {
-                throwError(
-                        "Nested classes with %s annotations must be static. (class: %s, field: %s)",
-                        AutoResubscribe.class.getSimpleName(),
-                        enclosingElement.getSimpleName(), attribute.getSimpleName());
-            }
-        }
-
-        // Verify containing type.
-        if (enclosingElement.getKind() != CLASS) {
-            throwError("%s annotations may only be contained in classes. (class: %s, field: %s)",
-                    AutoResubscribe.class.getSimpleName(),
-                    enclosingElement.getSimpleName(), attribute.getSimpleName());
-        }
-
-        // Verify containing class visibility is not private.
-        if (enclosingElement.getModifiers().contains(PRIVATE)) {
-            throwError("%s annotations may not be contained in private classes. (class: %s, "
-                            + "field: %s)",
-                    AutoResubscribe.class.getSimpleName(),
-                    enclosingElement.getSimpleName(), attribute.getSimpleName());
-        }
+    // Nested classes must be static
+    if (enclosingClass.getNestingKind().isNested()) {
+      if (!enclosingClass.getModifiers().contains(STATIC)) {
+        logError(
+                "Nested classes with %s annotations must be static. (class: %s, field: %s)",
+                AutoResubscribe.class.getSimpleName(),
+                enclosingClass.getSimpleName(), observerFieldElement.getSimpleName());
+      }
     }
 
-    private ClassToGenerateInfo getOrCreateTargetClass(
-            Map<TypeElement, ClassToGenerateInfo> modelClassMap, TypeElement classElement)
-            throws ResubscriptionProcessorException {
-
-        // TODO: (eli_hart 11/26/16) handle super classes
-        ClassToGenerateInfo classToGenerateInfo = modelClassMap.get(classElement);
-
-        if (classToGenerateInfo == null) {
-            ClassName generatedClassName = getGeneratedClassName(classElement);
-            classToGenerateInfo = new ClassToGenerateInfo(classElement, generatedClassName);
-            modelClassMap.put(classElement, classToGenerateInfo);
-        }
-
-        return classToGenerateInfo;
+    // Verify containing type.
+    if (enclosingClass.getKind() != CLASS) {
+      logError("%s annotations may only be contained in classes. (class: %s, field: %s)",
+              AutoResubscribe.class.getSimpleName(),
+              enclosingClass.getSimpleName(), observerFieldElement.getSimpleName());
     }
 
-    private ClassName getGeneratedClassName(TypeElement classElement) {
-        String packageName = elementUtils.getPackageOf(classElement).getQualifiedName().toString();
+    // Verify containing class visibility is not private.
+    if (enclosingClass.getModifiers().contains(PRIVATE)) {
+      logError("%s annotations may not be contained in private classes. (class: %s, "
+                      + "field: %s)",
+              AutoResubscribe.class.getSimpleName(),
+              enclosingClass.getSimpleName(), observerFieldElement.getSimpleName());
+    }
+  }
 
-        int packageLen = packageName.length() + 1;
-        String className =
-                classElement.getQualifiedName().toString().substring(packageLen).replace('.', '$');
+  private ClassToGenerateInfo getOrCreateTargetClass(
+          Map<TypeElement, ClassToGenerateInfo> modelClassMap, TypeElement classElement) {
 
-        return ClassName.get(packageName, className + GENERATED_CLASS_NAME_SUFFIX);
+    // TODO: (eli_hart 11/26/16) handle super classes
+    ClassToGenerateInfo classToGenerateInfo = modelClassMap.get(classElement);
+
+    if (classToGenerateInfo == null) {
+      ClassName generatedClassName = getGeneratedClassName(classElement);
+      classToGenerateInfo = new ClassToGenerateInfo(classElement, generatedClassName);
+      modelClassMap.put(classElement, classToGenerateInfo);
     }
 
-    private void generateClass(ClassToGenerateInfo info) throws IOException {
-        TypeSpec generatedClass = TypeSpec.classBuilder(info.generatedClassName)
-                .addJavadoc("Generated file. Do not modify!")
-                .addModifiers(Modifier.PUBLIC)
-                .addMethod(generateConstructor(info))
-                .build();
+    return classToGenerateInfo;
+  }
 
-        JavaFile.builder(info.generatedClassName.packageName(), generatedClass)
-                .build()
-                .writeTo(filer);
+  private ClassName getGeneratedClassName(TypeElement classElement) {
+    String packageName = elementUtils.getPackageOf(classElement).getQualifiedName().toString();
+
+    int packageLen = packageName.length() + 1;
+    String className =
+            classElement.getQualifiedName().toString().substring(packageLen).replace('.', '$');
+
+    return ClassName.get(packageName, className + GENERATED_CLASS_NAME_SUFFIX);
+  }
+
+  private void generateClass(ClassToGenerateInfo info) throws IOException {
+    TypeSpec generatedClass = TypeSpec.classBuilder(info.generatedClassName)
+            .addJavadoc("Generated file. Do not modify!")
+            .addModifiers(Modifier.PUBLIC)
+            .addMethod(generateConstructor(info))
+            .build();
+
+    JavaFile.builder(info.generatedClassName.packageName(), generatedClass)
+            .build()
+            .writeTo(filer);
+  }
+
+  private MethodSpec generateConstructor(ClassToGenerateInfo info) {
+    MethodSpec.Builder builder = MethodSpec.constructorBuilder()
+            .addModifiers(PUBLIC)
+            .addParameter(ParameterSpec.builder(TypeName.get(info.originalClassName.asType())
+                    , "target").build())
+            .addParameter(ParameterSpec.builder(TypeName.get(ObservableGroup.class), "group")
+                    .build());
+
+    for (String observerName : info.observerNames) {
+      String tag = info.originalClassName.getSimpleName().toString() + "_" + observerName;
+      builder.addStatement("target.$L.tag = $S", observerName, tag);
+      builder.addStatement("group.resubscribe(target.$L)", observerName);
     }
 
-    private MethodSpec generateConstructor(ClassToGenerateInfo info) {
-        MethodSpec.Builder builder = MethodSpec.constructorBuilder()
-                .addModifiers(PUBLIC)
-                .addParameter(ParameterSpec.builder(TypeName.get(info.originalClassName.asType())
-                        , "target").build())
-                .addParameter(ParameterSpec.builder(TypeName.get(ObservableGroup.class), "group")
-                        .build());
+    return builder.build();
+  }
 
-        for (String observerName : info.observerNames) {
-            String tag = info.originalClassName.getSimpleName().toString() + "_" + observerName;
-            builder.addStatement("target.$L.tag = $S", observerName, tag);
-            builder.addStatement("group.resubscribe(target.$L)", observerName);
-        }
+  private static class RxGroupsResubscriptionProcessorException extends Exception {
+    RxGroupsResubscriptionProcessorException(String message) {
+      super(message);
+    }
+  }
 
-        return builder.build();
+  private void logError(String msg, Object... args) {
+    logError(new RxGroupsResubscriptionProcessorException(String.format(msg, args)));
+  }
+
+  /**
+   * Exceptions are caught and logged, and not printed until all processing is done. This allows
+   * generated classes to be created first and allows for easier to read compile time error
+   * messages.
+   */
+  private void logError(Exception e) {
+    loggedExceptions.add(e);
+  }
+
+  private static class ClassToGenerateInfo {
+    final List<String> observerNames = new ArrayList<>();
+    private final TypeElement originalClassName;
+    private final ClassName generatedClassName;
+
+    public ClassToGenerateInfo(TypeElement originalClassName, ClassName generatedClassName) {
+      this.originalClassName = originalClassName;
+      this.generatedClassName = generatedClassName;
     }
 
-    private static class ResubscriptionProcessorException extends Exception {
-        ResubscriptionProcessorException(String message) {
-            super(message);
-        }
+    public void addObserver(String observerName) {
+      observerNames.add(observerName);
     }
-
-    private void writeError(Exception e) {
-        messager.printMessage(Diagnostic.Kind.ERROR, e.toString());
-    }
-
-    private void throwError(String msg, Object... args)
-            throws ResubscriptionProcessorException {
-        throw new ResubscriptionProcessorException(String.format(msg, args));
-    }
-
-    private static class ClassToGenerateInfo {
-        final List<String> observerNames = new ArrayList<>();
-        private final TypeElement originalClassName;
-        private final ClassName generatedClassName;
-
-        public ClassToGenerateInfo(TypeElement originalClassName, ClassName generatedClassName) {
-            this.originalClassName = originalClassName;
-            this.generatedClassName = generatedClassName;
-        }
-
-        public void addObserver(String observerName) {
-            observerNames.add(observerName);
-        }
-    }
+  }
 }

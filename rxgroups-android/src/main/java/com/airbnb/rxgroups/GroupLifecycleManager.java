@@ -71,7 +71,10 @@ public class GroupLifecycleManager {
     group.lock();
 
     GroupLifecycleManager manager = new GroupLifecycleManager(observableManager, group);
-    manager.initializeAutoResubscription(target);
+
+    if (target != null) {
+      manager.initializeAutoResubscription(target);
+    }
 
     return manager;
   }
@@ -110,6 +113,9 @@ public class GroupLifecycleManager {
    * and that have their corresponding Observable in flight.
    */
   public void initializeAutoResubscription(Object target) {
+    if (target == null) {
+      throw new IllegalArgumentException("Target cannot be null");
+    }
     ResubscribeHelper.initializeResubscription(target, group);
   }
 

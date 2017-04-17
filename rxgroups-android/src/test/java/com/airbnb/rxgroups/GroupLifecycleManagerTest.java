@@ -10,16 +10,13 @@ import org.junit.runner.RunWith;
 import org.robolectric.RobolectricGradleTestRunner;
 import org.robolectric.annotation.Config;
 
-import java.util.concurrent.TimeUnit;
-
-import rx.Observable;
-import rx.observers.TestSubscriber;
 import rx.schedulers.Schedulers;
 import rx.schedulers.TestScheduler;
 import rx.subjects.TestSubject;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -28,7 +25,6 @@ import static org.mockito.Mockito.when;
 public class GroupLifecycleManagerTest extends BaseTest {
   private final TestScheduler scheduler = Schedulers.test();
   private final TestSubject<String> testSubject = TestSubject.create(scheduler);
-  private final TestSubscriber<String> testSubscriber = new TestSubscriber<>();
   private final ObservableManager observableManager = mock(ObservableManager.class);
   private final ObservableGroup group = mock(ObservableGroup.class);
   private final TestTarget target = new TestTarget();
@@ -40,55 +36,38 @@ public class GroupLifecycleManagerTest extends BaseTest {
 
   @Test
   public void testSubscribe() {
-    // TODO: (eli_hart 12/7/16) Fix this test 
-//    when(observableManager.newGroup()).thenReturn(group);
-//    testSubject.subscribe(target.observer);
-//    group.transform(target.observer);
-//    GroupLifecycleManager.onCreate(observableManager, null, target);
-//
-//    assertThat(testSubject.hasObservers()).isTrue();
-//
-//    testSubject.onNext("hello");
-//    testSubject.onCompleted();
-//    scheduler.triggerActions();
-//
-//    testSubscriber.awaitTerminalEvent(3, TimeUnit.SECONDS);
-//    testSubscriber.assertCompleted();
-//    testSubscriber.assertValue("hello");
+    when(observableManager.newGroup()).thenReturn(group);
+    GroupLifecycleManager.onCreate(observableManager, null, target);
+    verify(group).resubscribe(target.observer);
   }
 
   @Test
   public void testSubscribeNoObservables() {
     when(observableManager.newGroup()).thenReturn(group);
-    when(group.hasObservables(target.observer)).thenReturn(false);
-    when(group.observable(target.observer)).thenReturn(testSubject);
-
-    GroupLifecycleManager.onCreate(observableManager, null, target);
-
-    assertThat(testSubject.hasObservers()).isFalse();
-
-    testSubject.onNext("hello");
-    testSubject.onCompleted();
-    scheduler.triggerActions();
-
-    testSubscriber.awaitTerminalEvent(3, TimeUnit.SECONDS);
-    testSubscriber.assertNotCompleted();
-    testSubscriber.assertNoValues();
+    GroupLifecycleManager.onCreate(observableManager, null, null);
+    verify(group, never()).resubscribe(any(AutoResubscribingObserver.class));
   }
 
   @Test
-  public void testSubscribeNoObservers() {
+  public void testCreateWithNoNullTarget() {
     when(observableManager.newGroup()).thenReturn(group);
-    when(group.hasObservables(target.observer)).thenReturn(true);
-    when(group.observable(target.observer)).thenReturn(testSubject);
+    GroupLifecycleManager.onCreate(observableManager, null, null);
+    verify(group, never()).resubscribe(any(AutoResubscribingObserver.class));
+  }
 
-    GroupLifecycleManager.onCreate(observableManager, null, target);
+  @Test(expected = IllegalArgumentException.class)
+  public void testSubscribeInvalidTarget() {
+    when(observableManager.newGroup()).thenReturn(group);
+    GroupLifecycleManager.onCreate(observableManager, null, new Object());
+  }
 
-    assertThat(testSubject.hasObservers()).isFalse();
+  @Test(expected = IllegalArgumentException.class)
+  public void testSubscribeNullTargetFails() {
+    when(observableManager.newGroup()).thenReturn(group);
+    GroupLifecycleManager groupLifecycleManager = GroupLifecycleManager.onCreate
+            (observableManager, null, null);
 
-    testSubject.onNext("hello");
-    testSubject.onCompleted();
-    scheduler.triggerActions();
+    groupLifecycleManager.initializeAutoResubscription(null);
   }
 
   @Test
