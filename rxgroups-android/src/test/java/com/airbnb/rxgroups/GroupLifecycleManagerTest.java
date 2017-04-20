@@ -61,7 +61,7 @@ public class GroupLifecycleManagerTest extends BaseTest {
     GroupLifecycleManager.onCreate(observableManager, null, new Object());
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test(expected = NullPointerException.class)
   public void testSubscribeNullTargetFails() {
     when(observableManager.newGroup()).thenReturn(group);
     GroupLifecycleManager groupLifecycleManager = GroupLifecycleManager.onCreate

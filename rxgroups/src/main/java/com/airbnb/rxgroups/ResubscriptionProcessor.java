@@ -107,7 +107,7 @@ public class ResubscriptionProcessor extends AbstractProcessor {
 
     TypeElement enclosingClass = (TypeElement) observerFieldElement.getEnclosingElement();
 
-    if (!ProcessorUtils.isResubscribingObserver(observerFieldElement)) {
+    if (!ProcessorUtils.isResubscribingObserver(observerFieldElement, typeUtils, elementUtils)) {
       logError("%s annotation may only be on %s types. (class: %s, field: %s)",
               AutoResubscribe.class.getSimpleName(), AutoResubscribingObserver.class,
               enclosingClass.getSimpleName(), observerFieldElement.getSimpleName());
