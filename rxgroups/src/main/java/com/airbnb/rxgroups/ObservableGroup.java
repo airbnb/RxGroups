@@ -92,7 +92,6 @@ public class ObservableGroup {
         Map<String, ManagedObservable<?>> map = groupMap.get(observerTag);
         if (map == null) {
             map = new HashMap<>();
-            // TODO: (eli_hart 11/26/16) Is there a better data structure than hashmap?
             groupMap.put(observerTag, map);
         }
         return map;
