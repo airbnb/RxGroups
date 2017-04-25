@@ -1,9 +1,8 @@
-package com.airbnb.rxgroups.compiler;
+package com.airbnb.rxgroups.processor;
 
 import com.airbnb.rxgroups.AutoResubscribe;
 import com.airbnb.rxgroups.AutoResubscribingObserver;
 import com.airbnb.rxgroups.ObservableGroup;
-import com.airbnb.rxgroups.processor.ProcessorHelper;
 import com.google.auto.service.AutoService;
 import com.google.common.collect.ImmutableSet;
 import com.squareup.javapoet.ClassName;

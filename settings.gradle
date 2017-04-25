@@ -1,4 +1,5 @@
 include ':rxgroups',
         ':rxgroups-android',
-        ':sample',
-        ':rxgroups-processor'
+        ':rxgroups-processor',
+        ':sample'
+

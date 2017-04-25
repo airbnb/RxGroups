@@ -1,4 +1,4 @@
-package com.airbnb.rxgroups.compiler;
+package com.airbnb.rxgroups.processor;
 
 
 import com.airbnb.rxgroups.AutoResubscribingObserver;

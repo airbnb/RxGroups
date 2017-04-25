@@ -1,42 +1,42 @@
 apply plugin: 'com.android.library'
 
 android {
-    compileSdkVersion androidConfig.compileSdkVersion
-    buildToolsVersion androidConfig.buildToolsVersion
+  compileSdkVersion androidConfig.compileSdkVersion
+  buildToolsVersion androidConfig.buildToolsVersion
 
-    defaultConfig {
-        minSdkVersion androidConfig.minSdkVersion
-        targetSdkVersion androidConfig.targetSdkVersion
-    }
+  defaultConfig {
+    minSdkVersion androidConfig.minSdkVersion
+    targetSdkVersion androidConfig.targetSdkVersion
+  }
 }
 
 dependencies {
-    compile project(':rxgroups')
-    compile dep.rxAndroid
+  compile project(':rxgroups')
+  compile dep.rxAndroid
 
-    testCompile dep.junit
-    testCompile dep.mockito
-    testCompile dep.hamcrestIntegration
-    testCompile dep.hamcrestCore
-    testCompile dep.hamcrestLibrary
-    testCompile dep.assertj
-    testCompile(dep.roboelectric) {
-        exclude module: 'classworlds'
-        exclude module: 'commons-logging'
-        exclude module: 'httpclient'
-        exclude module: 'maven-artifact'
-        exclude module: 'maven-artifact-manager'
-        exclude module: 'maven-error-diagnostics'
-        exclude module: 'maven-model'
-        exclude module: 'maven-project'
-        exclude module: 'maven-settings'
-        exclude module: 'plexus-container-default'
-        exclude module: 'plexus-interpolation'
-        exclude module: 'plexus-utils'
-        exclude module: 'wagon-file'
-        exclude module: 'wagon-http-lightweight'
-        exclude module: 'wagon-provider-api'
-    }
+  testCompile dep.junit
+  testCompile dep.mockito
+  testCompile dep.hamcrestIntegration
+  testCompile dep.hamcrestCore
+  testCompile dep.hamcrestLibrary
+  testCompile dep.assertj
+  testCompile(dep.roboelectric) {
+    exclude module: 'classworlds'
+    exclude module: 'commons-logging'
+    exclude module: 'httpclient'
+    exclude module: 'maven-artifact'
+    exclude module: 'maven-artifact-manager'
+    exclude module: 'maven-error-diagnostics'
+    exclude module: 'maven-model'
+    exclude module: 'maven-project'
+    exclude module: 'maven-settings'
+    exclude module: 'plexus-container-default'
+    exclude module: 'plexus-interpolation'
+    exclude module: 'plexus-utils'
+    exclude module: 'wagon-file'
+    exclude module: 'wagon-http-lightweight'
+    exclude module: 'wagon-provider-api'
+  }
 }
 
 apply from: rootProject.file('gradle/gradle-maven-push.gradle')
