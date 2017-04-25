@@ -1,5 +1,8 @@
-package com.airbnb.rxgroups;
+package com.airbnb.rxgroups.processor;
 
+import com.airbnb.rxgroups.AutoResubscribe;
+import com.airbnb.rxgroups.AutoResubscribingObserver;
+import com.airbnb.rxgroups.ObservableGroup;
 import com.google.auto.service.AutoService;
 import com.google.common.collect.ImmutableSet;
 import com.squareup.javapoet.ClassName;
@@ -25,7 +28,6 @@ import javax.annotation.processing.RoundEnvironment;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.Modifier;
-
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
@@ -38,7 +40,6 @@ import static javax.lang.model.element.Modifier.STATIC;
 
 @AutoService(Processor.class)
 public class ResubscriptionProcessor extends AbstractProcessor {
-  static final String GENERATED_CLASS_NAME_SUFFIX = "_ObservableResubscriber";
   private Filer filer;
   private Messager messager;
   private Elements elementUtils;
@@ -171,7 +172,7 @@ public class ResubscriptionProcessor extends AbstractProcessor {
     String className =
             classElement.getQualifiedName().toString().substring(packageLen).replace('.', '$');
 
-    return ClassName.get(packageName, className + GENERATED_CLASS_NAME_SUFFIX);
+    return ClassName.get(packageName, className + ProcessorHelper.GENERATED_CLASS_NAME_SUFFIX);
   }
 
   private void generateClass(ClassToGenerateInfo info) throws IOException {

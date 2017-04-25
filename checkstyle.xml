@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <!DOCTYPE module PUBLIC
-    "-//Puppy Crawl//DTD Check Configuration 1.2//EN"
-    "http://www.puppycrawl.com/dtds/configuration_1_2.dtd">
+    "-//Puppy Crawl//DTD Check Configuration 1.3//EN"
+    "http://www.puppycrawl.com/dtds/configuration_1_3.dtd">
 
 <module name="Checker">
     <module name="NewlineAtEndOfFile"/>
@@ -52,6 +52,7 @@
         <!-- See http://checkstyle.sf.net/config_sizes.html -->
         <module name="LineLength">
             <property name="max" value="100"/>
+            <property name="ignorePattern" value="^ *\* *[^ ]+$"/>
         </module>
         <!--<module name="MethodLength"/>-->
         <!--module name="ParameterNumber"/-->
@@ -100,7 +101,6 @@
         <!--module name="InnerAssignment"/-->
         <!--module name="MagicNumber"/-->
         <module name="MissingSwitchDefault"/>
-        <module name="RedundantThrows"/>
         <module name="SimplifyBooleanExpression"/>
         <module name="SimplifyBooleanReturn"/>
 

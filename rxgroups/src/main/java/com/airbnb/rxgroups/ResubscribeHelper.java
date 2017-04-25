@@ -1,13 +1,14 @@
 package com.airbnb.rxgroups;
 
+import com.airbnb.rxgroups.processor.ProcessorHelper;
+
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-import static com.airbnb.rxgroups.ResubscriptionProcessor.GENERATED_CLASS_NAME_SUFFIX;
-
 class ResubscribeHelper {
+
     private static final Map<Class<?>, Constructor<?>> BINDINGS = new LinkedHashMap<>();
 
     static void initializeResubscription(Object target, ObservableGroup group) {
@@ -46,7 +47,8 @@ class ResubscribeHelper {
         }
 
         try {
-            Class<?> bindingClass = Class.forName(clsName + GENERATED_CLASS_NAME_SUFFIX);
+            Class<?> bindingClass = Class.forName(clsName
+                + ProcessorHelper.GENERATED_CLASS_NAME_SUFFIX);
             //noinspection unchecked
             bindingCtor = bindingClass.getConstructor(cls, ObservableGroup.class);
         } catch (ClassNotFoundException e) {
