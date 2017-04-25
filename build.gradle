@@ -22,6 +22,7 @@ subprojects {
     apply plugin: 'checkstyle'
 
     checkstyle {
+      toolVersion = '7.6.1'
       configFile rootProject.file('checkstyle.xml')
       configProperties = ['checkstyle.cache.file': rootProject.file('build/checkstyle.cache')]
       showViolations true
