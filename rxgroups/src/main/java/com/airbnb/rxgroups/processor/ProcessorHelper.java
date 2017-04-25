@@ -1,7 +1,7 @@
 package com.airbnb.rxgroups.processor;
 
-public interface ProcessorHelper {
+public class ProcessorHelper {
 
-  String GENERATED_CLASS_NAME_SUFFIX = "_ObservableResubscriber";
+  public static final String GENERATED_CLASS_NAME_SUFFIX = "_ObservableResubscriber";
 
 }

@@ -86,19 +86,20 @@ public class GroupLifecycleManager {
   /**
    * TODO
    */
-  public <T> Observable.Transformer<? super T, T> transform(AutoResubscribingObserver<? super T> observer) {
+  public <T> Observable.Transformer<? super T, T>
+  transform(AutoResubscribingObserver<? super T> observer) {
     return transform(observer, null);
   }
 
-  public <T> Observable.Transformer<? super T, T> transform(AutoResubscribingObserver<? super T> observer,
-                                                            String observableTag) {
+  public <T> Observable.Transformer<? super T, T>
+  transform(AutoResubscribingObserver<? super T> observer, String observableTag) {
     return group.transform(observer, observableTag);
   }
 
   /**
    * Returns whether the provided {@link Class} exists for the {@link ObservableGroup}.
-   * Observables will only be removed from their respective groups once {@link Observer#onCompleted()}
-   * has been called.
+   * Observables will only be removed from their respective groups once
+   * {@link Observer#onCompleted()} has been called.
    */
   public boolean hasObservables(AutoResubscribingObserver<?> observer) {
     return group.hasObservables(observer);
