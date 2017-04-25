@@ -1,8 +1,8 @@
 apply plugin: 'com.android.application'
 
 android {
-  compileSdkVersion 25
-  buildToolsVersion "25.0.2"
+  compileSdkVersion androidConfig.compileSdkVersion
+  buildToolsVersion androidConfig.buildToolsVersion
 
   defaultConfig {
     applicationId "com.airbnb.rxgroups"
@@ -11,22 +11,12 @@ android {
     versionCode 1
     versionName "1.0"
   }
-  buildTypes {
-    release {
-      minifyEnabled false
-      proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
-    }
-  }
-  compileOptions {
-    sourceCompatibility JavaVersion.VERSION_1_7
-    targetCompatibility JavaVersion.VERSION_1_7
-  }
 }
 
 dependencies {
+  annotationProcessor project(':rxgroups-processor')
   compile project(':rxgroups-android')
-  compile 'io.reactivex:rxandroid:1.2.0'
-  compile 'com.android.support:appcompat-v7:25.1.1'
-  compile 'com.android.support:design:25.1.1'
-  testCompile 'junit:junit:4.12'
+  compile dep.androidSupportAppCompat
+  compile dep.androidSupportDesign
+  testCompile dep.junit
 }

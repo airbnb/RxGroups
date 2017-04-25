@@ -1,5 +1,7 @@
-package com.airbnb.rxgroups;
+package com.airbnb.rxgroups.compiler;
 
+
+import com.airbnb.rxgroups.AutoResubscribingObserver;
 
 import javax.lang.model.element.Element;
 import javax.lang.model.type.TypeMirror;

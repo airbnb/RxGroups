@@ -1,1 +1,4 @@
-include ':rxgroups', ':rxgroups-android', ':sample'
+include ':rxgroups',
+        ':rxgroups-android',
+        ':sample',
+        ':rxgroups-processor'
