@@ -228,7 +228,7 @@ public class ObservableGroup {
         return subscription(observer, null);
     }
 
-    <T> void resubscribe(AutoResubscribingObserver<? super T> observer) {
+    public <T> void resubscribe(AutoResubscribingObserver<? super T> observer) {
         Map<String, ManagedObservable<?>> observables = getObservablesForObserver(observer);
         for (String observableTag : observables.keySet()) {
             observable(observer, observableTag).subscribe(observer);
