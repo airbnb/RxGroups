@@ -1,4 +1,5 @@
 apply plugin: 'java'
+apply plugin: 'com.bmuschko.nexus'
 
 targetCompatibility = JavaVersion.VERSION_1_7
 sourceCompatibility = JavaVersion.VERSION_1_7
@@ -9,3 +10,14 @@ dependencies {
     compile project(':rxgroups')
 }
 
+extraArchive {
+    sources = true
+    tests = false
+    javadoc = false
+}
+
+nexus {
+    sign = !project.ext.isCi
+    repositoryUrl = project.ext.repositoryUrl
+    snapshotRepositoryUrl = project.ext.snapshotRepositoryUrl
+}

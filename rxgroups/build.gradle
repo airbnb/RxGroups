@@ -65,6 +65,6 @@ extraArchive {
 
 nexus {
   sign = !project.ext.isCi
-  repositoryUrl = 'https://oss.sonatype.org/service/local/staging/deploy/maven2/'
-  snapshotRepositoryUrl = 'https://oss.sonatype.org/content/repositories/snapshots/'
+  repositoryUrl = project.ext.repositoryUrl
+  snapshotRepositoryUrl = project.ext.snapshotRepositoryUrl
 }
