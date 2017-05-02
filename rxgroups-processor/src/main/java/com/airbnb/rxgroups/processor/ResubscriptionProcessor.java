@@ -197,7 +197,7 @@ public class ResubscriptionProcessor extends AbstractProcessor {
 
     for (String observerName : info.observerNames) {
       String tag = info.originalClassName.getSimpleName().toString() + "_" + observerName;
-      builder.addStatement("target.$L.tag = $S", observerName, tag);
+      builder.addStatement("target.$L.setTag($S)", observerName, tag);
       builder.addStatement("group.resubscribe(target.$L)", observerName);
     }
 

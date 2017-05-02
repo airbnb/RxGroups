@@ -85,7 +85,7 @@ public class ObservableGroup {
 
     private Map<String, ManagedObservable<?>> getObservablesForObserver(
             AutoResubscribingObserver<?> observer) {
-        return getObservablesForObserver(observer.tag);
+        return getObservablesForObserver(observer.getTag());
     }
 
     private Map<String, ManagedObservable<?>> getObservablesForObserver(String observerTag) {
@@ -104,12 +104,12 @@ public class ObservableGroup {
      */
     public <T> Observable.Transformer<? super T, T> transform(AutoResubscribingObserver<? super
             T> observer, String observableTag) {
-        return new GroupSubscriptionTransformer<>(this, observer.tag, observableTag);
+        return new GroupSubscriptionTransformer<>(this, observer.getTag(), observableTag);
     }
 
     public <T> Observable.Transformer<? super T, T> transform(AutoResubscribingObserver<? super
             T> observer) {
-        return new GroupSubscriptionTransformer<>(this, observer.tag, null);
+        return new GroupSubscriptionTransformer<>(this, observer.getTag(), null);
     }
 
     /**
@@ -199,12 +199,12 @@ public class ObservableGroup {
     public <T> Observable<T> observable(AutoResubscribingObserver<? super T> observer, String
             observableTag) {
         checkNotDestroyed();
-        Map<String, ManagedObservable<?>> observables = getObservablesForObserver(observer.tag);
+        Map<String, ManagedObservable<?>> observables = getObservablesForObserver(observer.getTag());
         //noinspection unchecked
         ManagedObservable<T> managedObservable = (ManagedObservable<T>) observables.get(
                 observableTag);
         if (managedObservable == null) {
-            throw new IllegalStateException("No observable exists for observer: " + observer.tag
+            throw new IllegalStateException("No observable exists for observer: " + observer.getTag()
                     + " and observable: " + observableTag);
         }
 
@@ -241,11 +241,11 @@ public class ObservableGroup {
      * nothing happens.
      */
     public void cancelAndRemove(AutoResubscribingObserver<?> observer, String observableTag) {
-        cancelAndRemove(observer.tag, observableTag);
+        cancelAndRemove(observer.getTag(), observableTag);
     }
 
     public void cancelAndRemove(AutoResubscribingObserver<?> observer) {
-        cancelAndRemove(observer.tag, null);
+        cancelAndRemove(observer.getTag(), null);
     }
 
     public void cancelAllObservablesForObserver(AutoResubscribingObserver<?> observer) {
