@@ -199,13 +199,14 @@ public class ObservableGroup {
     public <T> Observable<T> observable(AutoResubscribingObserver<? super T> observer, String
             observableTag) {
         checkNotDestroyed();
-        Map<String, ManagedObservable<?>> observables = getObservablesForObserver(observer.getTag());
+        Map<String, ManagedObservable<?>> observables
+            = getObservablesForObserver(observer.getTag());
         //noinspection unchecked
         ManagedObservable<T> managedObservable = (ManagedObservable<T>) observables.get(
                 observableTag);
         if (managedObservable == null) {
-            throw new IllegalStateException("No observable exists for observer: " + observer.getTag()
-                    + " and observable: " + observableTag);
+            throw new IllegalStateException("No observable exists for observer: "
+                + observer.getTag() + " and observable: " + observableTag);
         }
 
         Observable<T> observable = managedObservable.observable();
