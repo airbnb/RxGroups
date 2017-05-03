@@ -11,11 +11,7 @@ public abstract class AutoResubscribingObserver<T> implements Observer<T> {
     return tag;
   }
 
-  /**
-   * Sets this observer's resubscription {@code tag}.
-   * This is automatically done when using the {@link AutoResubscribe} annotation.
-   */
-  public void setTag(String tag) {
+  void setTag(String tag) {
     this.tag = tag;
   }
 

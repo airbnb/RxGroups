@@ -2,6 +2,7 @@ package com.airbnb.rxgroups.processor;
 
 import com.airbnb.rxgroups.AutoResubscribe;
 import com.airbnb.rxgroups.AutoResubscribingObserver;
+import com.airbnb.rxgroups.BaseObservableResubscriber;
 import com.airbnb.rxgroups.ObservableGroup;
 import com.google.auto.service.AutoService;
 import com.google.common.collect.ImmutableSet;
@@ -13,6 +14,7 @@ import com.squareup.javapoet.TypeName;
 import com.squareup.javapoet.TypeSpec;
 
 import java.io.IOException;
+import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -177,6 +179,7 @@ public class ResubscriptionProcessor extends AbstractProcessor {
 
   private void generateClass(ClassToGenerateInfo info) throws IOException {
     TypeSpec generatedClass = TypeSpec.classBuilder(info.generatedClassName)
+            .superclass(BaseObservableResubscriber.class)
             .addJavadoc("Generated file. Do not modify!")
             .addModifiers(Modifier.PUBLIC)
             .addMethod(generateConstructor(info))
@@ -197,7 +200,7 @@ public class ResubscriptionProcessor extends AbstractProcessor {
 
     for (String observerName : info.observerNames) {
       String tag = info.originalClassName.getSimpleName().toString() + "_" + observerName;
-      builder.addStatement("target.$L.setTag($S)", observerName, tag);
+      builder.addStatement("setTag(target.$L, $S)", observerName, tag);
       builder.addStatement("group.resubscribe(target.$L)", observerName);
     }
 
