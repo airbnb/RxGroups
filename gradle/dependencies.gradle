@@ -7,6 +7,9 @@ def versions = [
 
 ext.isCi = (project.hasProperty('CI') && CI == 'true')
 
+ext.repositoryUrl = 'https://oss.sonatype.org/service/local/staging/deploy/maven2/'
+ext.snapshotRepositoryUrl = 'https://oss.sonatype.org/content/repositories/snapshots/'
+
 ext.androidConfig = [
         compileSdkVersion: 25,
         buildToolsVersion: '25.0.2',

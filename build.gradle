@@ -18,6 +18,10 @@ subprojects {
   group = GROUP
   version = VERSION_NAME
 
+  tasks.withType(Javadoc) {
+    options.addStringOption('Xdoclint:none', '-quiet')
+  }
+
   if (!project.name.equals('rxgroups-processor')) {
     apply plugin: 'checkstyle'
 

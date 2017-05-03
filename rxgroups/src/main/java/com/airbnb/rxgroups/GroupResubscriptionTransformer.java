@@ -15,8 +15,10 @@
  */
 package com.airbnb.rxgroups;
 
+import rx.Emitter;
 import rx.Observable;
-import rx.Subscriber;
+import rx.Observer;
+import rx.functions.Action1;
 
 class GroupResubscriptionTransformer<T> implements Observable.Transformer<T, T> {
   private final ManagedObservable<T> managedObservable;
@@ -26,10 +28,22 @@ class GroupResubscriptionTransformer<T> implements Observable.Transformer<T, T> 
   }
 
   @Override public Observable<T> call(final Observable<T> observable) {
-    return Observable.create(new Observable.OnSubscribe<T>() {
-      @Override public void call(Subscriber<? super T> subscriber) {
-        managedObservable.resubscribe(observable, subscriber);
+    return Observable.create(new Action1<Emitter<T>>() {
+      @Override public void call(final Emitter<T> emitter) {
+        managedObservable.resubscribe(observable, new Observer<T>() {
+          @Override public void onCompleted() {
+            emitter.onCompleted();
+          }
+
+          @Override public void onError(Throwable e) {
+            emitter.onError(e);
+          }
+
+          @Override public void onNext(T t) {
+            emitter.onNext(t);
+          }
+        });
       }
-    });
+    }, Emitter.BackpressureMode.BUFFER);
   }
 }
