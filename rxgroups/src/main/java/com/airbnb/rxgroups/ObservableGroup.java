@@ -147,11 +147,12 @@ public class ObservableGroup {
 
     private List<String> observerTagsForObservableTag(String observableTag) {
         List<String> observerTags = new ArrayList<>();
-        for (Map.Entry<String, Map<String, ManagedObservable<?>>> groupEntry : groupMap.entrySet()) {
+        for (Map.Entry<String, Map<String, ManagedObservable<?>>> groupEntry
+            : groupMap.entrySet()) {
             String observerTag = groupEntry.getKey();
             Map<String, ManagedObservable<?>> observables = groupEntry.getValue();
             if (observables.containsKey(observableTag)) {
-               observerTags.add(observerTag);
+                observerTags.add(observerTag);
             }
         }
         return observerTags;
