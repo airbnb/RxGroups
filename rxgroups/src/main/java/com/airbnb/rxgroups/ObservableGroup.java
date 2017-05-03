@@ -70,7 +70,7 @@ public class ObservableGroup {
         }
 
         ManagedObservable<T> managedObservable =
-                new ManagedObservable<>(observerTag, observableTag, observable, observer, new
+                new ManagedObservable<>(observableTag, observableTag, observable, observer, new
                         Action0() {
                             @Override
                             public void call() {
@@ -90,11 +90,11 @@ public class ObservableGroup {
         return getObservablesForObserver(observer.getTag());
     }
 
-    private Map<String, ManagedObservable<?>> getObservablesForObserver(String observerTag) {
-        Map<String, ManagedObservable<?>> map = groupMap.get(observerTag);
+    private Map<String, ManagedObservable<?>> getObservablesForObserver(String observableTag) {
+        Map<String, ManagedObservable<?>> map = groupMap.get(observableTag);
         if (map == null) {
             map = new HashMap<>();
-            groupMap.put(observerTag, map);
+            groupMap.put(observableTag, map);
         }
         return map;
     }
@@ -239,17 +239,16 @@ public class ObservableGroup {
     /**
      * @return a {@link RequestSubscription} with which the {@link Observer} can unsubscribe from or
      * cancel before the {@link Observable} has completed. If no {@link Observable} is found for the
-     * provided {@code tag}, {@code null} is returned instead.
+     * provided {@code observableTag}, {@code null} is returned instead.
      */
     public RequestSubscription subscription(AutoResubscribingObserver<?> observer, String
             observableTag) {
-        Map<String, ManagedObservable<?>> observables = getObservablesForObserver(observer);
-        return observables.get(observableTag);
+       return subscription(observer.getTag(), observableTag);
     }
 
     /**
      * Convenience method for {@link #subscription(AutoResubscribingObserver, String)}, with
-     * {@code tag} of {@link AutoResubscribingObserver#getTag()}.
+     * {@code observableTag} of {@link AutoResubscribingObserver#getTag()}.
      *
      * <p> Use when the {@code observer} is associated with only one {@link Observable}.
      */
@@ -257,9 +256,14 @@ public class ObservableGroup {
         return subscription(observer, observer.getTag());
     }
 
+    private RequestSubscription subscription(String observerTag, String observableTag) {
+        Map<String, ManagedObservable<?>> observables = getObservablesForObserver(observerTag);
+        return observables.get(observableTag);
+    }
+
     /**
      * Convenience method for {@link #resubscribe(AutoResubscribingObserver, String)}, with
-     * {@code tag} of {@link AutoResubscribingObserver#getTag()}.
+     * {@code observableTag} of {@link AutoResubscribingObserver#getTag()}.
      * <p> Use when the {@code observer} is associated with only one {@link Observable}.
      */
     public <T> void resubscribe(AutoResubscribingObserver<? super T> observer) {
@@ -270,7 +274,8 @@ public class ObservableGroup {
     }
 
     /**
-     * Resubscribes this observer to the observable identified by {@code observableTag}.
+     * Resubscribes the {@link AutoResubscribingObserver} to the observable
+     * identified by {@code observableTag}.
      */
     public <T> void resubscribe(AutoResubscribingObserver<? super T> observer,
                                 String observableTag) {
@@ -281,28 +286,34 @@ public class ObservableGroup {
     }
 
     /**
-     * Removes the supplied {@link Observable} from this group and cancels it subscription. No more
-     * events will be delivered to its subscriber. If no Observable is found for the provided tag,
-     * nothing happens.
+     * Removes the {@link Observable} identified by {@code observableTag} for the given
+     * {@link AutoResubscribingObserver} and cancels it subscription.
+     * No more events will be delivered to its subscriber.
+     * <p>If no Observable is found for the provided {@code observableTag}, nothing happens.
      */
     public void cancelAndRemove(AutoResubscribingObserver<?> observer, String observableTag) {
         cancelAndRemove(observer.getTag(), observableTag);
     }
 
+    /**
+     * Convenience method for {@link #cancelAndRemove(AutoResubscribingObserver, String)}, with
+     * {@code observableTag} of {@link AutoResubscribingObserver#getTag()}.
+     * <p> Use when the {@code observer} is associated with only one {@link Observable}.
+     */
     public void cancelAndRemove(AutoResubscribingObserver<?> observer) {
         cancelAndRemove(observer.getTag(), observer.getTag());
     }
 
     /**
-     * Removes all {@link Observable} with {@code tag} from this group
+     * Removes all {@link Observable} with {@code observableTag} from this group
      * and cancels all of its subscriptions.
      * No more events will be delivered to any {@link AutoResubscribingObserver} associated with
-     * {@code tag}.
-     * If no Observables are found for the provided {@code tag}, nothing happens.
+     * {@code observableTag}.
+     * If no Observables are found for the provided {@code observableTag}, nothing happens.
      */
-    public void cancelAndRemoveAllWithTag(String tag) {
-        for (String observerTag: observerTagsForObservableTag(tag)) {
-            cancelAndRemove(observerTag, tag);
+    public void cancelAndRemoveAllWithTag(String observableTag) {
+        for (String observerTag: observerTagsForObservableTag(observableTag)) {
+            cancelAndRemove(observerTag, observableTag);
         }
     }
 
@@ -329,17 +340,22 @@ public class ObservableGroup {
 
     /**
      * Returns whether the observer has an existing {@link Observable} with
-     * the provided {@code tag}.
+     * the provided {@code observableTag}.
      */
     public boolean hasObservable(AutoResubscribingObserver<?> observer, String observableTag) {
         return subscription(observer, observableTag) != null;
     }
 
     /**
-     * Returns whether there exists any observable with given tag.
+     * Returns whether there exists any observable with given {@code observableTag}.
      */
-    public boolean hasObservable(String tag) {
-        return subscription(tag) != null;
+    public boolean hasObservable(String observableTag) {
+        for (String observerTag: observerTagsForObservableTag(observableTag)) {
+             if (subscription(observerTag, observableTag) != null) {
+                 return true;
+             }
+        }
+        return false;
     }
 
     public boolean hasObservables(AutoResubscribingObserver<?> observer) {

@@ -136,7 +136,7 @@ public class GroupLifecycleManager {
   }
 
   public void cancelAndRemove(String observableTag) {
-    group.cancelAndRemove(observableTag);
+    group.cancelAndRemoveAllWithTag(observableTag);
   }
 
   public void cancelAllObservablesForObserver(AutoResubscribingObserver<?> observer) {
