@@ -59,13 +59,13 @@ public class ObservableGroupTest {
   @Test public void shouldNotBeCompleted() {
     ObservableGroup group = observableManager.newGroup();
     TestObserver<Object> subscriber = new TestObserver<>();
-    group.add(fooObserver.getTag(), null, Observable.never(), subscriber);
+    group.add(fooObserver.getTag(), fooObserver.getTag(), Observable.never(), subscriber);
     subscriber.assertNotCompleted();
   }
 
   @Test public void shouldBeSubscribed() {
     ObservableGroup group = observableManager.newGroup();
-    group.add(fooObserver.getTag(), null, Observable.never(), new TestObserver<>());
+    group.add(fooObserver.getTag(), fooObserver.getTag(), Observable.never(), new TestObserver<>());
     assertThat(group.subscription(fooObserver).isCancelled()).isEqualTo(false);
   }
 
@@ -121,8 +121,8 @@ public class ObservableGroupTest {
     Observable<String> observable2 = Observable.never();
     TestObserver<String> subscriber1 = new TestObserver<>();
 
-    group.add(fooObserver.getTag(), null, observable1, subscriber1);
-    group2.add(fooObserver.getTag(), null, observable2, subscriber1);
+    group.add(fooObserver.getTag(), fooObserver.getTag(), observable1, subscriber1);
+    group2.add(fooObserver.getTag(), fooObserver.getTag(), observable2, subscriber1);
 
     observableManager.destroy(group);
 
@@ -468,34 +468,95 @@ public class ObservableGroupTest {
 
   @Test public void shouldReplaceObservablesOfSameTagAndSameGroupId() {
     ObservableGroup group = observableManager.newGroup();
-    Observable<String> observable1 = Observable.never();
+    PublishSubject<String> observable1 = PublishSubject.create();
     PublishSubject<String> observable2 = PublishSubject.create();
     TestObserver<String> observer1 = new TestObserver<>();
     TestObserver<String> observer2 = new TestObserver<>();
-    group.add(fooObserver.getTag(), null, observable1, observer1);
-    group.add(fooObserver.getTag(), null, observable2, observer2);
+    group.add(fooObserver.getTag(), fooObserver.getTag(), observable1, observer1);
+    group.add(fooObserver.getTag(), fooObserver.getTag(), observable2, observer2);
 
-    assertThat(group.subscription(fooObserver).isCancelled()).isEqualTo(false);
-    assertThat(group.hasObservables(fooObserver)).isEqualTo(true);
+    assertThat(group.subscription(fooObserver).isCancelled()).isFalse();
+    assertThat(group.hasObservables(fooObserver)).isTrue();
 
-    observable2.onNext("Hello World");
+    observable1.onNext("Hello World 1");
+    observable1.onCompleted();
+
+    observable2.onNext("Hello World 2");
     observable2.onCompleted();
 
     observer2.assertCompleted();
-    observer2.assertValue("Hello World");
+    observer2.assertValue("Hello World 2");
+
+    observer1.assertNoValues();
+  }
+
+  /**
+   * The same observable tag can be used so long as it is associated with a different observer tag.
+   */
+  @Test public void shouldNotReplaceObservableOfSameTagAndSameGroupIdAndDifferentObservers() {
+    ObservableGroup group = observableManager.newGroup();
+    PublishSubject<String> observable1 = PublishSubject.create();
+    TestObserver<String> observer1 = new TestObserver<>();
+    TestObserver<String> observer2 = new TestObserver<>();
+    String sharedObservableTag = "sharedTag";
+    group.add(fooObserver.getTag(), sharedObservableTag, observable1, observer1);
+    group.add(barObserver.getTag(), sharedObservableTag, observable1, observer2);
+
+    assertThat(group.subscription(fooObserver, sharedObservableTag).isCancelled()).isFalse();
+    assertThat(group.hasObservables(fooObserver)).isTrue();
+
+    assertThat(group.subscription(barObserver, sharedObservableTag).isCancelled()).isFalse();
+    assertThat(group.hasObservables(barObserver)).isTrue();
+
+    observable1.onNext("Hello World 1");
+    observable1.onCompleted();
+
+    observer2.assertCompleted();
+    observer2.assertValue("Hello World 1");
+
+    observer1.assertCompleted();
+    observer1.assertValue("Hello World 1");
+  }
+
+  /**
+   * The same observable tag can be used so long as it is associated with a different observer tag.
+   */
+  @Test public void testCancelAndRemoveAllWithTag() {
+    ObservableGroup group = observableManager.newGroup();
+    PublishSubject<String> observable1 = PublishSubject.create();
+    TestObserver<String> observer1 = new TestObserver<>();
+    TestObserver<String> observer2 = new TestObserver<>();
+    String sharedObservableTag = "sharedTag";
+    group.add(fooObserver.getTag(), sharedObservableTag, observable1, observer1);
+    group.add(barObserver.getTag(), sharedObservableTag, observable1, observer2);
+
+    assertThat(group.subscription(fooObserver, sharedObservableTag).isCancelled()).isFalse();
+    assertThat(group.hasObservables(fooObserver)).isTrue();
+
+    assertThat(group.subscription(barObserver, sharedObservableTag).isCancelled()).isFalse();
+    assertThat(group.hasObservables(barObserver)).isTrue();
+
+    group.cancelAndRemoveAllWithTag(sharedObservableTag);
+
+    assertThat(group.hasObservables(fooObserver)).isFalse();
+    assertThat(group.hasObservables(barObserver)).isFalse();
+
   }
 
   @Test public void testCancelAndReAddSubscription() {
     ObservableGroup group = observableManager.newGroup();
-    group.add(fooObserver.getTag(), null, PublishSubject.<String>create(), new TestObserver<>());
+    group.add(fooObserver.getTag(), fooObserver.getTag(), PublishSubject.<String>create(),
+        new TestObserver<>());
     group.cancelAndRemove(fooObserver);
     assertThat(group.subscription(fooObserver)).isNull();
 
     Observable<String> observable = PublishSubject.create();
     Observer<String> observer = new TestObserver<>();
 
-    group.add(fooObserver.getTag(), null, observable, observer);
+    group.add(fooObserver.getTag(), fooObserver.getTag(), observable, observer);
 
     assertThat(group.subscription(fooObserver).isCancelled()).isFalse();
   }
+
+
 }
