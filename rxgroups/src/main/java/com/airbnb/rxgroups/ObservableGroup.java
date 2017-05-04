@@ -70,7 +70,7 @@ public class ObservableGroup {
         }
 
         ManagedObservable<T> managedObservable =
-                new ManagedObservable<>(observableTag, observableTag, observable, observer, new
+                new ManagedObservable<>(observerTag, observableTag, observable, observer, new
                         Action0() {
                             @Override
                             public void call() {
@@ -90,11 +90,11 @@ public class ObservableGroup {
         return getObservablesForObserver(observer.getTag());
     }
 
-    private Map<String, ManagedObservable<?>> getObservablesForObserver(String observableTag) {
-        Map<String, ManagedObservable<?>> map = groupMap.get(observableTag);
+    private Map<String, ManagedObservable<?>> getObservablesForObserver(String observerTag) {
+        Map<String, ManagedObservable<?>> map = groupMap.get(observerTag);
         if (map == null) {
             map = new HashMap<>();
-            groupMap.put(observableTag, map);
+            groupMap.put(observerTag, map);
         }
         return map;
     }
@@ -105,8 +105,8 @@ public class ObservableGroup {
      * subscribed to.
      */
     public <T> Observable.Transformer<? super T, T> transform(AutoResubscribingObserver<? super
-            T> observer, String tag) {
-        return new GroupSubscriptionTransformer<>(this, observer.getTag(), tag);
+            T> observer, String observableTag) {
+        return new GroupSubscriptionTransformer<>(this, observer.getTag(), observableTag);
     }
 
     /**
@@ -215,7 +215,7 @@ public class ObservableGroup {
      * delivered until it is unlocked.
      */
     public <T> Observable<T> observable(AutoResubscribingObserver<? super T> observer) {
-        return observable(observer, null);
+        return observable(observer, observer.getTag());
     }
 
     public <T> Observable<T> observable(AutoResubscribingObserver<? super T> observer, String
