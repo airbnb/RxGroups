@@ -558,5 +558,4 @@ public class ObservableGroupTest {
     assertThat(group.subscription(fooObserver).isCancelled()).isFalse();
   }
 
-
 }
