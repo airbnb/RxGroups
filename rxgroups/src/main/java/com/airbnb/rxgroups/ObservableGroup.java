@@ -34,7 +34,7 @@ import rx.functions.Action1;
  * ready. If the {@link ObservableGroup} is locked when the response arrives, or if the observer was
  * removed, the response will be queued and delivered when the {@link ObservableGroup} is unlocked
  * and a observer is added. <p> Each {@link AutoResubscribingObserver} can only be subscribed to
- * the same observable tag once. If a {@link AutoResubscribingObserver} is already subscribed the
+ * the same observable tag once. If a {@link AutoResubscribingObserver} is already subscribed then
  * the given tag, the original subscription will be cancelled and discarded.
  */
 public class ObservableGroup {
@@ -114,7 +114,7 @@ public class ObservableGroup {
      * automatically added to this {@link ObservableGroup}. <p> Convenience method
      * for {@link #transform(AutoResubscribingObserver, String)} when {@code observer} only
      * is subscribed to one {@link Observable}. {@link AutoResubscribingObserver#getTag()}
-     * will be used the {@code tag}.
+     * will be used {@code tag}.
      */
     public <T> Observable.Transformer<? super T, T> transform(AutoResubscribingObserver<? super
         T> observer) {
@@ -147,8 +147,8 @@ public class ObservableGroup {
 
     private List<String> observerTagsForObservableTag(String observableTag) {
         List<String> observerTags = new ArrayList<>();
-        for (Map.Entry<String, Map<String, ManagedObservable<?>>> groupEntry
-            : groupMap.entrySet()) {
+        for (Map.Entry<String, Map<String, ManagedObservable<?>>> groupEntry :
+          groupMap.entrySet()) {
             String observerTag = groupEntry.getKey();
             Map<String, ManagedObservable<?>> observables = groupEntry.getValue();
             if (observables.containsKey(observableTag)) {
@@ -208,7 +208,8 @@ public class ObservableGroup {
     }
 
     /**
-     * Returns an existing {@link Observable} for the provided {@code tag}.
+     * Returns an existing {@link Observable} for the .
+     *
      * <p> Does not change the locked status of this {@link ObservableGroup}.
      * If it is unlocked, and the Observable has already emitted events,
      * they will be immediately delivered. If it is locked then no events will be
@@ -350,10 +351,10 @@ public class ObservableGroup {
      * Returns whether there exists any observable with given {@code observableTag}.
      */
     public boolean hasObservable(String observableTag) {
-        for (String observerTag: observerTagsForObservableTag(observableTag)) {
-             if (subscription(observerTag, observableTag) != null) {
-                 return true;
-             }
+        for (String observerTag : observerTagsForObservableTag(observableTag)) {
+            if (subscription(observerTag, observableTag) != null) {
+                return true;
+            }
         }
         return false;
     }
