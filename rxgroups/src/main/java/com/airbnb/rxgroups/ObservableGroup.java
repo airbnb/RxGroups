@@ -305,19 +305,6 @@ public class ObservableGroup {
         cancelAndRemove(observer.getTag(), observer.getTag());
     }
 
-    /**
-     * Removes all {@link Observable} with {@code observableTag} from this group
-     * and cancels all of its subscriptions.
-     * No more events will be delivered to any {@link AutoResubscribingObserver} associated with
-     * {@code observableTag}.
-     * If no Observables are found for the provided {@code observableTag}, nothing happens.
-     */
-    public void cancelAndRemoveAllWithTag(String observableTag) {
-        for (String observerTag: observerTagsForObservableTag(observableTag)) {
-            cancelAndRemove(observerTag, observableTag);
-        }
-    }
-
     public void cancelAllObservablesForObserver(AutoResubscribingObserver<?> observer) {
         Map<String, ManagedObservable<?>> observables = getObservablesForObserver(observer);
         for (ManagedObservable<?> managedObservable : observables.values()) {
@@ -345,18 +332,6 @@ public class ObservableGroup {
      */
     public boolean hasObservable(AutoResubscribingObserver<?> observer, String observableTag) {
         return subscription(observer, observableTag) != null;
-    }
-
-    /**
-     * Returns whether there exists any observable with given {@code observableTag}.
-     */
-    public boolean hasObservable(String observableTag) {
-        for (String observerTag : observerTagsForObservableTag(observableTag)) {
-            if (subscription(observerTag, observableTag) != null) {
-                return true;
-            }
-        }
-        return false;
     }
 
     public boolean hasObservables(AutoResubscribingObserver<?> observer) {

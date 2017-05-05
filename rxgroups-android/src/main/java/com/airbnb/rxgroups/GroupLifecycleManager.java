@@ -123,22 +123,25 @@ public class GroupLifecycleManager {
   }
 
   /**
-   * Cancel the given request if it is running, so that no future request callbacks are received.
-   * If the request is not running then nothing
-   * happens.
+   * Calls {@link ObservableGroup#cancelAndRemove(AutoResubscribingObserver)} for the group
+   * associated with this instance.
    */
   public void cancelAndRemove(AutoResubscribingObserver<?> observer) {
     group.cancelAndRemove(observer);
   }
 
+  /**
+   * Calls {@link ObservableGroup#cancelAndRemove(AutoResubscribingObserver, String)} for the group
+   * associated with this instance.
+   */
   public void cancelAndRemove(AutoResubscribingObserver<?> observer, String observableTag) {
     group.cancelAndRemove(observer, observableTag);
   }
 
-  public void cancelAndRemove(String observableTag) {
-    group.cancelAndRemoveAllWithTag(observableTag);
-  }
-
+  /**
+   * Calls {@link ObservableGroup#cancelAllObservablesForObserver(AutoResubscribingObserver)}
+   * for the group associated with this instance.
+   */
   public void cancelAllObservablesForObserver(AutoResubscribingObserver<?> observer) {
     group.cancelAllObservablesForObserver(observer);
   }

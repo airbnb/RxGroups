@@ -518,31 +518,6 @@ public class ObservableGroupTest {
     observer1.assertValue("Hello World 1");
   }
 
-  /**
-   * The same observable tag can be used so long as it is associated with a different observer tag.
-   */
-  @Test public void testCancelAndRemoveAllWithTag() {
-    ObservableGroup group = observableManager.newGroup();
-    PublishSubject<String> observable1 = PublishSubject.create();
-    TestObserver<String> observer1 = new TestObserver<>();
-    TestObserver<String> observer2 = new TestObserver<>();
-    String sharedObservableTag = "sharedTag";
-    group.add(fooObserver.getTag(), sharedObservableTag, observable1, observer1);
-    group.add(barObserver.getTag(), sharedObservableTag, observable1, observer2);
-
-    assertThat(group.subscription(fooObserver, sharedObservableTag).isCancelled()).isFalse();
-    assertThat(group.hasObservables(fooObserver)).isTrue();
-
-    assertThat(group.subscription(barObserver, sharedObservableTag).isCancelled()).isFalse();
-    assertThat(group.hasObservables(barObserver)).isTrue();
-
-    group.cancelAndRemoveAllWithTag(sharedObservableTag);
-
-    assertThat(group.hasObservables(fooObserver)).isFalse();
-    assertThat(group.hasObservables(barObserver)).isFalse();
-
-  }
-
   @Test public void testCancelAndReAddSubscription() {
     ObservableGroup group = observableManager.newGroup();
     group.add(fooObserver.getTag(), fooObserver.getTag(), PublishSubject.<String>create(),
