@@ -109,10 +109,6 @@ public class GroupLifecycleManager {
     return group.hasObservable(observer, observableTag);
   }
 
-  public boolean hasObservable(String observableTag) {
-    return group.hasObservable(observableTag);
-  }
-
   /**
    * Subscribe all Observer fields on the target that are annotated with {@link AutoResubscribe}
    * and that have their corresponding Observable in flight.

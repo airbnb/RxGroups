@@ -15,9 +15,7 @@
  */
 package com.airbnb.rxgroups;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -143,19 +141,6 @@ public class ObservableGroup {
                 action.call(managedObservable);
             }
         }
-    }
-
-    private List<String> observerTagsForObservableTag(String observableTag) {
-        List<String> observerTags = new ArrayList<>();
-        for (Map.Entry<String, Map<String, ManagedObservable<?>>> groupEntry :
-          groupMap.entrySet()) {
-            String observerTag = groupEntry.getKey();
-            Map<String, ManagedObservable<?>> observables = groupEntry.getValue();
-            if (observables.containsKey(observableTag)) {
-                observerTags.add(observerTag);
-            }
-        }
-        return observerTags;
     }
 
     /**
