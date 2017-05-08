@@ -32,7 +32,7 @@ import rx.functions.Action1;
  * ready. If the {@link ObservableGroup} is locked when the response arrives, or if the observer was
  * removed, the response will be queued and delivered when the {@link ObservableGroup} is unlocked
  * and a observer is added. <p> Each {@link AutoResubscribingObserver} can only be subscribed to
- * the same observable tag once. If a {@link AutoResubscribingObserver} is already subscribed then
+ * the same observable tag once. If a {@link AutoResubscribingObserver} is already subscribed to
  * the given tag, the original subscription will be cancelled and discarded.
  */
 public class ObservableGroup {
