@@ -59,13 +59,13 @@ public class ObservableGroupTest {
   @Test public void shouldNotBeCompleted() {
     ObservableGroup group = observableManager.newGroup();
     TestObserver<Object> subscriber = new TestObserver<>();
-    group.add(fooObserver.getTag(), null, Observable.never(), subscriber);
+    group.add(fooObserver.getTag(), fooObserver.getTag(), Observable.never(), subscriber);
     subscriber.assertNotCompleted();
   }
 
   @Test public void shouldBeSubscribed() {
     ObservableGroup group = observableManager.newGroup();
-    group.add(fooObserver.getTag(), null, Observable.never(), new TestObserver<>());
+    group.add(fooObserver.getTag(), fooObserver.getTag(), Observable.never(), new TestObserver<>());
     assertThat(group.subscription(fooObserver).isCancelled()).isEqualTo(false);
   }
 
@@ -74,7 +74,7 @@ public class ObservableGroupTest {
     PublishSubject<String> subject = PublishSubject.create();
     TestObserver<String> subscriber = new TestObserver<>();
 
-    group.add(fooObserver.getTag(), null, subject, subscriber);
+    group.add(fooObserver.getTag(), fooObserver.getTag(), subject, subscriber);
     subscriber.assertNotCompleted();
 
     subject.onNext("Foo Bar");
@@ -88,7 +88,7 @@ public class ObservableGroupTest {
     ObservableGroup group = observableManager.newGroup();
     TestObserver<String> testObserver = new TestObserver<>();
     Observable<String> observable = Observable.error(new RuntimeException("boom"));
-    group.add(fooObserver.getTag(), null, observable, testObserver);
+    group.add(fooObserver.getTag(), fooObserver.getTag(), observable, testObserver);
 
     testObserver.assertError(RuntimeException.class);
   }
@@ -121,8 +121,8 @@ public class ObservableGroupTest {
     Observable<String> observable2 = Observable.never();
     TestObserver<String> subscriber1 = new TestObserver<>();
 
-    group.add(fooObserver.getTag(), null, observable1, subscriber1);
-    group2.add(fooObserver.getTag(), null, observable2, subscriber1);
+    group.add(fooObserver.getTag(), fooObserver.getTag(), observable1, subscriber1);
+    group2.add(fooObserver.getTag(), fooObserver.getTag(), observable2, subscriber1);
 
     observableManager.destroy(group);
 
@@ -145,8 +145,8 @@ public class ObservableGroupTest {
     TestObserver<String> subscriber1 = new TestObserver<>();
     TestObserver<String> subscriber2 = new TestObserver<>();
 
-    group.add(fooObserver.getTag(), null, observable1, subscriber1);
-    group.add(barObserver.getTag(), null, observable2, subscriber2);
+    group.add(fooObserver.getTag(), fooObserver.getTag(), observable1, subscriber1);
+    group.add(barObserver.getTag(), barObserver.getTag(), observable2, subscriber2);
 
     group.unsubscribe();
     observableManager.destroy(group);
@@ -160,7 +160,7 @@ public class ObservableGroupTest {
     PublishSubject<String> subject = PublishSubject.create();
     TestObserver<String> subscriber1 = new TestObserver<>();
 
-    group.add(fooObserver.getTag(), null, subject, subscriber1);
+    group.add(fooObserver.getTag(), fooObserver.getTag(), subject, subscriber1);
     group.unsubscribe();
     subject.onNext("Hello");
     subject.onCompleted();
@@ -173,7 +173,7 @@ public class ObservableGroupTest {
     ObservableGroup group = observableManager.newGroup();
     PublishSubject<String> subject = PublishSubject.create();
     TestObserver<String> subscriber = new TestObserver<>();
-    group.add(fooObserver.getTag(), null, subject, subscriber);
+    group.add(fooObserver.getTag(), fooObserver.getTag(), subject, subscriber);
 
     subject.onNext("Roberto Gomez Bolanos is king");
     subject.onCompleted();
@@ -187,7 +187,7 @@ public class ObservableGroupTest {
     TestObserver<String> testObserver = new TestObserver<>();
     PublishSubject<String> subject = PublishSubject.create();
 
-    group.add(fooObserver.getTag(), null, subject, testObserver);
+    group.add(fooObserver.getTag(), fooObserver.getTag(), subject, testObserver);
 
     subject.onError(new RuntimeException("BOOM!"));
 
@@ -201,7 +201,7 @@ public class ObservableGroupTest {
     TestObserver<String> testObserver = new TestObserver<>();
     PublishSubject<String> subject = PublishSubject.create();
 
-    group.add(fooObserver.getTag(), null, subject, testObserver);
+    group.add(fooObserver.getTag(), fooObserver.getTag(), subject, testObserver);
     group.unsubscribe();
 
     subject.onNext("Roberto Gomez Bolanos");
@@ -215,7 +215,7 @@ public class ObservableGroupTest {
     ObservableGroup group = observableManager.newGroup();
     TestObserver<String> testObserver = new TestObserver<>();
     PublishSubject<String> subject = PublishSubject.create();
-    group.add(fooObserver.getTag(), null, subject, testObserver);
+    group.add(fooObserver.getTag(), fooObserver.getTag(), subject, testObserver);
     group.unsubscribe();
 
     subject.onNext("Hello World");
@@ -236,7 +236,7 @@ public class ObservableGroupTest {
     TestObserver<String> testObserver = new TestObserver<>();
     PublishSubject<String> subject = PublishSubject.create();
 
-    group.add(fooObserver.getTag(), null, subject, testObserver);
+    group.add(fooObserver.getTag(), fooObserver.getTag(), subject, testObserver);
     group.unsubscribe();
 
     subject.onError(new Exception("Exploded"));
@@ -255,7 +255,7 @@ public class ObservableGroupTest {
     ObservableGroup group = observableManager.newGroup();
     TestObserver<String> testObserver = new TestObserver<>();
     PublishSubject<String> subject = PublishSubject.create();
-    group.add(fooObserver.getTag(), null, subject, testObserver);
+    group.add(fooObserver.getTag(), fooObserver.getTag(), subject, testObserver);
     group.unsubscribe();
 
     subject.onNext("Hello World");
@@ -281,7 +281,7 @@ public class ObservableGroupTest {
     PublishSubject<String> subject = PublishSubject.create();
     TestObserver<String> testObserver = new TestObserver<>();
 
-    group2.add(fooObserver.getTag(), null, subject, testObserver);
+    group2.add(fooObserver.getTag(), fooObserver.getTag(), subject, testObserver);
     group.unsubscribe();
 
     subject.onNext("Gremio Foot-ball Porto Alegrense");
@@ -299,7 +299,7 @@ public class ObservableGroupTest {
     PublishSubject<String> subject = PublishSubject.create();
     TestObserver<String> testObserver = new TestObserver<>();
 
-    group.add(fooObserver.getTag(), null, subject, testObserver);
+    group.add(fooObserver.getTag(), fooObserver.getTag(), subject, testObserver);
     observableManager.destroy(group);
 
     subject.onNext("Gremio Foot-ball Porto Alegrense");
@@ -317,8 +317,8 @@ public class ObservableGroupTest {
     PublishSubject<String> subject2 = PublishSubject.create();
     TestObserver<String> testSubscriber2 = new TestObserver<>();
 
-    group.add(fooObserver.getTag(), null, subject1, testSubscriber1);
-    group2.add(barObserver.getTag(), null, subject2, testSubscriber2);
+    group.add(fooObserver.getTag(), fooObserver.getTag(), subject1, testSubscriber1);
+    group2.add(barObserver.getTag(), barObserver.getTag(), subject2, testSubscriber2);
     group.unsubscribe();
 
     subject1.onNext("Florinda Mesa");
@@ -337,7 +337,7 @@ public class ObservableGroupTest {
     TestObserver<String> testSubscriber1 = new TestObserver<>();
     TestObserver<String> testSubscriber2 = new TestObserver<>();
 
-    group.add(fooObserver.getTag(), null, subject, testSubscriber1);
+    group.add(fooObserver.getTag(), fooObserver.getTag(), subject, testSubscriber1);
     group.observable(fooObserver).subscribe(testSubscriber2);
 
     subject.onNext("Ruben Aguirre");
@@ -356,8 +356,8 @@ public class ObservableGroupTest {
     PublishSubject<String> subject2 = PublishSubject.create();
     TestObserver<String> testSubscriber2 = new TestObserver<>();
 
-    group.add(fooObserver.getTag(), null, subject1, testSubscriber1);
-    group.add(barObserver.getTag(), null, subject2, testSubscriber2);
+    group.add(fooObserver.getTag(), fooObserver.getTag(), subject1, testSubscriber1);
+    group.add(barObserver.getTag(), barObserver.getTag(), subject2, testSubscriber2);
     group.unsubscribe();
 
     subject1.onNext("Chespirito");
@@ -377,7 +377,7 @@ public class ObservableGroupTest {
     PublishSubject<String> subject = PublishSubject.create();
 
     group.lock();
-    group.add(fooObserver.getTag(), null, subject, testObserver);
+    group.add(fooObserver.getTag(), fooObserver.getTag(), subject, testObserver);
 
     subject.onNext("Chespirito");
     subject.onCompleted();
@@ -393,7 +393,7 @@ public class ObservableGroupTest {
     PublishSubject<String> subject = PublishSubject.create();
 
     group.lock();
-    group.add(fooObserver.getTag(), null, subject, testObserver);
+    group.add(fooObserver.getTag(), fooObserver.getTag(), subject, testObserver);
 
     subject.onNext("Chespirito");
     subject.onCompleted();
@@ -411,7 +411,7 @@ public class ObservableGroupTest {
     TestObserver<String> testObserver = new TestObserver<>();
     PublishSubject<String> subject = PublishSubject.create();
 
-    group.add(fooObserver.getTag(), null, subject, testObserver);
+    group.add(fooObserver.getTag(), fooObserver.getTag(), subject, testObserver);
     group.lock();
 
     subject.onNext("Chespirito");
@@ -430,7 +430,7 @@ public class ObservableGroupTest {
     TestObserver<String> testObserver = new TestObserver<>();
     PublishSubject<String> subject = PublishSubject.create();
 
-    group.add(fooObserver.getTag(), null, subject, testObserver);
+    group.add(fooObserver.getTag(), fooObserver.getTag(), subject, testObserver);
     group.lock();
     group.unsubscribe();
 
@@ -468,34 +468,69 @@ public class ObservableGroupTest {
 
   @Test public void shouldReplaceObservablesOfSameTagAndSameGroupId() {
     ObservableGroup group = observableManager.newGroup();
-    Observable<String> observable1 = Observable.never();
+    PublishSubject<String> observable1 = PublishSubject.create();
     PublishSubject<String> observable2 = PublishSubject.create();
     TestObserver<String> observer1 = new TestObserver<>();
     TestObserver<String> observer2 = new TestObserver<>();
-    group.add(fooObserver.getTag(), null, observable1, observer1);
-    group.add(fooObserver.getTag(), null, observable2, observer2);
+    group.add(fooObserver.getTag(), fooObserver.getTag(), observable1, observer1);
+    group.add(fooObserver.getTag(), fooObserver.getTag(), observable2, observer2);
 
-    assertThat(group.subscription(fooObserver).isCancelled()).isEqualTo(false);
-    assertThat(group.hasObservables(fooObserver)).isEqualTo(true);
+    assertThat(group.subscription(fooObserver).isCancelled()).isFalse();
+    assertThat(group.hasObservables(fooObserver)).isTrue();
 
-    observable2.onNext("Hello World");
+    observable1.onNext("Hello World 1");
+    observable1.onCompleted();
+
+    observable2.onNext("Hello World 2");
     observable2.onCompleted();
 
     observer2.assertCompleted();
-    observer2.assertValue("Hello World");
+    observer2.assertValue("Hello World 2");
+
+    observer1.assertNoValues();
+  }
+
+  /**
+   * The same observable tag can be used so long as it is associated with a different observer tag.
+   */
+  @Test public void shouldNotReplaceObservableOfSameTagAndSameGroupIdAndDifferentObservers() {
+    ObservableGroup group = observableManager.newGroup();
+    PublishSubject<String> observable1 = PublishSubject.create();
+    TestObserver<String> observer1 = new TestObserver<>();
+    TestObserver<String> observer2 = new TestObserver<>();
+    String sharedObservableTag = "sharedTag";
+    group.add(fooObserver.getTag(), sharedObservableTag, observable1, observer1);
+    group.add(barObserver.getTag(), sharedObservableTag, observable1, observer2);
+
+    assertThat(group.subscription(fooObserver, sharedObservableTag).isCancelled()).isFalse();
+    assertThat(group.hasObservables(fooObserver)).isTrue();
+
+    assertThat(group.subscription(barObserver, sharedObservableTag).isCancelled()).isFalse();
+    assertThat(group.hasObservables(barObserver)).isTrue();
+
+    observable1.onNext("Hello World 1");
+    observable1.onCompleted();
+
+    observer2.assertCompleted();
+    observer2.assertValue("Hello World 1");
+
+    observer1.assertCompleted();
+    observer1.assertValue("Hello World 1");
   }
 
   @Test public void testCancelAndReAddSubscription() {
     ObservableGroup group = observableManager.newGroup();
-    group.add(fooObserver.getTag(), null, PublishSubject.<String>create(), new TestObserver<>());
+    group.add(fooObserver.getTag(), fooObserver.getTag(), PublishSubject.<String>create(),
+        new TestObserver<>());
     group.cancelAndRemove(fooObserver);
     assertThat(group.subscription(fooObserver)).isNull();
 
     Observable<String> observable = PublishSubject.create();
     Observer<String> observer = new TestObserver<>();
 
-    group.add(fooObserver.getTag(), null, observable, observer);
+    group.add(fooObserver.getTag(), fooObserver.getTag(), observable, observer);
 
     assertThat(group.subscription(fooObserver).isCancelled()).isFalse();
   }
+
 }
