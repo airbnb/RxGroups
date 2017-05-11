@@ -1,9 +1,9 @@
 package com.airbnb.rxgroups.processor;
 
 import com.airbnb.rxgroups.AutoResubscribe;
-import com.airbnb.rxgroups.AutoResubscribingObserver;
 import com.airbnb.rxgroups.BaseObservableResubscriber;
 import com.airbnb.rxgroups.ObservableGroup;
+import com.airbnb.rxgroups.TaggedObserver;
 import com.google.auto.service.AutoService;
 import com.google.common.collect.ImmutableSet;
 import com.squareup.javapoet.ClassName;
@@ -14,7 +14,6 @@ import com.squareup.javapoet.TypeName;
 import com.squareup.javapoet.TypeSpec;
 
 import java.io.IOException;
-import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -35,6 +34,7 @@ import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
 import javax.tools.Diagnostic;
 
+import static com.airbnb.rxgroups.processor.ResubscriptionProcessor.ObserverType.*;
 import static javax.lang.model.element.ElementKind.CLASS;
 import static javax.lang.model.element.Modifier.PRIVATE;
 import static javax.lang.model.element.Modifier.PUBLIC;
@@ -103,16 +103,20 @@ public class ResubscriptionProcessor extends AbstractProcessor {
     ClassToGenerateInfo targetClass = getOrCreateTargetClass(info, enclosingClass);
 
     String observerName = observer.getSimpleName().toString();
-    targetClass.addObserver(observerName);
+
+    boolean isAutoResubscribing =
+        ProcessorUtils.isResubscribingObserver(observer, typeUtils, elementUtils);
+    ObserverType observerType = isAutoResubscribing ? AUTO_RESUBSCRIBE_OBSERVER : TAGGED_OBSERVER;
+    targetClass.addObserver(observerName, observerType);
   }
 
   private void validateObserverField(Element observerFieldElement) {
 
     TypeElement enclosingClass = (TypeElement) observerFieldElement.getEnclosingElement();
 
-    if (!ProcessorUtils.isResubscribingObserver(observerFieldElement, typeUtils, elementUtils)) {
+    if (!ProcessorUtils.isTaggedObserver(observerFieldElement, typeUtils, elementUtils)) {
       logError("%s annotation may only be on %s types. (class: %s, field: %s)",
-              AutoResubscribe.class.getSimpleName(), AutoResubscribingObserver.class,
+              AutoResubscribe.class.getSimpleName(), TaggedObserver.class,
               enclosingClass.getSimpleName(), observerFieldElement.getSimpleName());
     }
 
@@ -198,9 +202,14 @@ public class ResubscriptionProcessor extends AbstractProcessor {
             .addParameter(ParameterSpec.builder(TypeName.get(ObservableGroup.class), "group")
                     .build());
 
-    for (String observerName : info.observerNames) {
-      String tag = info.originalClassName.getSimpleName().toString() + "_" + observerName;
-      builder.addStatement("setTag(target.$L, $S)", observerName, tag);
+    for (Map.Entry<String, ObserverType> observerNameAndType
+        : info.observerNamesToType.entrySet()) {
+      String observerName = observerNameAndType.getKey();
+      ObserverType type = observerNameAndType.getValue();
+      if (type == AUTO_RESUBSCRIBE_OBSERVER) {
+        String tag = info.originalClassName.getSimpleName().toString() + "_" + observerName;
+        builder.addStatement("setTag(target.$L, $S)", observerName, tag);
+      }
       builder.addStatement("group.resubscribe(target.$L)", observerName);
     }
 
@@ -217,6 +226,11 @@ public class ResubscriptionProcessor extends AbstractProcessor {
     logError(new RxGroupsResubscriptionProcessorException(String.format(msg, args)));
   }
 
+  enum ObserverType {
+    TAGGED_OBSERVER,
+    AUTO_RESUBSCRIBE_OBSERVER
+  }
+
   /**
    * Exceptions are caught and logged, and not printed until all processing is done. This allows
    * generated classes to be created first and allows for easier to read compile time error
@@ -227,7 +241,7 @@ public class ResubscriptionProcessor extends AbstractProcessor {
   }
 
   private static class ClassToGenerateInfo {
-    final List<String> observerNames = new ArrayList<>();
+    final Map<String, ObserverType> observerNamesToType = new LinkedHashMap<>();
     private final TypeElement originalClassName;
     private final ClassName generatedClassName;
 
@@ -236,8 +250,8 @@ public class ResubscriptionProcessor extends AbstractProcessor {
       this.generatedClassName = generatedClassName;
     }
 
-    public void addObserver(String observerName) {
-      observerNames.add(observerName);
+    public void addObserver(String observerName, ObserverType type) {
+      observerNamesToType.put(observerName, type);
     }
   }
 }

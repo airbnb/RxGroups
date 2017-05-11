@@ -42,7 +42,7 @@ public class ObservableGroup {
     private boolean locked;
     private boolean destroyed;
 
-    ObservableGroup(long groupId, WarningConfiguration warningConfiguration) {
+    ObservableGroup(long groupId) {
         this.groupId = groupId;
     }
 
