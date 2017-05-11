@@ -87,12 +87,12 @@ public class GroupLifecycleManager {
    * TODO
    */
   public <T> Observable.Transformer<? super T, T>
-  transform(AutoResubscribingObserver<? super T> observer) {
+  transform(TaggedObserver<? super T> observer) {
     return transform(observer, null);
   }
 
   public <T> Observable.Transformer<? super T, T>
-  transform(AutoResubscribingObserver<? super T> observer, String observableTag) {
+  transform(TaggedObserver<? super T> observer, String observableTag) {
     return group.transform(observer, observableTag);
   }
 

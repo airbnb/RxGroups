@@ -31,8 +31,8 @@ import rx.functions.Action1;
  * {@link ObservableGroup} with an observer, and that observer will be called when a response is
  * ready. If the {@link ObservableGroup} is locked when the response arrives, or if the observer was
  * removed, the response will be queued and delivered when the {@link ObservableGroup} is unlocked
- * and a observer is added. <p> Each {@link AutoResubscribingObserver} can only be subscribed to
- * the same observable tag once. If a {@link AutoResubscribingObserver} is already subscribed to
+ * and a observer is added. <p> Each {@link TaggedObserver} can only be subscribed to
+ * the same observable tag once. If a {@link TaggedObserver} is already subscribed to
  * the given tag, the original subscription will be cancelled and discarded.
  */
 public class ObservableGroup {
@@ -84,7 +84,7 @@ public class ObservableGroup {
     }
 
     private Map<String, ManagedObservable<?>> getObservablesForObserver(
-            AutoResubscribingObserver<?> observer) {
+            TaggedObserver<?> observer) {
         return getObservablesForObserver(observer.getTag());
     }
 
@@ -102,7 +102,7 @@ public class ObservableGroup {
      * automatically added to this {@link ObservableGroup} with the provided {@code tag} when
      * subscribed to.
      */
-    public <T> Observable.Transformer<? super T, T> transform(AutoResubscribingObserver<? super
+    public <T> Observable.Transformer<? super T, T> transform(TaggedObserver<? super
             T> observer, String observableTag) {
         return new GroupSubscriptionTransformer<>(this, observer.getTag(), observableTag);
     }
@@ -110,11 +110,11 @@ public class ObservableGroup {
     /**
      * Transforms an existing {@link Observable} by returning a new {@link Observable} that is
      * automatically added to this {@link ObservableGroup}. <p> Convenience method
-     * for {@link #transform(AutoResubscribingObserver, String)} when {@code observer} only
-     * is subscribed to one {@link Observable}. {@link AutoResubscribingObserver#getTag()}
+     * for {@link #transform(TaggedObserver, String)} when {@code observer} only
+     * is subscribed to one {@link Observable}. {@link TaggedObserver#getTag()}
      * will be used {@code tag}.
      */
-    public <T> Observable.Transformer<? super T, T> transform(AutoResubscribingObserver<? super
+    public <T> Observable.Transformer<? super T, T> transform(TaggedObserver<? super
         T> observer) {
         return new GroupSubscriptionTransformer<>(this, observer.getTag(), observer.getTag());
     }
@@ -145,7 +145,7 @@ public class ObservableGroup {
 
     /**
      * Locks (prevents) Observables added to this group from emitting new events. Observables added
-     * via {@link #transform(AutoResubscribingObserver, String)} while the group is locked will
+     * via {@link #transform(TaggedObserver, String)} while the group is locked will
      * **not** be subscribed until their respective group is unlocked. If it's never unlocked, then
      * the Observable will never be subscribed to at all. This does not clear references to existing
      * Observers. Please use {@link #unsubscribe()} if you want to clear references to existing
@@ -180,7 +180,7 @@ public class ObservableGroup {
      * existing
      * {@link Observer} objects in order to avoid leaks. This does not disconnect from the upstream
      * Observable, so it can be resumed upon calling
-     * {@link #observable(AutoResubscribingObserver)} if
+     * {@link #observable(TaggedObserver)} if
      * needed.
      */
     public void unsubscribe() {
@@ -200,11 +200,11 @@ public class ObservableGroup {
      * they will be immediately delivered. If it is locked then no events will be
      * delivered until it is unlocked.
      */
-    public <T> Observable<T> observable(AutoResubscribingObserver<? super T> observer) {
+    public <T> Observable<T> observable(TaggedObserver<? super T> observer) {
         return observable(observer, observer.getTag());
     }
 
-    public <T> Observable<T> observable(AutoResubscribingObserver<? super T> observer, String
+    public <T> Observable<T> observable(TaggedObserver<? super T> observer, String
             observableTag) {
         checkNotDestroyed();
         Map<String, ManagedObservable<?>> observables
@@ -227,18 +227,18 @@ public class ObservableGroup {
      * cancel before the {@link Observable} has completed. If no {@link Observable} is found for the
      * provided {@code observableTag}, {@code null} is returned instead.
      */
-    public RequestSubscription subscription(AutoResubscribingObserver<?> observer, String
+    public RequestSubscription subscription(TaggedObserver<?> observer, String
             observableTag) {
        return subscription(observer.getTag(), observableTag);
     }
 
     /**
-     * Convenience method for {@link #subscription(AutoResubscribingObserver, String)}, with
-     * {@code observableTag} of {@link AutoResubscribingObserver#getTag()}.
+     * Convenience method for {@link #subscription(TaggedObserver, String)}, with
+     * {@code observableTag} of {@link TaggedObserver#getTag()}.
      *
      * <p> Use when the {@code observer} is associated with only one {@link Observable}.
      */
-    public RequestSubscription subscription(AutoResubscribingObserver<?> observer) {
+    public RequestSubscription subscription(TaggedObserver<?> observer) {
         return subscription(observer, observer.getTag());
     }
 
@@ -248,11 +248,11 @@ public class ObservableGroup {
     }
 
     /**
-     * Convenience method for {@link #resubscribe(AutoResubscribingObserver, String)}, with
-     * {@code observableTag} of {@link AutoResubscribingObserver#getTag()}.
+     * Convenience method for {@link #resubscribe(TaggedObserver, String)}, with
+     * {@code observableTag} of {@link TaggedObserver#getTag()}.
      * <p> Use when the {@code observer} is associated with only one {@link Observable}.
      */
-    public <T> void resubscribe(AutoResubscribingObserver<? super T> observer) {
+    public <T> void resubscribe(TaggedObserver<? super T> observer) {
         Map<String, ManagedObservable<?>> observables = getObservablesForObserver(observer);
         for (String observableTag : observables.keySet()) {
             observable(observer, observableTag).subscribe(observer);
@@ -260,10 +260,10 @@ public class ObservableGroup {
     }
 
     /**
-     * Resubscribes the {@link AutoResubscribingObserver} to the observable
+     * Resubscribes the {@link TaggedObserver} to the observable
      * identified by {@code observableTag}.
      */
-    public <T> void resubscribe(AutoResubscribingObserver<? super T> observer,
+    public <T> void resubscribe(TaggedObserver<? super T> observer,
                                 String observableTag) {
         final Observable<T> observable = observable(observer, observableTag);
         if (observable != null) {
@@ -273,24 +273,24 @@ public class ObservableGroup {
 
     /**
      * Removes the {@link Observable} identified by {@code observableTag} for the given
-     * {@link AutoResubscribingObserver} and cancels it subscription.
+     * {@link TaggedObserver} and cancels it subscription.
      * No more events will be delivered to its subscriber.
      * <p>If no Observable is found for the provided {@code observableTag}, nothing happens.
      */
-    public void cancelAndRemove(AutoResubscribingObserver<?> observer, String observableTag) {
+    public void cancelAndRemove(TaggedObserver<?> observer, String observableTag) {
         cancelAndRemove(observer.getTag(), observableTag);
     }
 
     /**
-     * Convenience method for {@link #cancelAndRemove(AutoResubscribingObserver, String)}, with
-     * {@code observableTag} of {@link AutoResubscribingObserver#getTag()}.
+     * Convenience method for {@link #cancelAndRemove(TaggedObserver, String)}, with
+     * {@code observableTag} of {@link TaggedObserver#getTag()}.
      * <p> Use when the {@code observer} is associated with only one {@link Observable}.
      */
-    public void cancelAndRemove(AutoResubscribingObserver<?> observer) {
+    public void cancelAndRemove(TaggedObserver<?> observer) {
         cancelAndRemove(observer.getTag(), observer.getTag());
     }
 
-    public void cancelAllObservablesForObserver(AutoResubscribingObserver<?> observer) {
+    public void cancelAllObservablesForObserver(TaggedObserver<?> observer) {
         Map<String, ManagedObservable<?>> observables = getObservablesForObserver(observer);
         for (ManagedObservable<?> managedObservable : observables.values()) {
             managedObservable.cancel();
@@ -315,11 +315,11 @@ public class ObservableGroup {
      * Returns whether the observer has an existing {@link Observable} with
      * the provided {@code observableTag}.
      */
-    public boolean hasObservable(AutoResubscribingObserver<?> observer, String observableTag) {
+    public boolean hasObservable(TaggedObserver<?> observer, String observableTag) {
         return subscription(observer, observableTag) != null;
     }
 
-    public boolean hasObservables(AutoResubscribingObserver<?> observer) {
+    public boolean hasObservables(TaggedObserver<?> observer) {
         return !getObservablesForObserver(observer).isEmpty();
     }
 

@@ -32,6 +32,25 @@ public class GroupLifecycleManagerTest extends BaseTest {
   static class TestTarget {
     @AutoResubscribe
     final TestAutoResubscribingObserver observer = new TestAutoResubscribingObserver("foo");
+
+    @AutoResubscribe
+    final TaggedObserver taggedObserver = new TaggedObserver() {
+      @Override public String getTag() {
+        return "bar";
+      }
+
+      @Override public void onCompleted() {
+
+      }
+
+      @Override public void onError(Throwable e) {
+
+      }
+
+      @Override public void onNext(Object o) {
+
+      }
+    };
   }
 
   @Test
@@ -39,6 +58,7 @@ public class GroupLifecycleManagerTest extends BaseTest {
     when(observableManager.newGroup()).thenReturn(group);
     GroupLifecycleManager.onCreate(observableManager, null, target);
     verify(group).resubscribe(target.observer);
+    verify(group).resubscribe(target.taggedObserver);
   }
 
   @Test
@@ -75,6 +95,8 @@ public class GroupLifecycleManagerTest extends BaseTest {
     when(observableManager.newGroup()).thenReturn(group);
     when(group.hasObservables(target.observer)).thenReturn(true);
     when(group.observable(target.observer)).thenReturn(testSubject);
+    when(group.hasObservables(target.taggedObserver)).thenReturn(true);
+    when(group.observable(target.taggedObserver)).thenReturn(testSubject);
 
     GroupLifecycleManager lifecycleManager = GroupLifecycleManager.onCreate
             (observableManager, null, target);

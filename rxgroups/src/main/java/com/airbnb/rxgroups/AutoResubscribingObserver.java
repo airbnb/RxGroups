@@ -1,13 +1,11 @@
 package com.airbnb.rxgroups;
 
 
-import rx.Observer;
-
-public abstract class AutoResubscribingObserver<T> implements Observer<T> {
+public abstract class AutoResubscribingObserver<T> implements TaggedObserver<T> {
 
   private String tag;
 
-  public String getTag() {
+  public final String getTag() {
     return tag;
   }
 
