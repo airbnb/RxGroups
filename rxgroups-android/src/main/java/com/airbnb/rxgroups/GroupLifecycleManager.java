@@ -140,7 +140,7 @@ public class GroupLifecycleManager {
    * Calls {@link ObservableGroup#cancelAllObservablesForObserver(Observer)} (Observer)}
    * for the group associated with this instance.
    */
-  public void cancelAndRemoveAll(Observer<?> observer) {
+  public void cancelAllObservablesForObserver(Observer<?> observer) {
     group.cancelAllObservablesForObserver(observer);
   }
 
@@ -150,14 +150,6 @@ public class GroupLifecycleManager {
    */
   public void cancelAndRemove(Observer<?> observer, String observableTag) {
     group.cancelAndRemove(observer, observableTag);
-  }
-
-  /**
-   * Calls {@link ObservableGroup#cancelAllObservablesForObserver(Observer)}
-   * for the group associated with this instance.
-   */
-  public void cancelAllObservablesForObserver(Observer<?> observer) {
-    group.cancelAllObservablesForObserver(observer);
   }
 
   private void onDestroy(boolean isFinishing) {
