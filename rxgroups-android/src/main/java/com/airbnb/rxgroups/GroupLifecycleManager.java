@@ -44,7 +44,7 @@ public class GroupLifecycleManager {
     this.group = group;
   }
 
-    /** Call this method from your Activity or Fragment's onCreate method */
+  /** Call this method from your Activity or Fragment's onCreate method */
   public static GroupLifecycleManager onCreate(ObservableManager observableManager,
       @Nullable Bundle savedState, @Nullable Object target) {
 

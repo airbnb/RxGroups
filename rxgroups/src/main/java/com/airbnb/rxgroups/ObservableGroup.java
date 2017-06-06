@@ -70,8 +70,8 @@ public class ObservableGroup {
      * Sets a unique tag on all Observer fields that are annotated with {@link AutoTag}
      * or {@link AutoResubscribe}.
      *
-     * Resubscribes all Observer fields on the target that are annotated with {@link AutoResubscribe}
-     * and that have their corresponding Observable in flight.
+     * Resubscribes all Observer fields on the target that are annotated with
+     * {@link AutoResubscribe} and that have their corresponding Observable in flight.
      */
     public void safeInitializeAutoResubscription(final Object target) {
         Preconditions.checkNotNull(target, "Target cannot be null");
@@ -306,14 +306,11 @@ public class ObservableGroup {
     }
 
     /**
-     * Convenience method for {@link #cancelAndRemove(Observer, String)}, with
-     * {@code observableTag} of {@link TaggedObserver#getTag()}.
-     * <p> Use when the {@code observer} is associated with only one {@link Observable}.
+     * Removes all {@link Observable} for the given
+     * {@link Observer} and cancels their subscriptions.
+     * No more events will be delivered to its subscriber.
+     * <p>If no Observable is found for the provided {@code observableTag}, nothing happens.
      */
-    public void cancelAndRemove(Observer<?> observer) {
-        cancelAndRemove(Utils.getObserverTag(observer), Utils.getObserverTag(observer));
-    }
-
     public void cancelAllObservablesForObserver(Observer<?> observer) {
         Map<String, ManagedObservable<?>> observables = getObservablesForObserver(observer);
         for (ManagedObservable<?> managedObservable : observables.values()) {
@@ -343,6 +340,9 @@ public class ObservableGroup {
         return subscription(observer, observableTag) != null;
     }
 
+    /**
+     * Returns whether the observer has any existing {@link Observable}.
+     */
     public boolean hasObservables(Observer<?> observer) {
         return !getObservablesForObserver(observer).isEmpty();
     }

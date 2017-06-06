@@ -2,6 +2,10 @@ package com.airbnb.rxgroups;
 
 import rx.Observer;
 
+/**
+ * An {@link Observer} which as a string "tag" which
+ * uniquely identifies this Observer.
+ */
 public interface TaggedObserver<T> extends Observer<T> {
 
   /**
