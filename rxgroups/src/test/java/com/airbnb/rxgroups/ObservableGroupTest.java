@@ -522,7 +522,7 @@ public class ObservableGroupTest {
     ObservableGroup group = observableManager.newGroup();
     group.add(fooObserver.getTag(), fooObserver.getTag(), PublishSubject.<String>create(),
         new TestObserver<>());
-    group.cancelAndRemove(fooObserver);
+    group.cancelAllObservablesForObserver(fooObserver);
     assertThat(group.subscription(fooObserver)).isNull();
 
     Observable<String> observable = PublishSubject.create();
