@@ -14,14 +14,14 @@ public class NonResubscribableTagTest {
   }
 
   @Test
-  public void testMatch_innerclass() {
+  public void testMatchInnerclass() {
     InnerClass test = new InnerClass();
     final String tag = NonResubscribableTag.create(test);
     assertThat(NonResubscribableTag.isNonResubscribableTag(tag)).isTrue();
   }
 
   @Test
-  public void testMatch_nomatch() {
+  public void testNoMatch() {
     String tag = "stableTag";
     assertThat(NonResubscribableTag.isNonResubscribableTag(tag)).isFalse();
   }
