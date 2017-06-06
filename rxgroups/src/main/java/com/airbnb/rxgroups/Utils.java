@@ -7,6 +7,6 @@ public class Utils {
     if (observer instanceof TaggedObserver) {
       return ((TaggedObserver) observer).getTag();
     }
-    return NonResubscribingTag.create(observer);
+    return NonResubscribableTag.create(observer);
   }
 }

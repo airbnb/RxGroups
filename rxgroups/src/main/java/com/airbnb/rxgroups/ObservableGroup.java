@@ -364,9 +364,9 @@ public class ObservableGroup {
                 + locked + ", destroyed=" + destroyed + '}';
     }
 
-    void removeNonResubscribingObservers() {
+    void removeNonResubscribableObservers() {
         for (String observerTag : groupMap.keySet()) {
-            if (NonResubscribingTag.isNonResubscribableTag(observerTag)) {
+            if (NonResubscribableTag.isNonResubscribableTag(observerTag)) {
                 for (ManagedObservable<?> observable : groupMap.get(observerTag).values()) {
                     observable.cancel();
                 }

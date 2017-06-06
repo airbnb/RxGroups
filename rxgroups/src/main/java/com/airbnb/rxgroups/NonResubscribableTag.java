@@ -6,9 +6,9 @@ import java.util.regex.Pattern;
 /**
  * Creates a tag of the form NonResubscribableTag_className#hashcode.
  */
-class NonResubscribingTag {
+class NonResubscribableTag {
 
-  private static final String IDENTIFIER = NonResubscribingTag.class.getSimpleName();
+  private static final String IDENTIFIER = NonResubscribableTag.class.getSimpleName();
   private static final Pattern REGEX_MATCHER = Pattern.compile(IDENTIFIER + "_.*#\\d+");
   private static final String TEMPLATE = IDENTIFIER + "_%s#%d";
 

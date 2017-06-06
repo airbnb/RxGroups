@@ -111,7 +111,7 @@ public class GroupLifecycleManagerTest extends BaseTest {
     verify(observableManager).destroy(group);
   }
 
-  @Test public void testNonResubscribingObservablesRemovedAfterNonFinishingDestroy() {
+  @Test public void testNonResubscribableObservablesRemovedAfterNonFinishingDestroy() {
     when(observableManager.newGroup()).thenReturn(new ObservableGroup(1));
 
     GroupLifecycleManager lifecycleManager = GroupLifecycleManager.onCreate

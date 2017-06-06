@@ -164,7 +164,7 @@ public class GroupLifecycleManager {
     if (isFinishing) {
       observableManager.destroy(group);
     } else {
-      group().removeNonResubscribingObservers();
+      group().removeNonResubscribableObservers();
       group.unsubscribe();
     }
   }
