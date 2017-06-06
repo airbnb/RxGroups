@@ -44,7 +44,7 @@ public class GroupLifecycleManager {
     this.group = group;
   }
 
-  /** Call this method from your Activity or Fragment's onCreate method */
+    /** Call this method from your Activity or Fragment's onCreate method */
   public static GroupLifecycleManager onCreate(ObservableManager observableManager,
       @Nullable Bundle savedState, @Nullable Object target) {
 
@@ -72,7 +72,7 @@ public class GroupLifecycleManager {
     GroupLifecycleManager manager = new GroupLifecycleManager(observableManager, group);
 
     if (target != null) {
-      manager.initializeAutoResubscription(target);
+      manager.safeInitializeAutoResubscription(target);
     }
 
     return manager;
@@ -87,12 +87,12 @@ public class GroupLifecycleManager {
    * TODO
    */
   public <T> Observable.Transformer<? super T, T>
-  transform(TaggedObserver<? super T> observer) {
+  transform(Observer<? super T> observer) {
     return transform(observer, null);
   }
 
   public <T> Observable.Transformer<? super T, T>
-  transform(TaggedObserver<? super T> observer, String observableTag) {
+  transform(Observer<? super T> observer, String observableTag) {
     return group.transform(observer, observableTag);
   }
 
@@ -101,17 +101,23 @@ public class GroupLifecycleManager {
    * Observables will only be removed from their respective groups once
    * {@link Observer#onCompleted()} has been called.
    */
-  public boolean hasObservables(AutoResubscribingObserver<?> observer) {
+  public boolean hasObservables(Observer<?> observer) {
     return group.hasObservables(observer);
   }
 
-  public boolean hasObservable(AutoResubscribingObserver<?> observer, String observableTag) {
+  public boolean hasObservable(Observer<?> observer, String observableTag) {
     return group.hasObservable(observer, observableTag);
   }
 
   /**
+   * Sets a unique tag on all Observer fields that are annotated with {@link AutoTag}
+   * or {@link AutoResubscribe}.
+   *
    * Subscribe all Observer fields on the target that are annotated with {@link AutoResubscribe}
    * and that have their corresponding Observable in flight.
+   *
+   * Throws {@link IllegalArgumentException} if there are no {@link AutoResubscribe}
+   * or {@link AutoTag} observers in the target.
    */
   public void initializeAutoResubscription(Object target) {
     Preconditions.checkNotNull(target, "Target cannot be null");
@@ -119,26 +125,38 @@ public class GroupLifecycleManager {
   }
 
   /**
-   * Calls {@link ObservableGroup#cancelAndRemove(AutoResubscribingObserver)} for the group
+   * Sets a unique tag on all Observer fields that are annotated with {@link AutoTag}
+   * or {@link AutoResubscribe}.
+   *
+   * Resubscribes all Observer fields on the target that are annotated with {@link AutoResubscribe}
+   * and that have their corresponding Observable in flight.
+   */
+  public void safeInitializeAutoResubscription(Object target) {
+    Preconditions.checkNotNull(target, "Target cannot be null");
+    ResubscribeHelper.safeInitializeResubscription(target, group);
+  }
+
+  /**
+   * Calls {@link ObservableGroup#cancelAndRemove(Observer)} for the group
    * associated with this instance.
    */
-  public void cancelAndRemove(AutoResubscribingObserver<?> observer) {
+  public void cancelAndRemove(Observer<?> observer) {
     group.cancelAndRemove(observer);
   }
 
   /**
-   * Calls {@link ObservableGroup#cancelAndRemove(AutoResubscribingObserver, String)} for the group
+   * Calls {@link ObservableGroup#cancelAndRemove(Observer, String)} for the group
    * associated with this instance.
    */
-  public void cancelAndRemove(AutoResubscribingObserver<?> observer, String observableTag) {
+  public void cancelAndRemove(Observer<?> observer, String observableTag) {
     group.cancelAndRemove(observer, observableTag);
   }
 
   /**
-   * Calls {@link ObservableGroup#cancelAllObservablesForObserver(AutoResubscribingObserver)}
+   * Calls {@link ObservableGroup#cancelAllObservablesForObserver(Observer)}
    * for the group associated with this instance.
    */
-  public void cancelAllObservablesForObserver(AutoResubscribingObserver<?> observer) {
+  public void cancelAllObservablesForObserver(Observer<?> observer) {
     group.cancelAllObservablesForObserver(observer);
   }
 
@@ -146,6 +164,7 @@ public class GroupLifecycleManager {
     if (isFinishing) {
       observableManager.destroy(group);
     } else {
+      group().removeNonResubscribingObservers();
       group.unsubscribe();
     }
   }

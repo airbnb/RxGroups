@@ -6,4 +6,8 @@ public class BaseObservableResubscriber {
     target.setTag(tag);
   }
 
+  protected void setTag(AutoTaggableObserver target, String tag) {
+    target.setTag(tag);
+  }
+
 }
