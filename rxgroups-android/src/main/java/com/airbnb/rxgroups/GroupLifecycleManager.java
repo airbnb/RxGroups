@@ -137,11 +137,11 @@ public class GroupLifecycleManager {
   }
 
   /**
-   * Calls {@link ObservableGroup#cancelAndRemove(Observer)} for the group
-   * associated with this instance.
+   * Calls {@link ObservableGroup#cancelAllObservablesForObserver(Observer)} (Observer)}
+   * for the group associated with this instance.
    */
-  public void cancelAndRemove(Observer<?> observer) {
-    group.cancelAndRemove(observer);
+  public void cancelAndRemoveAll(Observer<?> observer) {
+    group.cancelAllObservablesForObserver(observer);
   }
 
   /**
