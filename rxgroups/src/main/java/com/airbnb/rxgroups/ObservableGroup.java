@@ -380,7 +380,7 @@ public class ObservableGroup {
                 for (ManagedObservable<?> observable : groupMap.get(observerTag).values()) {
                     observable.cancel();
                 }
-                groupMap.remove(observerTag);
+                groupMap.get(observerTag).clear();
             }
         }
     }
