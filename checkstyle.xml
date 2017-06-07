@@ -121,5 +121,7 @@
         <!--module name="FinalParameters"/-->
         <!--module name="TodoComment"/-->
         <module name="UpperEll"/>
+        <module name="FileContentsHolder"/>
     </module>
+
 </module>
