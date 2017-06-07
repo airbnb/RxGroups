@@ -38,6 +38,7 @@ public class ResubscribeHelperTest {
     assertThat(leafClass.leafInitialized).isTrue();
   }
 
+  //CHECKSTYLE:OFF
   @SuppressWarnings("unused")
   public static class BaseClass_ObservableResubscriber {
     boolean initialized = false;
@@ -64,4 +65,5 @@ public class ResubscribeHelperTest {
       target.leafInitialized = true;
     }
   }
+  //CHECKSTYLE:ON
 }
