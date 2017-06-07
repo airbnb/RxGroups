@@ -1,0 +1,54 @@
+import org.gradle.internal.jvm.Jvm
+
+apply plugin: 'com.android.library'
+apply from: 'build.workaround-missing-resource.gradle'
+
+android {
+  compileSdkVersion 25
+  buildToolsVersion "25.0.3"
+
+  defaultConfig {
+    minSdkVersion 15
+    targetSdkVersion 25
+    versionCode 1
+    versionName "1.0"
+
+    testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+
+  }
+  buildTypes {
+    release {
+      minifyEnabled false
+      proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+    }
+  }
+}
+
+dependencies {
+  compile project(':rxgroups')
+  compile project(':rxgroups-processor')
+
+  testCompile dep.junit
+  testCompile dep.mockito
+  testCompile dep.hamcrestIntegration
+  testCompile dep.hamcrestCore
+  testCompile dep.hamcrestLibrary
+  testCompile dep.assertj
+  testCompile files(getRuntimeJar())
+  testCompile files(Jvm.current().getToolsJar())
+  testCompile dep.googleCompileTesting
+}
+
+static def getRuntimeJar() {
+  try {
+    final File javaBase = new File(System.getProperty("java.home")).getCanonicalFile();
+    File runtimeJar = new File(javaBase, "lib/rt.jar");
+    if (runtimeJar.exists()) {
+      return runtimeJar;
+    }
+    runtimeJar = new File(javaBase, "jre/lib/rt.jar");
+    return runtimeJar.exists() ? runtimeJar : null;
+  } catch (IOException e) {
+    throw new RuntimeException(e);
+  }
+}

@@ -7,6 +7,6 @@ import rx.Observer;
  * {@link ObservableGroup#initializeAutoTaggingAndResubscription(Object)}
  * when used with {@link AutoResubscribe} or {@link AutoTag}.
  */
-public interface AutoTaggableObserver<T> extends Observer<T> {
+public interface AutoTaggableObserver<T> extends TaggedObserver<T> {
   void setTag(String tag);
 }

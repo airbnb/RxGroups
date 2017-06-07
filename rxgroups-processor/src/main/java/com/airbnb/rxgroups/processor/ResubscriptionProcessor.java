@@ -1,7 +1,9 @@
 package com.airbnb.rxgroups.processor;
 
 import com.airbnb.rxgroups.AutoResubscribe;
+import com.airbnb.rxgroups.AutoResubscribingObserver;
 import com.airbnb.rxgroups.AutoTag;
+import com.airbnb.rxgroups.AutoTaggableObserver;
 import com.airbnb.rxgroups.BaseObservableResubscriber;
 import com.airbnb.rxgroups.ObservableGroup;
 import com.airbnb.rxgroups.TaggedObserver;
@@ -22,7 +24,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import javax.annotation.Nullable;
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.Filer;
 import javax.annotation.processing.Messager;
@@ -37,7 +38,8 @@ import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
 import javax.tools.Diagnostic;
 
-import static com.airbnb.rxgroups.processor.ResubscriptionProcessor.ObserverType.*;
+import static com.airbnb.rxgroups.processor.ResubscriptionProcessor.ObserverType.AUTO_RESUBSCRIBE_OBSERVER;
+import static com.airbnb.rxgroups.processor.ResubscriptionProcessor.ObserverType.TAGGED_OBSERVER;
 import static javax.lang.model.element.ElementKind.CLASS;
 import static javax.lang.model.element.Modifier.PRIVATE;
 import static javax.lang.model.element.Modifier.PUBLIC;
@@ -143,10 +145,19 @@ public class ResubscriptionProcessor extends AbstractProcessor {
 
     TypeElement enclosingClass = (TypeElement) observerFieldElement.getEnclosingElement();
 
-    if (!ProcessorUtils.isTaggedObserver(observerFieldElement, typeUtils, elementUtils)) {
+    if (annotationClass == AutoResubscribe.class
+        && !ProcessorUtils.isTaggedObserver(observerFieldElement, typeUtils, elementUtils)) {
       logError("%s annotation may only be on %s types. (class: %s, field: %s)",
               annotationClass.getSimpleName(), TaggedObserver.class,
               enclosingClass.getSimpleName(), observerFieldElement.getSimpleName());
+    }
+
+    if (annotationClass == AutoTag.class &&
+        !(ProcessorUtils.isAutoTaggable(observerFieldElement, typeUtils, elementUtils) ||
+         ProcessorUtils.isResubscribingObserver(observerFieldElement, typeUtils, elementUtils))) {
+      logError("%s annotation may only be on %s or %s types. (class: %s, field: %s)",
+          annotationClass.getSimpleName(), AutoTaggableObserver.class, AutoResubscribingObserver.class,
+          enclosingClass.getSimpleName(), observerFieldElement.getSimpleName());
     }
 
     // Verify method modifiers.
