@@ -322,7 +322,11 @@ public class ObservableGroup {
      * No more events will be delivered to its subscriber.
      */
     public void cancelAllObservablesForObserver(Observer<?> observer) {
-        Map<String, ManagedObservable<?>> observables = getObservablesForObserver(observer);
+      cancelAllObservablesForObserver(Utils.getObserverTag(observer));
+    }
+
+    private void cancelAllObservablesForObserver(String observerTag) {
+        Map<String, ManagedObservable<?>> observables = getObservablesForObserver(observerTag);
         for (ManagedObservable<?> managedObservable : observables.values()) {
             managedObservable.cancel();
         }
@@ -377,10 +381,7 @@ public class ObservableGroup {
     void removeNonResubscribableObservers() {
         for (String observerTag : groupMap.keySet()) {
             if (NonResubscribableTag.isNonResubscribableTag(observerTag)) {
-                for (ManagedObservable<?> observable : groupMap.get(observerTag).values()) {
-                    observable.cancel();
-                }
-                groupMap.get(observerTag).clear();
+                cancelAllObservablesForObserver(observerTag);
             }
         }
     }
