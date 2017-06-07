@@ -154,7 +154,7 @@ public class ResubscriptionProcessor extends AbstractProcessor {
 
     if (annotationClass == AutoTag.class &&
         !(ProcessorUtils.isAutoTaggable(observerFieldElement, typeUtils, elementUtils) ||
-         ProcessorUtils.isResubscribingObserver(observerFieldElement, typeUtils, elementUtils))) {
+            ProcessorUtils.isResubscribingObserver(observerFieldElement, typeUtils, elementUtils))) {
       logError("%s annotation may only be on %s or %s types. (class: %s, field: %s)",
           annotationClass.getSimpleName(), AutoTaggableObserver.class, AutoResubscribingObserver.class,
           enclosingClass.getSimpleName(), observerFieldElement.getSimpleName());
