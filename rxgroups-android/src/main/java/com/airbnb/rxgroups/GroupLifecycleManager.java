@@ -121,7 +121,7 @@ public class GroupLifecycleManager {
    */
   public void initializeAutoResubscription(Object target) {
     Preconditions.checkNotNull(target, "Target cannot be null");
-    ResubscribeHelper.initializeResubscription(target, group);
+    ResubscribeHelper.initializeAutoTaggingResubscription(target, group);
   }
 
   /**
@@ -133,7 +133,7 @@ public class GroupLifecycleManager {
    */
   public void safeInitializeAutoResubscription(Object target) {
     Preconditions.checkNotNull(target, "Target cannot be null");
-    ResubscribeHelper.safeInitializeResubscription(target, group);
+    ResubscribeHelper.safeInitializeAutoTaggingAndResubscription(target, group);
   }
 
   /**

@@ -128,7 +128,7 @@ public class MainActivity extends AppCompatActivity {
       Toast.makeText(this, "Stopped timer", Toast.LENGTH_SHORT).show();
       isRunning = false;
       startStop.setImageDrawable(alarmDrawable);
-      observableGroup.cancelAndRemove(observer);
+      observableGroup.cancelAllObservablesForObserver(observer);
     }
   }
 

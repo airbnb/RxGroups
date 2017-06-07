@@ -7,20 +7,31 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import javax.annotation.Nullable;
+
 class ResubscribeHelper {
 
   private static final Map<Class<?>, Constructor<?>> BINDINGS = new LinkedHashMap<>();
 
-  static void initializeResubscription(Object target, ObservableGroup group) {
-    Constructor<?> constructor = findConstructorForClass(target.getClass(), group);
-    if (constructor == null) {
-      throw new IllegalArgumentException("Invalid target: " + target);
+  /**
+   * Initializes all helper classes in {@code target} class hierarchy.
+   */
+  static void initializeAutoTaggingAndResubscription(Object target, ObservableGroup group) {
+    Class<?> cls = target.getClass();
+    String clsName = cls.getName();
+    while (cls != null && !clsName.startsWith("android.") && !clsName.startsWith("java.")) {
+      initializeAutoTaggingAndResubscriptionInTargetClassOnly(target, cls, group);
+      cls = cls.getSuperclass();
+      if (cls != null) {
+        clsName = cls.getName();
+      }
     }
-    invokeConstructor(constructor, target, group);
   }
 
-  static void safeInitializeResubscription(Object target, ObservableGroup group) {
-    Constructor<?> constructor = findConstructorForClass(target.getClass(), group);
+  static void initializeAutoTaggingAndResubscriptionInTargetClassOnly(Object target,
+                                                                      Class<?> targetClass,
+                                                                      ObservableGroup group) {
+    Constructor<?> constructor = findConstructorForClass(targetClass, group);
     if (constructor == null) {
       return;
     }
@@ -47,17 +58,18 @@ class ResubscribeHelper {
     }
   }
 
+  @Nullable
   private static Constructor<?> findConstructorForClass(Class<?> cls, ObservableGroup group) {
     Constructor<?> bindingCtor = BINDINGS.get(cls);
-    if (bindingCtor != null) {
+    if (BINDINGS.containsKey(cls)) {
       return bindingCtor;
     }
 
     String clsName = cls.getName();
     if (clsName.startsWith("android.") || clsName.startsWith("java.")) {
+      BINDINGS.put(cls, bindingCtor);
       return null;
     }
-
     try {
       Class<?> bindingClass = Class.forName(clsName
           + ProcessorHelper.GENERATED_CLASS_NAME_SUFFIX);

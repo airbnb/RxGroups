@@ -52,30 +52,42 @@ public class ObservableGroup {
     }
 
     /**
-     * Sets a unique tag on all Observer fields that are annotated with {@link AutoTag}
-     * or {@link AutoResubscribe}.
-     *
-     * Subscribe all Observer fields on the target that are annotated with {@link AutoResubscribe}
+     * Sets a unique tag on all Observer fields of {@code target}
+     * that are annotated with {@link AutoTag} or {@link AutoResubscribe}.
+     * All fields declared in superclasses of {@code target} will also be set.
+     * <p>
+     * Subscribe all Observer fields on the {@code target} and in superclasses
+     * that are annotated with {@link AutoResubscribe}
      * and that have their corresponding Observable in flight.
-     *
-     * Throws {@link IllegalArgumentException} if there are no {@link AutoResubscribe}
-     * or {@link AutoTag} observers in the target.
-     */
-    public void initializeAutoResubscription(final Object target) {
-        Preconditions.checkNotNull(target, "Target cannot be null");
-        ResubscribeHelper.initializeResubscription(target, this);
-    }
-
-    /**
-     * Sets a unique tag on all Observer fields that are annotated with {@link AutoTag}
-     * or {@link AutoResubscribe}.
-     *
+     * <p>
      * Resubscribes all Observer fields on the target that are annotated with
      * {@link AutoResubscribe} and that have their corresponding Observable in flight.
      */
-    public void safeInitializeAutoResubscription(final Object target) {
+    public void initializeAutoTaggingAndResubscription(final Object target) {
         Preconditions.checkNotNull(target, "Target cannot be null");
-        ResubscribeHelper.safeInitializeResubscription(target, this);
+        ResubscribeHelper.initializeAutoTaggingAndResubscription(target, this);
+    }
+
+    /**
+     * Unlike {@link #initializeAutoTaggingAndResubscription(Object)} superclasses will
+     * <b>not</b> be initialized; only the fields in {@code targetClass} will be initialized.
+     * <p>
+     * Sets a unique tag on all Observer fields of {@code target}
+     * that are annotated with {@link AutoTag} or {@link AutoResubscribe}.
+     * <p>
+     * Subscribe all Observer fields on the {@code target}
+     * that are annotated with {@link AutoResubscribe}
+     * and that have their corresponding Observable in flight.
+     * <p>
+     * Resubscribes all Observer fields on the target that are annotated with
+     * {@link AutoResubscribe} and that have their corresponding Observable in flight.
+     * <p>
+     */
+    public <T> void initializeAutoTaggingAndResubscriptionInTargetClassOnly(T target,
+                                                                            Class<T> targetClass) {
+        Preconditions.checkNotNull(target, "Target cannot be null");
+        ResubscribeHelper.initializeAutoTaggingAndResubscriptionInTargetClassOnly(target,
+            targetClass, this);
     }
 
     /**

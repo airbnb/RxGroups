@@ -188,7 +188,6 @@ public class ResubscriptionProcessor extends AbstractProcessor {
   private ClassToGenerateInfo getOrCreateTargetClass(
           Map<TypeElement, ClassToGenerateInfo> modelClassMap, TypeElement classElement) {
 
-    // TODO: (eli_hart 11/26/16) handle super classes
     ClassToGenerateInfo classToGenerateInfo = modelClassMap.get(classElement);
 
     if (classToGenerateInfo == null) {
