@@ -4,15 +4,14 @@ apply plugin: 'com.android.library'
 apply from: 'build.workaround-missing-resource.gradle'
 
 android {
-  compileSdkVersion 25
-  buildToolsVersion "25.0.3"
+  compileSdkVersion androidConfig.compileSdkVersion
+  buildToolsVersion androidConfig.buildToolsVersion
 
   defaultConfig {
     minSdkVersion 15
     targetSdkVersion 25
     versionCode 1
     versionName "1.0"
-
     testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
 
   }
