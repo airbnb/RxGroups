@@ -31,8 +31,8 @@ import rx.functions.Action1;
  * {@link ObservableGroup} with an observer, and that observer will be called when a response is
  * ready. If the {@link ObservableGroup} is locked when the response arrives, or if the observer was
  * removed, the response will be queued and delivered when the {@link ObservableGroup} is unlocked
- * and a observer is added. <p> Each {@link TaggedObserver} can only be subscribed to
- * the same observable tag once. If a {@link TaggedObserver} is already subscribed to
+ * and a observer is added. <p> Each {@link Observer} can only be subscribed to
+ * the same observable tag once. If a {@link Observer} is already subscribed to
  * the given tag, the original subscription will be cancelled and discarded.
  */
 @SuppressWarnings("WeakerAccess")
@@ -142,22 +142,21 @@ public class ObservableGroup {
      * automatically added to this {@link ObservableGroup} with the provided {@code tag} when
      * subscribed to.
      */
-    public <T> Observable.Transformer<? super T, T> transform(Observer<? super
-            T> observer, String observableTag) {
-        return new GroupSubscriptionTransformer<>(this,
-            Utils.getObserverTag(observer), observableTag);
+    public <T> Observable.Transformer<? super T, T> transform(Observer<? super T> observer,
+                                                              String observableTag) {
+        return new GroupSubscriptionTransformer<>(this, Utils.getObserverTag(observer),
+            observableTag);
     }
 
     /**
      * Transforms an existing {@link Observable} by returning a new {@link Observable} that is
-     * automatically added to this {@link ObservableGroup}. <p> Convenience method
+     * automatically added to this {@link ObservableGroup}.
+     * <p> Convenience method
      * for {@link #transform(Observer, String)} when {@code observer} only
-     * is subscribed to one {@link Observable}. {@link TaggedObserver#getTag()}
-     * will be used {@code tag}.
+     * is subscribed to one {@link Observable}.
      */
-    public <T> Observable.Transformer<? super T, T> transform(TaggedObserver<? super
-        T> observer) {
-        return new GroupSubscriptionTransformer<>(this, observer.getTag(), observer.getTag());
+    public <T> Observable.Transformer<? super T, T> transform(Observer<? super T> observer) {
+        return transform(observer, Utils.getObserverTag(observer));
     }
 
     /**
@@ -321,7 +320,6 @@ public class ObservableGroup {
      * Removes all {@link Observable} for the given
      * {@link Observer} and cancels their subscriptions.
      * No more events will be delivered to its subscriber.
-     * <p>If no Observable is found for the provided {@code observableTag}, nothing happens.
      */
     public void cancelAllObservablesForObserver(Observer<?> observer) {
         Map<String, ManagedObservable<?>> observables = getObservablesForObserver(observer);

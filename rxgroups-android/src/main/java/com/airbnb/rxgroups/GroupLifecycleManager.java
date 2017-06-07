@@ -72,7 +72,7 @@ public class GroupLifecycleManager {
     GroupLifecycleManager manager = new GroupLifecycleManager(observableManager, group);
 
     if (target != null) {
-      manager.safeInitializeAutoResubscription(target);
+      manager.initializeAutoTaggingAndResubscription(target);
     }
 
     return manager;
@@ -84,56 +84,56 @@ public class GroupLifecycleManager {
   }
 
   /**
-   * TODO
+   * Calls {@link ObservableGroup#transform(Observer)}  for the group managed by
+   * this instance.
    */
-  public <T> Observable.Transformer<? super T, T>
-  transform(Observer<? super T> observer) {
-    return transform(observer, null);
+  public <T> Observable.Transformer<? super T, T> transform(Observer<? super T> observer) {
+    return group.transform(observer);
   }
 
-  public <T> Observable.Transformer<? super T, T>
-  transform(Observer<? super T> observer, String observableTag) {
+  /**
+   * Calls {@link ObservableGroup#transform(Observer, String)}  for the group managed by
+   * this instance.
+   */
+  public <T> Observable.Transformer<? super T, T> transform(Observer<? super T> observer,
+                                                            String observableTag) {
     return group.transform(observer, observableTag);
   }
 
   /**
-   * Returns whether the provided {@link Class} exists for the {@link ObservableGroup}.
-   * Observables will only be removed from their respective groups once
-   * {@link Observer#onCompleted()} has been called.
+   * Call {@link ObservableGroup#hasObservables(Observer)} for the group managed by
+   * this instance.
    */
   public boolean hasObservables(Observer<?> observer) {
     return group.hasObservables(observer);
   }
 
+  /**
+   * Call {@link ObservableGroup#hasObservable(Observer, String)} for the group managed by
+   * this instance.
+   */
   public boolean hasObservable(Observer<?> observer, String observableTag) {
     return group.hasObservable(observer, observableTag);
   }
 
   /**
-   * Sets a unique tag on all Observer fields that are annotated with {@link AutoTag}
-   * or {@link AutoResubscribe}.
-   *
-   * Subscribe all Observer fields on the target that are annotated with {@link AutoResubscribe}
-   * and that have their corresponding Observable in flight.
-   *
-   * Throws {@link IllegalArgumentException} if there are no {@link AutoResubscribe}
-   * or {@link AutoTag} observers in the target.
+   * Calls
+   * {@link ObservableGroup#initializeAutoTaggingAndResubscription(Object)} (Object, Class)}
+   * for the group managed by this instance.
    */
-  public void initializeAutoResubscription(Object target) {
+  public void initializeAutoTaggingAndResubscription(Object target) {
     Preconditions.checkNotNull(target, "Target cannot be null");
-    ResubscribeHelper.initializeAutoTaggingResubscription(target, group);
+    group.initializeAutoTaggingAndResubscription(target);
   }
 
   /**
-   * Sets a unique tag on all Observer fields that are annotated with {@link AutoTag}
-   * or {@link AutoResubscribe}.
-   *
-   * Resubscribes all Observer fields on the target that are annotated with {@link AutoResubscribe}
-   * and that have their corresponding Observable in flight.
+   * Calls
+   * {@link ObservableGroup#initializeAutoTaggingAndResubscriptionInTargetClassOnly(Object, Class)}
+   * for the group managed by this instance.
    */
-  public void safeInitializeAutoResubscription(Object target) {
-    Preconditions.checkNotNull(target, "Target cannot be null");
-    ResubscribeHelper.safeInitializeAutoTaggingAndResubscription(target, group);
+  public <T> void initializeAutoTaggingAndResubscriptionInTargetClassOnly(T target,
+                                                                          Class<T> targetClass) {
+   group.initializeAutoTaggingAndResubscriptionInTargetClassOnly(target, targetClass);
   }
 
   /**

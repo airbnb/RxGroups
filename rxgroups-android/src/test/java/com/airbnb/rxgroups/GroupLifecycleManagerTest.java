@@ -8,6 +8,7 @@ import com.airbnb.rxgroups.android.BuildConfig;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Matchers;
 import org.robolectric.RobolectricGradleTestRunner;
 import org.robolectric.annotation.Config;
 
@@ -19,6 +20,7 @@ import rx.subjects.TestSubject;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.doCallRealMethod;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -60,6 +62,7 @@ public class GroupLifecycleManagerTest extends BaseTest {
   @Test
   public void testSubscribe() {
     when(observableManager.newGroup()).thenReturn(group);
+    doCallRealMethod().when(group).initializeAutoTaggingAndResubscription(Matchers.any());
     GroupLifecycleManager.onCreate(observableManager, null, target);
     verify(group).resubscribeAll(target.observer);
     verify(group).resubscribeAll(target.taggedObserver);
@@ -77,6 +80,7 @@ public class GroupLifecycleManagerTest extends BaseTest {
     when(observableManager.newGroup()).thenReturn(group);
     GroupLifecycleManager.onCreate(observableManager, null, null);
     verify(group, never()).resubscribeAll(any(AutoResubscribingObserver.class));
+    verify(group, never()).resubscribeAll(any(TaggedObserver.class));
   }
 
   public void testSubscribeInvalidTargetNoException() {
@@ -90,7 +94,7 @@ public class GroupLifecycleManagerTest extends BaseTest {
     GroupLifecycleManager groupLifecycleManager = GroupLifecycleManager.onCreate
             (observableManager, null, null);
 
-    groupLifecycleManager.initializeAutoResubscription(null);
+    groupLifecycleManager.initializeAutoTaggingAndResubscription(null);
   }
 
   @Test
@@ -116,8 +120,6 @@ public class GroupLifecycleManagerTest extends BaseTest {
 
     GroupLifecycleManager lifecycleManager = GroupLifecycleManager.onCreate
         (observableManager, null, target);
-
-
 
     Observer nonResubscribableObserver = new Observer<Object>() {
       @Override public void onCompleted() {
