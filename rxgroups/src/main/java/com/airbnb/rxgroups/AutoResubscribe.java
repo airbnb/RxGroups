@@ -27,4 +27,9 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.FIELD)
 public @interface AutoResubscribe {
+  /**
+   * @return A custom tag to use instead of auto-generated tag.
+   * This tag should be unique within the RxGroup.
+   */
+  String customTag() default "";
 }

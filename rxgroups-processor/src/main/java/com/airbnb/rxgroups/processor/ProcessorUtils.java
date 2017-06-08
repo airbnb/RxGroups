@@ -2,6 +2,7 @@ package com.airbnb.rxgroups.processor;
 
 
 import com.airbnb.rxgroups.AutoResubscribingObserver;
+import com.airbnb.rxgroups.AutoTaggableObserver;
 import com.airbnb.rxgroups.TaggedObserver;
 
 import javax.lang.model.element.Element;
@@ -23,6 +24,14 @@ class ProcessorUtils {
       elementUtil) {
     final TypeMirror autoResubscribingTypeMirror = elementUtil.getTypeElement(
         TaggedObserver.class.getCanonicalName()).asType();
+    return typeUtil.isAssignable(observerFieldElement.asType(), typeUtil.erasure(
+        autoResubscribingTypeMirror));
+  }
+
+  static boolean isAutoTaggable(Element observerFieldElement, Types typeUtil, Elements
+      elementUtil) {
+    final TypeMirror autoResubscribingTypeMirror = elementUtil.getTypeElement(
+        AutoTaggableObserver.class.getCanonicalName()).asType();
     return typeUtil.isAssignable(observerFieldElement.asType(), typeUtil.erasure(
         autoResubscribingTypeMirror));
   }

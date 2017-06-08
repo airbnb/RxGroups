@@ -7,7 +7,8 @@ def versions = [
 
 ext.isCi = (project.hasProperty('CI') && CI == 'true')
 
-ext.repositoryUrl = 'https://oss.sonatype.org/service/local/staging/deploy/maven2/'
+ext.repositoryUrl = hasProperty('RELEASE_REPOSITORY_URL') ? RELEASE_REPOSITORY_URL
+        : 'https://oss.sonatype.org/service/local/staging/deploy/maven2/'
 ext.snapshotRepositoryUrl = 'https://oss.sonatype.org/content/repositories/snapshots/'
 
 ext.androidConfig = [
@@ -35,6 +36,7 @@ ext.dep = [
         hamcrestCore           : "org.hamcrest:hamcrest-core:$versions.hamcrestVersion",
         hamcrestLibrary        : "org.hamcrest:hamcrest-library:$versions.hamcrestVersion",
         assertj                : 'org.assertj:assertj-core:1.7.0',
-        roboelectric           : 'org.robolectric:robolectric:3.1.2'
+        roboelectric           : 'org.robolectric:robolectric:3.1.2',
+        googleCompileTesting   : 'com.google.testing.compile:compile-testing:0.11'
 ]
 

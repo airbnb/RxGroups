@@ -1,6 +1,9 @@
 package com.airbnb.rxgroups.processor;
 
 import com.airbnb.rxgroups.AutoResubscribe;
+import com.airbnb.rxgroups.AutoResubscribingObserver;
+import com.airbnb.rxgroups.AutoTag;
+import com.airbnb.rxgroups.AutoTaggableObserver;
 import com.airbnb.rxgroups.BaseObservableResubscriber;
 import com.airbnb.rxgroups.ObservableGroup;
 import com.airbnb.rxgroups.TaggedObserver;
@@ -14,6 +17,7 @@ import com.squareup.javapoet.TypeName;
 import com.squareup.javapoet.TypeSpec;
 
 import java.io.IOException;
+import java.lang.annotation.Annotation;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -34,7 +38,8 @@ import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
 import javax.tools.Diagnostic;
 
-import static com.airbnb.rxgroups.processor.ResubscriptionProcessor.ObserverType.*;
+import static com.airbnb.rxgroups.processor.ResubscriptionProcessor.ObserverType.AUTO_RESUBSCRIBE_OBSERVER;
+import static com.airbnb.rxgroups.processor.ResubscriptionProcessor.ObserverType.TAGGED_OBSERVER;
 import static javax.lang.model.element.ElementKind.CLASS;
 import static javax.lang.model.element.Modifier.PRIVATE;
 import static javax.lang.model.element.Modifier.PUBLIC;
@@ -59,7 +64,8 @@ public class ResubscriptionProcessor extends AbstractProcessor {
 
   @Override
   public Set<String> getSupportedAnnotationTypes() {
-    return ImmutableSet.of(AutoResubscribe.class.getCanonicalName());
+    return ImmutableSet.of(AutoResubscribe.class.getCanonicalName(),
+        AutoTag.class.getCanonicalName());
   }
 
   @Override
@@ -72,7 +78,15 @@ public class ResubscriptionProcessor extends AbstractProcessor {
     LinkedHashMap<TypeElement, ClassToGenerateInfo> modelClassMap = new LinkedHashMap<>();
     for (Element observer : roundEnv.getElementsAnnotatedWith(AutoResubscribe.class)) {
       try {
-        processObserver(observer, modelClassMap);
+        processObserver(observer, modelClassMap, AutoResubscribe.class);
+      } catch (Exception e) {
+        logError(e);
+      }
+    }
+
+    for (Element observer : roundEnv.getElementsAnnotatedWith(AutoTag.class)) {
+      try {
+        processObserver(observer, modelClassMap, AutoTag.class);
       } catch (Exception e) {
         logError(e);
       }
@@ -97,8 +111,8 @@ public class ResubscriptionProcessor extends AbstractProcessor {
   }
 
   private void processObserver(Element observer, LinkedHashMap<TypeElement, ClassToGenerateInfo>
-          info) {
-    validateObserverField(observer);
+          info, Class<? extends Annotation> annotationClass) {
+    validateObserverField(observer, annotationClass);
     TypeElement enclosingClass = (TypeElement) observer.getEnclosingElement();
     ClassToGenerateInfo targetClass = getOrCreateTargetClass(info, enclosingClass);
 
@@ -107,17 +121,43 @@ public class ResubscriptionProcessor extends AbstractProcessor {
     boolean isAutoResubscribing =
         ProcessorUtils.isResubscribingObserver(observer, typeUtils, elementUtils);
     ObserverType observerType = isAutoResubscribing ? AUTO_RESUBSCRIBE_OBSERVER : TAGGED_OBSERVER;
-    targetClass.addObserver(observerName, observerType);
+    boolean isAutoTaggable = ProcessorUtils.isAutoTaggable(observer, typeUtils, elementUtils);
+    boolean shouldAutoResubscribe = annotationClass == AutoResubscribe.class;
+    String customTag = getCustomTag(observer, annotationClass);
+
+    targetClass.addObserver(observerName, new ObserverInfo(observerType, customTag, isAutoTaggable,
+        shouldAutoResubscribe));
   }
 
-  private void validateObserverField(Element observerFieldElement) {
+  private String getCustomTag(Element observer, Class<? extends Annotation> annotationClass) {
+    String customTag = "";
+    if (annotationClass == AutoResubscribe.class) {
+      customTag = ((AutoResubscribe)observer.getAnnotation(annotationClass)).customTag();
+    }
+    else if (annotationClass == AutoTag.class) {
+      customTag = ((AutoTag)observer.getAnnotation(annotationClass)).customTag();
+    }
+    return customTag;
+  }
+
+  private void validateObserverField(Element observerFieldElement,
+                                     Class<? extends Annotation> annotationClass) {
 
     TypeElement enclosingClass = (TypeElement) observerFieldElement.getEnclosingElement();
 
-    if (!ProcessorUtils.isTaggedObserver(observerFieldElement, typeUtils, elementUtils)) {
+    if (annotationClass == AutoResubscribe.class
+        && !ProcessorUtils.isTaggedObserver(observerFieldElement, typeUtils, elementUtils)) {
       logError("%s annotation may only be on %s types. (class: %s, field: %s)",
-              AutoResubscribe.class.getSimpleName(), TaggedObserver.class,
+              annotationClass.getSimpleName(), TaggedObserver.class,
               enclosingClass.getSimpleName(), observerFieldElement.getSimpleName());
+    }
+
+    if (annotationClass == AutoTag.class &&
+        !(ProcessorUtils.isAutoTaggable(observerFieldElement, typeUtils, elementUtils) ||
+            ProcessorUtils.isResubscribingObserver(observerFieldElement, typeUtils, elementUtils))) {
+      logError("%s annotation may only be on %s or %s types. (class: %s, field: %s)",
+          annotationClass.getSimpleName(), AutoTaggableObserver.class, AutoResubscribingObserver.class,
+          enclosingClass.getSimpleName(), observerFieldElement.getSimpleName());
     }
 
     // Verify method modifiers.
@@ -126,7 +166,7 @@ public class ResubscriptionProcessor extends AbstractProcessor {
       logError(
               "%s annotations must not be on private or static fields. (class: %s, field: "
                       + "%s)",
-              AutoResubscribe.class.getSimpleName(),
+              annotationClass.getSimpleName(),
               enclosingClass.getSimpleName(), observerFieldElement.getSimpleName());
     }
 
@@ -135,7 +175,7 @@ public class ResubscriptionProcessor extends AbstractProcessor {
       if (!enclosingClass.getModifiers().contains(STATIC)) {
         logError(
                 "Nested classes with %s annotations must be static. (class: %s, field: %s)",
-                AutoResubscribe.class.getSimpleName(),
+                annotationClass.getSimpleName(),
                 enclosingClass.getSimpleName(), observerFieldElement.getSimpleName());
       }
     }
@@ -143,7 +183,7 @@ public class ResubscriptionProcessor extends AbstractProcessor {
     // Verify containing type.
     if (enclosingClass.getKind() != CLASS) {
       logError("%s annotations may only be contained in classes. (class: %s, field: %s)",
-              AutoResubscribe.class.getSimpleName(),
+              annotationClass.getSimpleName(),
               enclosingClass.getSimpleName(), observerFieldElement.getSimpleName());
     }
 
@@ -151,7 +191,7 @@ public class ResubscriptionProcessor extends AbstractProcessor {
     if (enclosingClass.getModifiers().contains(PRIVATE)) {
       logError("%s annotations may not be contained in private classes. (class: %s, "
                       + "field: %s)",
-              AutoResubscribe.class.getSimpleName(),
+              annotationClass.getSimpleName(),
               enclosingClass.getSimpleName(), observerFieldElement.getSimpleName());
     }
   }
@@ -159,7 +199,6 @@ public class ResubscriptionProcessor extends AbstractProcessor {
   private ClassToGenerateInfo getOrCreateTargetClass(
           Map<TypeElement, ClassToGenerateInfo> modelClassMap, TypeElement classElement) {
 
-    // TODO: (eli_hart 11/26/16) handle super classes
     ClassToGenerateInfo classToGenerateInfo = modelClassMap.get(classElement);
 
     if (classToGenerateInfo == null) {
@@ -202,15 +241,19 @@ public class ResubscriptionProcessor extends AbstractProcessor {
             .addParameter(ParameterSpec.builder(TypeName.get(ObservableGroup.class), "group")
                     .build());
 
-    for (Map.Entry<String, ObserverType> observerNameAndType
+    for (Map.Entry<String, ObserverInfo> observerNameAndType
         : info.observerNamesToType.entrySet()) {
       String observerName = observerNameAndType.getKey();
-      ObserverType type = observerNameAndType.getValue();
-      if (type == AUTO_RESUBSCRIBE_OBSERVER) {
-        String tag = info.originalClassName.getSimpleName().toString() + "_" + observerName;
+      ObserverInfo observerInfo = observerNameAndType.getValue();
+      if (observerInfo.type == AUTO_RESUBSCRIBE_OBSERVER || observerInfo.autoTaggable) {
+        String tag = "".equals(observerInfo.customTag) ?
+            info.originalClassName.getSimpleName().toString() + "_" + observerName
+            : observerInfo.customTag;
         builder.addStatement("setTag(target.$L, $S)", observerName, tag);
       }
-      builder.addStatement("group.resubscribe(target.$L)", observerName);
+      if (observerInfo.shouldAutoResubscribe) {
+        builder.addStatement("group.resubscribeAll(target.$L)", observerName);
+      }
     }
 
     return builder.build();
@@ -231,6 +274,21 @@ public class ResubscriptionProcessor extends AbstractProcessor {
     AUTO_RESUBSCRIBE_OBSERVER
   }
 
+  private static class ObserverInfo {
+    final ObserverType type;
+    final String customTag;
+    final boolean autoTaggable;
+    final boolean shouldAutoResubscribe;
+
+    ObserverInfo(ObserverType type, String customTag, boolean autoTaggable,
+                 boolean shouldAutoResubscribe) {
+      this.type = type;
+      this.customTag = customTag;
+      this.autoTaggable = autoTaggable;
+      this.shouldAutoResubscribe = shouldAutoResubscribe;
+    }
+  }
+
   /**
    * Exceptions are caught and logged, and not printed until all processing is done. This allows
    * generated classes to be created first and allows for easier to read compile time error
@@ -241,7 +299,7 @@ public class ResubscriptionProcessor extends AbstractProcessor {
   }
 
   private static class ClassToGenerateInfo {
-    final Map<String, ObserverType> observerNamesToType = new LinkedHashMap<>();
+    final Map<String, ObserverInfo> observerNamesToType = new LinkedHashMap<>();
     private final TypeElement originalClassName;
     private final ClassName generatedClassName;
 
@@ -250,7 +308,7 @@ public class ResubscriptionProcessor extends AbstractProcessor {
       this.generatedClassName = generatedClassName;
     }
 
-    public void addObserver(String observerName, ObserverType type) {
+    public void addObserver(String observerName, ObserverInfo type) {
       observerNamesToType.put(observerName, type);
     }
   }

@@ -22,7 +22,8 @@ subprojects {
     options.addStringOption('Xdoclint:none', '-quiet')
   }
 
-  if (!project.name.equals('rxgroups-processor')) {
+  if (!(project.name.equals('rxgroups-processor')
+          || project.name.equals('rxgroups-annotation-test'))) {
     apply plugin: 'checkstyle'
 
     checkstyle {

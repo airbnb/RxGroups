@@ -1,6 +1,9 @@
 package com.airbnb.rxgroups;
 
-
+/**
+ * A {@link rx.Observer} which has a stable tag. Must be used with {@link AutoResubscribe}
+ * annotation to set the tag before observer is used.
+ */
 public abstract class AutoResubscribingObserver<T> implements TaggedObserver<T> {
 
   private String tag;

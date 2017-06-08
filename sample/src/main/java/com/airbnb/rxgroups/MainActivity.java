@@ -122,13 +122,13 @@ public class MainActivity extends AppCompatActivity {
       timerObservable
           .observeOn(AndroidSchedulers.mainThread())
           .onBackpressureBuffer()
-          .compose(groupLifecycleManager.<Long>transform(observer))
+          .compose(groupLifecycleManager.transform(observer))
           .subscribe(observer);
     } else {
       Toast.makeText(this, "Stopped timer", Toast.LENGTH_SHORT).show();
       isRunning = false;
       startStop.setImageDrawable(alarmDrawable);
-      observableGroup.cancelAndRemove(observer);
+      observableGroup.cancelAllObservablesForObserver(observer);
     }
   }
 
