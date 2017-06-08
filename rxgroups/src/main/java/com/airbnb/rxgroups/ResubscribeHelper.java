@@ -61,7 +61,7 @@ class ResubscribeHelper {
   @Nullable
   private static Constructor<?> findConstructorForClass(Class<?> cls, ObservableGroup group) {
     Constructor<?> bindingCtor = BINDINGS.get(cls);
-    if (BINDINGS.containsKey(cls)) {
+    if (bindingCtor != null || BINDINGS.containsKey(cls)) {
       return bindingCtor;
     }
 
