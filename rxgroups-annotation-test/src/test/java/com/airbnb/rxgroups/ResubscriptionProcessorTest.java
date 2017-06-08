@@ -85,6 +85,32 @@ public class ResubscriptionProcessorTest {
         .generatesSources(resubscriberSource);
   }
 
+  @Test public void autoTaggableObserver_worksWithAll_customTag() throws Exception {
+    JavaFileObject source = JavaFileObjects.forResource("AutoTaggableObserver_Pass_All_CustomTag.java");
+
+    JavaFileObject resubscriberSource = JavaFileObjects.forSourceString("test.AutoTaggableObserver_Pass_All_CustomTag", ""
+        + "package test;\n"
+        + "import com.airbnb.rxgroups.BaseObservableResubscriber;\n"
+        + "import com.airbnb.rxgroups.ObservableGroup;\n"
+        + "\n"
+        + "public class AutoTaggableObserver_Pass_All_CustomTag_ObservableResubscriber extends BaseObservableResubscriber {\n"
+        + "  public AutoTaggableObserver_Pass_All_CustomTag_ObservableResubscriber(AutoTaggableObserver_Pass_All_CustomTag target, ObservableGroup group) {\n"
+        + "     setTag(target.resubscribeObserver, \"tag1\");\n"
+        + "     group.resubscribeAll(target.resubscribeObserver);\n"
+        + "     setTag(target.autoTag, \"tag2\");\n"
+        + "  }\n"
+        + "}\n"
+        + ""
+    );
+
+    Truth.assertAbout(JavaSourceSubjectFactory.javaSource()).that(source)
+        .withCompilerOptions("-Xlint:-processing")
+        .processedWith(new ResubscriptionProcessor())
+        .compilesWithoutWarnings()
+        .and()
+        .generatesSources(resubscriberSource);
+  }
+
   @Test public void plainObserverFails_autoResubscribe() throws Exception {
     JavaFileObject source = JavaFileObjects.forResource("PlainObserver_Fail_AutoResubscribe.java");
 
