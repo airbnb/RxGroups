@@ -1,6 +1,7 @@
 package com.airbnb.rxgroups;
 
-import rx.Observer;
+
+import io.reactivex.Observer;
 
 /**
  * An {@link Observer} which as a string "tag" which

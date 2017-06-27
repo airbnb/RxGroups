@@ -1,8 +1,9 @@
 package com.airbnb.rxgroups;
 
-import rx.Observer;
 
-public class Utils {
+import io.reactivex.Observer;
+
+final class Utils {
   static String getObserverTag(Observer<?> observer) {
     if (observer instanceof TaggedObserver) {
       String definedTag = ((TaggedObserver) observer).getTag();

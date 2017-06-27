@@ -25,8 +25,8 @@ import java.util.UUID;
 
 import javax.annotation.Nullable;
 
-import rx.Observable;
-import rx.Observer;
+import io.reactivex.ObservableTransformer;
+import io.reactivex.Observer;
 
 /**
  * TODO
@@ -87,7 +87,7 @@ public class GroupLifecycleManager {
    * Calls {@link ObservableGroup#transform(Observer)}  for the group managed by
    * this instance.
    */
-  public <T> Observable.Transformer<? super T, T> transform(Observer<? super T> observer) {
+  public <T> ObservableTransformer<? super T, T> transform(Observer<? super T> observer) {
     return group.transform(observer);
   }
 
@@ -95,7 +95,7 @@ public class GroupLifecycleManager {
    * Calls {@link ObservableGroup#transform(Observer, String)}  for the group managed by
    * this instance.
    */
-  public <T> Observable.Transformer<? super T, T> transform(Observer<? super T> observer,
+  public <T> ObservableTransformer<? super T, T> transform(Observer<? super T> observer,
                                                             String observableTag) {
     return group.transform(observer, observableTag);
   }
@@ -157,7 +157,7 @@ public class GroupLifecycleManager {
       observableManager.destroy(group);
     } else {
       group().removeNonResubscribableObservers();
-      group.unsubscribe();
+      group.dispose();
     }
   }
 

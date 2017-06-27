@@ -13,7 +13,7 @@ ext.snapshotRepositoryUrl = 'https://oss.sonatype.org/content/repositories/snaps
 
 ext.androidConfig = [
         compileSdkVersion: 25,
-        buildToolsVersion: '25.0.2',
+        buildToolsVersion: '25.0.3',
         minSdkVersion    : 16,
         targetSdkVersion : 25
 ]
@@ -26,8 +26,8 @@ ext.dep = [
         findBugs               : 'com.google.code.findbugs:jsr305:3.0.0',
         gradleNexus            : 'com.bmuschko:gradle-nexus-plugin:2.3.1',
         javaPoet               : 'com.squareup:javapoet:1.8.0',
-        rxAndroid              : 'io.reactivex:rxandroid:1.2.1',
-        rxJava                 : 'io.reactivex:rxjava:1.2.9',
+        rxAndroid              : 'io.reactivex.rxjava2:rxandroid:2.0.1',
+        rxJava                 : 'io.reactivex.rxjava2:rxjava:2.1.0',
 
         //Tests
         junit                  : 'junit:junit:4.12',
