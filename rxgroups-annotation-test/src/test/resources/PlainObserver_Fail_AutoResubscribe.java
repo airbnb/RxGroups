@@ -1,7 +1,8 @@
 package test;
 
 import com.airbnb.rxgroups.AutoResubscribe;
-import rx.Observer;
+
+import io.reactivex.Observer;
 
 public class PlainObserver_Fail_AutoResubscribe {
 
