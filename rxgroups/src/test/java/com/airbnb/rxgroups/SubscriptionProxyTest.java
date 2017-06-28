@@ -34,7 +34,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class SubscriptionProxyTest {
   @Test public void testInitialState() {
     Observable<Integer> observable = Observable.create(new ObservableOnSubscribe<Integer>() {
-      @Override public void subscribe(@NonNull ObservableEmitter<Integer> emitter) throws Exception {
+      @Override public void subscribe(@NonNull ObservableEmitter<Integer> emitter)
+          throws Exception {
         emitter.onNext(1234);
         emitter.onComplete();
       }
@@ -67,7 +68,8 @@ public class SubscriptionProxyTest {
   @Test public void testSubscribe() {
     TestObserver<Integer> observer = new TestObserver<>();
     Observable<Integer> observable = Observable.create(new ObservableOnSubscribe<Integer>() {
-      @Override public void subscribe(@NonNull ObservableEmitter<Integer> emitter) throws Exception {
+      @Override public void subscribe(@NonNull ObservableEmitter<Integer> emitter)
+          throws Exception {
         emitter.onNext(1234);
         emitter.onComplete();
       }
