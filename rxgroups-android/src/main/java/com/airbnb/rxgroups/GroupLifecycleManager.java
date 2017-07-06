@@ -29,7 +29,16 @@ import io.reactivex.ObservableTransformer;
 import io.reactivex.Observer;
 
 /**
- * TODO
+ * Manges unlocking, locking, and destroying observables based on the lifecycle of an activity or
+ * fragment. An Activity or fragment must call:
+ * <ul>
+ * <li>{@link #onCreate(ObservableManager, Bundle, Object)}</li>
+ * <li>{@link #onResume()}</li>
+ * <li>{@link #onPause()}</li>
+ * <li>{@link #onDestroy(Activity)}</li>
+ * <li>{@link #onSaveInstanceState(Bundle)}</li>
+ * </ul>
+ * in corresponding methods.
  */
 @SuppressWarnings("WeakerAccess")
 public class GroupLifecycleManager {

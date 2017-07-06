@@ -44,8 +44,8 @@ class GroupSubscriptionTransformer<T> implements ObservableTransformer<T, T> {
     return Observable.create(new ObservableOnSubscribe<T>() {
       @Override
       public void subscribe(@NonNull final ObservableEmitter<T> emitter) throws Exception {
-        emitter.setDisposable(managedObservableDisposable);
         group.add(observerTag, observableTag, sourceObservable, emitter);
+        emitter.setDisposable(managedObservableDisposable);
       }
     });
   }
