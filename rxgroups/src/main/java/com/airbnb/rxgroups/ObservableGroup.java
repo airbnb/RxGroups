@@ -145,9 +145,9 @@ public class ObservableGroup {
      * subscribed to.
      */
     public <T> ObservableTransformer<? super T, T> transform(Observer<? super T> observer,
-                                                             String observableTag) {
+            String observableTag) {
         return new GroupSubscriptionTransformer<>(this, Utils.getObserverTag(observer),
-            observableTag);
+                observableTag);
     }
 
     /**
@@ -299,8 +299,7 @@ public class ObservableGroup {
      * Resubscribes the {@link TaggedObserver} to the observable
      * identified by {@code observableTag}.
      */
-    public <T> void resubscribe(TaggedObserver<? super T> observer,
-                                String observableTag) {
+    public <T> void resubscribe(TaggedObserver<? super T> observer, String observableTag) {
         final Observable<T> observable = observable(observer, observableTag);
         if (observable != null) {
             observable.subscribe(observer);
