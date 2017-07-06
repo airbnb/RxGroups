@@ -15,35 +15,37 @@
  */
 package com.airbnb.rxgroups;
 
-import rx.Emitter;
-import rx.Observable;
-import rx.Observer;
-import rx.functions.Action1;
 
-class GroupResubscriptionTransformer<T> implements Observable.Transformer<T, T> {
+import io.reactivex.Observable;
+import io.reactivex.ObservableEmitter;
+import io.reactivex.ObservableOnSubscribe;
+import io.reactivex.ObservableSource;
+import io.reactivex.ObservableTransformer;
+import io.reactivex.annotations.NonNull;
+import io.reactivex.disposables.Disposable;
+
+class GroupResubscriptionTransformer<T> implements ObservableTransformer<T, T> {
   private final ManagedObservable<T> managedObservable;
 
   GroupResubscriptionTransformer(ManagedObservable<T> managedObservable) {
     this.managedObservable = managedObservable;
   }
 
-  @Override public Observable<T> call(final Observable<T> observable) {
-    return Observable.create(new Action1<Emitter<T>>() {
-      @Override public void call(final Emitter<T> emitter) {
-        managedObservable.resubscribe(observable, new Observer<T>() {
-          @Override public void onCompleted() {
-            emitter.onCompleted();
+  @Override public ObservableSource<T> apply(@NonNull final Observable<T> ignored) {
+    return Observable.create(new ObservableOnSubscribe<T>() {
+      @Override
+      public void subscribe(@NonNull final ObservableEmitter<T> emitter) throws Exception {
+        emitter.setDisposable(new Disposable() {
+          @Override public void dispose() {
+            managedObservable.dispose();
           }
 
-          @Override public void onError(Throwable e) {
-            emitter.onError(e);
-          }
-
-          @Override public void onNext(T t) {
-            emitter.onNext(t);
+          @Override public boolean isDisposed() {
+            return managedObservable.isDisposed();
           }
         });
+        managedObservable.resubscribe(emitter);
       }
-    }, Emitter.BackpressureMode.BUFFER);
+    });
   }
 }

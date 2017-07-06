@@ -26,8 +26,8 @@ import android.view.View;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import rx.Observable;
-import rx.android.schedulers.AndroidSchedulers;
+import io.reactivex.Observable;
+import io.reactivex.android.schedulers.AndroidSchedulers;
 
 public class MainActivity extends AppCompatActivity {
   private static final String IS_RUNNING = "IS_RUNNING";
@@ -41,7 +41,7 @@ public class MainActivity extends AppCompatActivity {
 
   @AutoResubscribe final AutoResubscribingObserver<Long> observer =
       new AutoResubscribingObserver<Long>() {
-        @Override public void onCompleted() {
+        @Override public void onComplete() {
           Log.d(TAG, "onCompleted()");
         }
 
@@ -121,7 +121,6 @@ public class MainActivity extends AppCompatActivity {
       startStop.setImageDrawable(alarmOffDrawable);
       timerObservable
           .observeOn(AndroidSchedulers.mainThread())
-          .onBackpressureBuffer()
           .compose(groupLifecycleManager.transform(observer))
           .subscribe(observer);
     } else {

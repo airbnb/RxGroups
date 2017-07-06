@@ -15,29 +15,28 @@
  */
 package com.airbnb.rxgroups;
 
-import rx.Observable;
-import rx.Observer;
-import rx.functions.Action0;
+
+import io.reactivex.Observable;
+import io.reactivex.ObservableEmitter;
+import io.reactivex.functions.Action;
 
 /**
  * A wrapper for a {@link SubscriptionProxy} for use with the {@link ObservableGroup} to monitor a
  * subscription state by tag.
  */
-class ManagedObservable<T> implements RequestSubscription {
+class ManagedObservable<T> implements SourceSubscription {
   private final String observableTag;
   private final String observerTag;
   private final SubscriptionProxy<T> proxy;
   private boolean locked = true;
-  private Observable<T> observable;
-  private Observer<? super T> observer;
+  private ObservableEmitter<? super T> observerEmitter;
 
-  ManagedObservable(String observerTag, String observableTag, Observable<T> observable,
-                    Observer<? super T> observer, Action0 onTerminate) {
+  ManagedObservable(String observerTag, String observableTag, Observable<T> upstreamObservable,
+                    ObservableEmitter<? super T> observer, Action onTerminate) {
     this.observableTag = observableTag;
     this.observerTag = observerTag;
-    this.observer = observer;
-    proxy = SubscriptionProxy.create(observable, onTerminate);
-    this.observable = proxy.observable();
+    this.observerEmitter = observer;
+    proxy = SubscriptionProxy.create(upstreamObservable, onTerminate);
   }
 
   @Override public boolean isCancelled() {
@@ -46,41 +45,40 @@ class ManagedObservable<T> implements RequestSubscription {
 
   @Override public void cancel() {
     proxy.cancel();
-    observer = null;
+    observerEmitter = null;
   }
 
   void lock() {
     locked = true;
-    proxy.unsubscribe();
+    proxy.dispose();
   }
 
-  @Override public void unsubscribe() {
-    proxy.unsubscribe();
-    observer = null;
+  @Override public void dispose() {
+    proxy.dispose();
+    observerEmitter = null;
   }
 
-  @Override public boolean isUnsubscribed() {
-    return proxy.isUnsubscribed();
+  @Override public boolean isDisposed() {
+    return proxy.isDisposed();
   }
 
   void unlock() {
     locked = false;
 
-    if (observer != null) {
-      proxy.subscribe(observable, observer);
+    if (observerEmitter != null) {
+      proxy.subscribe(observerEmitter);
     }
   }
 
-  Observable<T> observable() {
+  Observable<T> proxiedObservable() {
     return proxy.observable();
   }
 
-  void resubscribe(Observable<T> observable, Observer<? super T> observer) {
-    this.observable = observable;
-    this.observer = Preconditions.checkNotNull(observer);
+  void resubscribe(ObservableEmitter<? super T> observerEmitter) {
+    this.observerEmitter = Preconditions.checkNotNull(observerEmitter);
 
     if (!locked) {
-      proxy.subscribe(observable, observer);
+      proxy.subscribe(observerEmitter);
     }
   }
 

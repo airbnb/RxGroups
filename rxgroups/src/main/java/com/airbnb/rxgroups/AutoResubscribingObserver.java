@@ -1,7 +1,10 @@
 package com.airbnb.rxgroups;
 
+import io.reactivex.annotations.NonNull;
+import io.reactivex.disposables.Disposable;
+
 /**
- * A {@link rx.Observer} which has a stable tag. Must be used with {@link AutoResubscribe}
+ * A {@link io.reactivex.Observer} which has a stable tag. Must be used with {@link AutoResubscribe}
  * annotation to set the tag before observer is used.
  */
 public abstract class AutoResubscribingObserver<T> implements TaggedObserver<T> {
@@ -17,7 +20,7 @@ public abstract class AutoResubscribingObserver<T> implements TaggedObserver<T> 
   }
 
   @Override
-  public void onCompleted() {
+  public void onComplete() {
 
   }
 
@@ -31,4 +34,7 @@ public abstract class AutoResubscribingObserver<T> implements TaggedObserver<T> 
 
   }
 
+  @Override public void onSubscribe(@NonNull Disposable d) {
+
+  }
 }

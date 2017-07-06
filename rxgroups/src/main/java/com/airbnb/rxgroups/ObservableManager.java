@@ -20,7 +20,8 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 
-import rx.Observable;
+import io.reactivex.Observable;
+
 
 /**
  * Easily keep reference to {@link Observable}s across lifecycle changes. Observables are grouped by

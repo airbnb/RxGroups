@@ -3,6 +3,8 @@ package test;
 import com.airbnb.rxgroups.AutoResubscribe;
 import com.airbnb.rxgroups.TaggedObserver;
 
+import io.reactivex.disposables.Disposable;
+
 public class TaggedObserver_Pass_AutoResubscribe {
   @AutoResubscribe
   public TaggedObserver<Object> taggedObserver = new TaggedObserver<Object>() {
@@ -10,7 +12,7 @@ public class TaggedObserver_Pass_AutoResubscribe {
       return "stableTag";
     }
 
-    @Override public void onCompleted() {
+    @Override public void onComplete() {
 
     }
 
@@ -19,6 +21,10 @@ public class TaggedObserver_Pass_AutoResubscribe {
     }
 
     @Override public void onNext(Object o) {
+
+    }
+
+    @Override public void onSubscribe(Disposable d) {
 
     }
   };

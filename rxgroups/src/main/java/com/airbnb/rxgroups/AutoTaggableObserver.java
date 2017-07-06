@@ -1,6 +1,7 @@
 package com.airbnb.rxgroups;
 
-import rx.Observer;
+
+import io.reactivex.Observer;
 
 /**
  * {@link Observer} with a unique tag which can be automatically set during

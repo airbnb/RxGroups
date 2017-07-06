@@ -12,11 +12,10 @@ import org.mockito.Matchers;
 import org.robolectric.RobolectricGradleTestRunner;
 import org.robolectric.annotation.Config;
 
-import rx.Observer;
-import rx.schedulers.Schedulers;
-import rx.schedulers.TestScheduler;
-import rx.subjects.PublishSubject;
-import rx.subjects.TestSubject;
+import io.reactivex.annotations.NonNull;
+import io.reactivex.disposables.Disposable;
+import io.reactivex.observers.TestObserver;
+import io.reactivex.subjects.PublishSubject;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
@@ -28,9 +27,8 @@ import static org.mockito.Mockito.when;
 
 @Config(sdk = Build.VERSION_CODES.LOLLIPOP, constants = BuildConfig.class)
 @RunWith(RobolectricGradleTestRunner.class)
-public class GroupLifecycleManagerTest extends BaseTest {
-  private final TestScheduler scheduler = Schedulers.test();
-  private final TestSubject<String> testSubject = TestSubject.create(scheduler);
+public class GroupLifecycleManagerTest {
+  private final PublishSubject<String> testSubject = PublishSubject.create();
   private final ObservableManager observableManager = mock(ObservableManager.class);
   private final ObservableGroup group = mock(ObservableGroup.class);
   private final TestTarget target = new TestTarget();
@@ -45,11 +43,15 @@ public class GroupLifecycleManagerTest extends BaseTest {
         return "bar";
       }
 
-      @Override public void onCompleted() {
+      @Override public void onComplete() {
 
       }
 
       @Override public void onError(Throwable e) {
+
+      }
+
+      @Override public void onSubscribe(@NonNull Disposable d) {
 
       }
 
@@ -92,7 +94,7 @@ public class GroupLifecycleManagerTest extends BaseTest {
   public void testSubscribeNullTargetFails() {
     when(observableManager.newGroup()).thenReturn(group);
     GroupLifecycleManager groupLifecycleManager = GroupLifecycleManager.onCreate
-            (observableManager, null, null);
+        (observableManager, null, null);
 
     groupLifecycleManager.initializeAutoTaggingAndResubscription(null);
   }
@@ -105,8 +107,8 @@ public class GroupLifecycleManagerTest extends BaseTest {
     when(group.hasObservables(target.taggedObserver)).thenReturn(true);
     when(group.observable(target.taggedObserver)).thenReturn(testSubject);
 
-    GroupLifecycleManager lifecycleManager = GroupLifecycleManager.onCreate
-            (observableManager, null, target);
+    GroupLifecycleManager lifecycleManager
+        = GroupLifecycleManager.onCreate(observableManager, null, target);
 
     Activity activity = mock(Activity.class);
     when(activity.isFinishing()).thenReturn(true);
@@ -121,21 +123,10 @@ public class GroupLifecycleManagerTest extends BaseTest {
     GroupLifecycleManager lifecycleManager = GroupLifecycleManager.onCreate
         (observableManager, null, target);
 
-    Observer nonResubscribableObserver = new Observer<Object>() {
-      @Override public void onCompleted() {
-
-      }
-
-      @Override public void onError(Throwable e) {
-
-      }
-
-      @Override public void onNext(Object o) {
-
-      }
-    };
-    lifecycleManager.group().add(Utils.getObserverTag(nonResubscribableObserver),
-        "observableTag", PublishSubject.create(), nonResubscribableObserver);
+    TestObserver<String> nonResubscribableObserver = new TestObserver<>();
+    PublishSubject.<String>create()
+        .compose(lifecycleManager.group().transform(nonResubscribableObserver))
+        .subscribe(nonResubscribableObserver);
 
     assertThat(lifecycleManager.group().hasObservables(nonResubscribableObserver)).isTrue();
 
@@ -148,18 +139,18 @@ public class GroupLifecycleManagerTest extends BaseTest {
     assertThat(lifecycleManager.group().hasObservables(nonResubscribableObserver)).isFalse();
   }
 
-  @Test public void testResubscribableNotRemovedAfterNonFinishingDestroy() {
+  @Test public void testTaggedObserverNotRemovedAfterNonFinishingDestroy() {
     when(observableManager.newGroup()).thenReturn(new ObservableGroup(1));
 
     GroupLifecycleManager lifecycleManager = GroupLifecycleManager.onCreate
         (observableManager, null, target);
 
-    Observer stableObserver = new TaggedObserver() {
+    TaggedObserver<String> stableObserver = new TaggedObserver<String>() {
       @Override public String getTag() {
         return "stableTag";
       }
 
-      @Override public void onCompleted() {
+      @Override public void onComplete() {
 
       }
 
@@ -167,12 +158,17 @@ public class GroupLifecycleManagerTest extends BaseTest {
 
       }
 
-      @Override public void onNext(Object o) {
+      @Override public void onSubscribe(@NonNull Disposable d) {
+
+      }
+
+      @Override public void onNext(String s) {
 
       }
     };
-    lifecycleManager.group().add(Utils.getObserverTag(stableObserver),
-        "observableTag", PublishSubject.create(), stableObserver);
+    PublishSubject.<String>create()
+        .compose(lifecycleManager.group().transform(stableObserver))
+        .subscribe(stableObserver);
 
     assertThat(lifecycleManager.group().hasObservables(stableObserver)).isTrue();
 

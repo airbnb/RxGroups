@@ -19,24 +19,34 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.util.concurrent.Callable;
 
-import rx.Observable;
-import rx.Observer;
-import rx.subjects.PublishSubject;
+import io.reactivex.Observable;
+import io.reactivex.Scheduler;
+import io.reactivex.annotations.NonNull;
+import io.reactivex.functions.Function;
+import io.reactivex.observers.TestObserver;
+import io.reactivex.plugins.RxJavaPlugins;
+import io.reactivex.schedulers.Schedulers;
+import io.reactivex.subjects.PublishSubject;
 
-import static junit.framework.TestCase.fail;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assert.fail;
 
 public class ObservableGroupTest {
   private final ObservableManager observableManager = new ObservableManager();
   private final TestAutoResubscribingObserver fooObserver =
-          new TestAutoResubscribingObserver("foo");
+      new TestAutoResubscribingObserver("foo");
   private final TestAutoResubscribingObserver barObserver =
-          new TestAutoResubscribingObserver("bar");
+      new TestAutoResubscribingObserver("bar");
 
   @Before public void setUp() throws IOException {
-    System.setProperty("rxjava.plugin.RxJavaSchedulersHook.implementation",
-        TestRxJavaSchedulerHook.class.getName());
+    RxJavaPlugins.setInitIoSchedulerHandler(new Function<Callable<Scheduler>, Scheduler>() {
+      @Override
+      public Scheduler apply(@NonNull Callable<Scheduler> schedulerCallable) throws Exception {
+        return Schedulers.trampoline();
+      }
+    });
   }
 
   @Test public void shouldNotHaveObservable() {
@@ -47,9 +57,8 @@ public class ObservableGroupTest {
   @Test public void shouldAddRequestByObserverTag() {
     ObservableGroup group = observableManager.newGroup();
     ObservableGroup group2 = observableManager.newGroup();
-    Observable<String> observable = Observable.never();
-
-    group.add(fooObserver.getTag(), null, observable, new TestObserver<>());
+    Observable<String> sourceObservable = Observable.never();
+    sourceObservable.compose(group.transform(fooObserver)).subscribe(fooObserver);
 
     assertThat(group.hasObservables(fooObserver)).isEqualTo(true);
     assertThat(group2.hasObservables(fooObserver)).isEqualTo(false);
@@ -59,36 +68,40 @@ public class ObservableGroupTest {
   @Test public void shouldNotBeCompleted() {
     ObservableGroup group = observableManager.newGroup();
     TestObserver<Object> subscriber = new TestObserver<>();
-    group.add(fooObserver.getTag(), fooObserver.getTag(), Observable.never(), subscriber);
-    subscriber.assertNotCompleted();
+    Observable<String> sourceObservable = Observable.never();
+
+    sourceObservable.compose(group.transform(fooObserver)).subscribe(fooObserver);
+    subscriber.assertNotComplete();
   }
 
   @Test public void shouldBeSubscribed() {
     ObservableGroup group = observableManager.newGroup();
-    group.add(fooObserver.getTag(), fooObserver.getTag(), Observable.never(), new TestObserver<>());
+    Observable<String> sourceObservable = Observable.never();
+    sourceObservable.compose(group.transform(fooObserver)).subscribe(fooObserver);
+
     assertThat(group.subscription(fooObserver).isCancelled()).isEqualTo(false);
   }
 
   @Test public void shouldDeliverSuccessfulEvent() throws Exception {
     ObservableGroup group = observableManager.newGroup();
-    PublishSubject<String> subject = PublishSubject.create();
+    PublishSubject<String> sourceObservable = PublishSubject.create();
     TestObserver<String> subscriber = new TestObserver<>();
 
-    group.add(fooObserver.getTag(), fooObserver.getTag(), subject, subscriber);
-    subscriber.assertNotCompleted();
+    sourceObservable.compose(group.transform(subscriber)).subscribe(subscriber);
+    subscriber.assertNotComplete();
 
-    subject.onNext("Foo Bar");
-    subject.onCompleted();
+    sourceObservable.onNext("Foo Bar");
+    sourceObservable.onComplete();
 
-    subscriber.assertCompleted();
+    subscriber.assertComplete();
     subscriber.assertValue("Foo Bar");
   }
 
   @Test public void shouldDeliverError() throws Exception {
     ObservableGroup group = observableManager.newGroup();
     TestObserver<String> testObserver = new TestObserver<>();
-    Observable<String> observable = Observable.error(new RuntimeException("boom"));
-    group.add(fooObserver.getTag(), fooObserver.getTag(), observable, testObserver);
+    Observable<String> sourceObservable = Observable.error(new RuntimeException("boom"));
+    sourceObservable.compose(group.transform(testObserver)).subscribe(testObserver);
 
     testObserver.assertError(RuntimeException.class);
   }
@@ -98,16 +111,14 @@ public class ObservableGroupTest {
     ObservableGroup group2 = observableManager.newGroup();
     Observable<String> observable1 = Observable.never();
     Observable<String> observable2 = Observable.never();
-    TestObserver<String> subscriber1 = new TestObserver<>();
-    TestObserver<String> subscriber2 = new TestObserver<>();
 
-    group.add(barObserver.getTag(), null, observable1, subscriber1);
+    observable1.compose(group.transform(barObserver)).subscribe(barObserver);
     assertThat(group.hasObservables(barObserver)).isEqualTo(true);
     assertThat(group.hasObservables(fooObserver)).isEqualTo(false);
     assertThat(group2.hasObservables(barObserver)).isEqualTo(false);
     assertThat(group2.hasObservables(fooObserver)).isEqualTo(false);
 
-    group2.add(fooObserver.getTag(), null, observable2, subscriber2);
+    observable2.compose(group2.transform(fooObserver)).subscribe(fooObserver);
     assertThat(group.hasObservables(barObserver)).isEqualTo(true);
     assertThat(group.hasObservables(fooObserver)).isEqualTo(false);
     assertThat(group2.hasObservables(barObserver)).isEqualTo(false);
@@ -119,10 +130,9 @@ public class ObservableGroupTest {
     ObservableGroup group2 = observableManager.newGroup();
     Observable<String> observable1 = Observable.never();
     Observable<String> observable2 = Observable.never();
-    TestObserver<String> subscriber1 = new TestObserver<>();
 
-    group.add(fooObserver.getTag(), fooObserver.getTag(), observable1, subscriber1);
-    group2.add(fooObserver.getTag(), fooObserver.getTag(), observable2, subscriber1);
+    observable1.compose(group.transform(fooObserver)).subscribe(fooObserver);
+    observable2.compose(group2.transform(fooObserver)).subscribe(fooObserver);
 
     observableManager.destroy(group);
 
@@ -145,10 +155,10 @@ public class ObservableGroupTest {
     TestObserver<String> subscriber1 = new TestObserver<>();
     TestObserver<String> subscriber2 = new TestObserver<>();
 
-    group.add(fooObserver.getTag(), fooObserver.getTag(), observable1, subscriber1);
-    group.add(barObserver.getTag(), barObserver.getTag(), observable2, subscriber2);
+    observable1.compose(group.transform(subscriber1)).subscribe(subscriber1);
+    observable2.compose(group.transform(subscriber2)).subscribe(subscriber2);
 
-    group.unsubscribe();
+    group.dispose();
     observableManager.destroy(group);
 
     assertThat(group.hasObservables(fooObserver)).isEqualTo(false);
@@ -157,13 +167,13 @@ public class ObservableGroupTest {
 
   @Test public void shouldClearQueuedResults() throws Exception {
     ObservableGroup group = observableManager.newGroup();
-    PublishSubject<String> subject = PublishSubject.create();
+    PublishSubject<String> sourceObservable = PublishSubject.create();
     TestObserver<String> subscriber1 = new TestObserver<>();
 
-    group.add(fooObserver.getTag(), fooObserver.getTag(), subject, subscriber1);
-    group.unsubscribe();
-    subject.onNext("Hello");
-    subject.onCompleted();
+    sourceObservable.compose(group.transform(subscriber1)).subscribe(subscriber1);
+    group.dispose();
+    sourceObservable.onNext("Hello");
+    sourceObservable.onComplete();
     observableManager.destroy(group);
 
     assertThat(group.hasObservables(fooObserver)).isEqualTo(false);
@@ -171,25 +181,25 @@ public class ObservableGroupTest {
 
   @Test public void shouldRemoveObservablesAfterTermination() throws Exception {
     ObservableGroup group = observableManager.newGroup();
-    PublishSubject<String> subject = PublishSubject.create();
+    PublishSubject<String> sourceObservable = PublishSubject.create();
     TestObserver<String> subscriber = new TestObserver<>();
-    group.add(fooObserver.getTag(), fooObserver.getTag(), subject, subscriber);
+    sourceObservable.compose(group.transform(subscriber)).subscribe(subscriber);
 
-    subject.onNext("Roberto Gomez Bolanos is king");
-    subject.onCompleted();
+    sourceObservable.onNext("Roberto Gomez Bolanos is king");
+    sourceObservable.onComplete();
 
-    subscriber.assertCompleted();
+    subscriber.assertComplete();
     assertThat(group.hasObservables(fooObserver)).isEqualTo(false);
   }
 
   @Test public void shouldRemoveResponseAfterErrorDelivery() throws InterruptedException {
     ObservableGroup group = observableManager.newGroup();
     TestObserver<String> testObserver = new TestObserver<>();
-    PublishSubject<String> subject = PublishSubject.create();
+    PublishSubject<String> sourceObservable = PublishSubject.create();
 
-    group.add(fooObserver.getTag(), fooObserver.getTag(), subject, testObserver);
+    sourceObservable.compose(group.transform(testObserver)).subscribe(testObserver);
 
-    subject.onError(new RuntimeException("BOOM!"));
+    sourceObservable.onError(new RuntimeException("BOOM!"));
 
     testObserver.assertError(Exception.class);
 
@@ -199,95 +209,99 @@ public class ObservableGroupTest {
   @Test public void shouldNotDeliverResultWhileUnsubscribed() throws Exception {
     ObservableGroup group = observableManager.newGroup();
     TestObserver<String> testObserver = new TestObserver<>();
-    PublishSubject<String> subject = PublishSubject.create();
+    PublishSubject<String> sourceObservable = PublishSubject.create();
 
-    group.add(fooObserver.getTag(), fooObserver.getTag(), subject, testObserver);
-    group.unsubscribe();
+    sourceObservable.compose(group.transform(testObserver)).subscribe(testObserver);
+    group.dispose();
 
-    subject.onNext("Roberto Gomez Bolanos");
-    subject.onCompleted();
+    sourceObservable.onNext("Roberto Gomez Bolanos");
+    sourceObservable.onComplete();
 
-    testObserver.assertNotCompleted();
-    assertThat(group.hasObservables(fooObserver)).isEqualTo(true);
+    testObserver.assertNotComplete();
+    assertThat(group.hasObservables(testObserver)).isEqualTo(true);
   }
 
   @Test public void shouldDeliverQueuedEventsWhenResubscribed() throws Exception {
     ObservableGroup group = observableManager.newGroup();
-    TestObserver<String> testObserver = new TestObserver<>();
-    PublishSubject<String> subject = PublishSubject.create();
-    group.add(fooObserver.getTag(), fooObserver.getTag(), subject, testObserver);
-    group.unsubscribe();
+    TestAutoResubscribingObserver resubscribingObserver = new TestAutoResubscribingObserver("foo");
+    PublishSubject<String> sourceObservable = PublishSubject.create();
+    sourceObservable.compose(group.transform(resubscribingObserver))
+        .subscribe(resubscribingObserver);
+    group.dispose();
 
-    subject.onNext("Hello World");
-    subject.onCompleted();
+    sourceObservable.onNext("Hello World");
+    sourceObservable.onComplete();
 
-    testObserver.assertNotCompleted();
-    testObserver.assertNoValues();
+    resubscribingObserver.assertionTarget.assertNotComplete();
+    resubscribingObserver.assertionTarget.assertNoValues();
 
-    group.observable(fooObserver).subscribe(testObserver);
+    // TestObserver cannot be reused after being disposed in RxJava2
+    resubscribingObserver = new TestAutoResubscribingObserver("foo");
+    group.observable(resubscribingObserver).subscribe(resubscribingObserver);
 
-    testObserver.assertCompleted();
-    testObserver.assertValue("Hello World");
-    assertThat(group.hasObservables(fooObserver)).isEqualTo(false);
+    resubscribingObserver.assertionTarget.assertComplete();
+    resubscribingObserver.assertionTarget.assertValue("Hello World");
+    assertThat(group.hasObservables(resubscribingObserver)).isEqualTo(false);
   }
 
   @Test public void shouldDeliverQueuedErrorWhenResubscribed() throws Exception {
     ObservableGroup group = observableManager.newGroup();
-    TestObserver<String> testObserver = new TestObserver<>();
-    PublishSubject<String> subject = PublishSubject.create();
+    TestAutoResubscribingObserver resubscribingObserver = new TestAutoResubscribingObserver("foo");
+    PublishSubject<String> sourceObservable = PublishSubject.create();
 
-    group.add(fooObserver.getTag(), fooObserver.getTag(), subject, testObserver);
-    group.unsubscribe();
+    sourceObservable.compose(group.transform(resubscribingObserver))
+        .subscribe(resubscribingObserver);
+    group.dispose();
 
-    subject.onError(new Exception("Exploded"));
+    sourceObservable.onError(new Exception("Exploded"));
 
-    testObserver.assertNotCompleted();
-    testObserver.assertNoValues();
+    resubscribingObserver.assertionTarget.assertNotComplete();
+    resubscribingObserver.assertionTarget.assertNoValues();
 
-    testObserver = new TestObserver<>();
-    group.observable(fooObserver).subscribe(testObserver);
+    resubscribingObserver = new TestAutoResubscribingObserver("foo");
+    group.observable(resubscribingObserver).subscribe(resubscribingObserver);
 
-    testObserver.assertError(Exception.class);
-    assertThat(group.hasObservables(fooObserver)).isEqualTo(false);
+    resubscribingObserver.assertionTarget.assertError(Exception.class);
+    assertThat(group.hasObservables(resubscribingObserver)).isEqualTo(false);
   }
 
   @Test public void shouldNotDeliverEventsWhenResubscribedIfLocked() {
     ObservableGroup group = observableManager.newGroup();
-    TestObserver<String> testObserver = new TestObserver<>();
-    PublishSubject<String> subject = PublishSubject.create();
-    group.add(fooObserver.getTag(), fooObserver.getTag(), subject, testObserver);
-    group.unsubscribe();
+    TestAutoResubscribingObserver testObserver = new TestAutoResubscribingObserver("foo");
+    PublishSubject<String> sourceObservable = PublishSubject.create();
+    sourceObservable.compose(group.transform(testObserver)).subscribe(testObserver);
+    group.dispose();
 
-    subject.onNext("Hello World");
-    subject.onCompleted();
+    sourceObservable.onNext("Hello World");
+    sourceObservable.onComplete();
 
     group.lock();
-    testObserver = new TestObserver<>();
-    group.observable(fooObserver).subscribe(testObserver);
+    testObserver = new TestAutoResubscribingObserver("foo");
+    group.observable(testObserver).subscribe(testObserver);
 
-    testObserver.assertNotCompleted();
-    testObserver.assertNoValues();
+    testObserver.assertionTarget.assertNotComplete();
+    testObserver.assertionTarget.assertNoValues();
 
     group.unlock();
-    testObserver.assertCompleted();
-    testObserver.assertNoErrors();
-    testObserver.assertValue("Hello World");
-    assertThat(group.hasObservables(fooObserver)).isEqualTo(false);
+    testObserver.assertionTarget.assertComplete();
+    testObserver.assertionTarget.assertNoErrors();
+    testObserver.assertionTarget.assertValue("Hello World");
+    assertThat(group.hasObservables(testObserver)).isEqualTo(false);
   }
 
   @Test public void shouldUnsubscribeByContext() throws Exception {
     ObservableGroup group = observableManager.newGroup();
     ObservableGroup group2 = observableManager.newGroup();
-    PublishSubject<String> subject = PublishSubject.create();
+    PublishSubject<String> sourceObservable = PublishSubject.create();
     TestObserver<String> testObserver = new TestObserver<>();
 
-    group2.add(fooObserver.getTag(), fooObserver.getTag(), subject, testObserver);
-    group.unsubscribe();
+    sourceObservable.compose(group2.transform(testObserver)).subscribe(testObserver);
+    group.dispose();
 
-    subject.onNext("Gremio Foot-ball Porto Alegrense");
-    subject.onCompleted();
+    sourceObservable.onNext("Gremio Foot-ball Porto Alegrense");
+    sourceObservable.onComplete();
 
-    testObserver.assertCompleted();
+    testObserver.assertComplete();
     testObserver.assertNoErrors();
     testObserver.assertValue("Gremio Foot-ball Porto Alegrense");
 
@@ -296,16 +310,16 @@ public class ObservableGroupTest {
 
   @Test public void shouldNotDeliverEventsAfterCancelled() throws Exception {
     ObservableGroup group = observableManager.newGroup();
-    PublishSubject<String> subject = PublishSubject.create();
+    PublishSubject<String> sourceObservable = PublishSubject.create();
     TestObserver<String> testObserver = new TestObserver<>();
 
-    group.add(fooObserver.getTag(), fooObserver.getTag(), subject, testObserver);
+    sourceObservable.compose(group.transform(testObserver)).subscribe(testObserver);
     observableManager.destroy(group);
 
-    subject.onNext("Gremio Foot-ball Porto Alegrense");
-    subject.onCompleted();
+    sourceObservable.onNext("Gremio Foot-ball Porto Alegrense");
+    sourceObservable.onComplete();
 
-    testObserver.assertNotCompleted();
+    testObserver.assertNotComplete();
     assertThat(group.hasObservables(fooObserver)).isEqualTo(false);
   }
 
@@ -313,40 +327,40 @@ public class ObservableGroupTest {
     ObservableGroup group = observableManager.newGroup();
     ObservableGroup group2 = observableManager.newGroup();
     PublishSubject<String> subject1 = PublishSubject.create();
-    TestObserver<String> testSubscriber1 = new TestObserver<>();
+    TestAutoResubscribingObserver testSubscriber1 = new TestAutoResubscribingObserver("foo");
     PublishSubject<String> subject2 = PublishSubject.create();
-    TestObserver<String> testSubscriber2 = new TestObserver<>();
+    TestAutoResubscribingObserver testSubscriber2 = new TestAutoResubscribingObserver("bar");
 
-    group.add(fooObserver.getTag(), fooObserver.getTag(), subject1, testSubscriber1);
-    group2.add(barObserver.getTag(), barObserver.getTag(), subject2, testSubscriber2);
-    group.unsubscribe();
+    subject1.compose(group.transform(testSubscriber1)).subscribe(testSubscriber1);
+    subject2.compose(group2.transform(testSubscriber2)).subscribe(testSubscriber2);
+    group.dispose();
 
     subject1.onNext("Florinda Mesa");
-    subject1.onCompleted();
+    subject1.onComplete();
     subject2.onNext("Carlos Villagran");
-    subject2.onCompleted();
+    subject2.onComplete();
 
-    testSubscriber1.assertNotCompleted();
-    testSubscriber2.assertNoErrors();
-    testSubscriber2.assertValue("Carlos Villagran");
+    testSubscriber1.assertionTarget.assertNotComplete();
+    testSubscriber2.assertionTarget.assertNoErrors();
+    testSubscriber2.assertionTarget.assertValue("Carlos Villagran");
   }
 
   @Test public void shouldOverrideExistingSubscriber() throws Exception {
     ObservableGroup group = observableManager.newGroup();
-    PublishSubject<String> subject = PublishSubject.create();
-    TestObserver<String> testSubscriber1 = new TestObserver<>();
-    TestObserver<String> testSubscriber2 = new TestObserver<>();
+    PublishSubject<String> sourceObservable = PublishSubject.create();
+    TestAutoResubscribingObserver testSubscriber1 = new TestAutoResubscribingObserver("foo");
+    TestAutoResubscribingObserver testSubscriber2 = new TestAutoResubscribingObserver("foo");
 
-    group.add(fooObserver.getTag(), fooObserver.getTag(), subject, testSubscriber1);
-    group.observable(fooObserver).subscribe(testSubscriber2);
+    sourceObservable.compose(group.transform(testSubscriber1)).subscribe(testSubscriber1);
+    sourceObservable.compose(group.transform(testSubscriber2)).subscribe(testSubscriber2);
 
-    subject.onNext("Ruben Aguirre");
-    subject.onCompleted();
+    sourceObservable.onNext("Ruben Aguirre");
+    sourceObservable.onComplete();
 
-    testSubscriber1.assertNotCompleted();
-    testSubscriber1.assertNoValues();
-    testSubscriber2.assertCompleted();
-    testSubscriber2.assertValue("Ruben Aguirre");
+    testSubscriber1.assertionTarget.assertNotComplete();
+    testSubscriber1.assertionTarget.assertNoValues();
+    testSubscriber2.assertionTarget.assertComplete();
+    testSubscriber2.assertionTarget.assertValue("Ruben Aguirre");
   }
 
   @Test public void shouldQueueMultipleRequests() throws Exception {
@@ -356,51 +370,51 @@ public class ObservableGroupTest {
     PublishSubject<String> subject2 = PublishSubject.create();
     TestObserver<String> testSubscriber2 = new TestObserver<>();
 
-    group.add(fooObserver.getTag(), fooObserver.getTag(), subject1, testSubscriber1);
-    group.add(barObserver.getTag(), barObserver.getTag(), subject2, testSubscriber2);
-    group.unsubscribe();
+    subject1.compose(group.transform(testSubscriber1)).subscribe(testSubscriber1);
+    subject2.compose(group.transform(testSubscriber2)).subscribe(testSubscriber2);
+    group.dispose();
 
     subject1.onNext("Chespirito");
-    subject1.onCompleted();
+    subject1.onComplete();
     subject2.onNext("Edgar Vivar");
-    subject2.onCompleted();
+    subject2.onComplete();
 
-    testSubscriber1.assertNotCompleted();
-    testSubscriber2.assertNotCompleted();
-    assertThat(group.hasObservables(fooObserver)).isEqualTo(true);
-    assertThat(group.hasObservables(barObserver)).isEqualTo(true);
+    testSubscriber1.assertNotComplete();
+    testSubscriber2.assertNotComplete();
+    assertThat(group.hasObservables(testSubscriber1)).isEqualTo(true);
+    assertThat(group.hasObservables(testSubscriber2)).isEqualTo(true);
   }
 
   @Test public void shouldNotDeliverResultWhileLocked() throws Exception {
     ObservableGroup group = observableManager.newGroup();
     TestObserver<String> testObserver = new TestObserver<>();
-    PublishSubject<String> subject = PublishSubject.create();
+    PublishSubject<String> sourceObservable = PublishSubject.create();
 
     group.lock();
-    group.add(fooObserver.getTag(), fooObserver.getTag(), subject, testObserver);
+    sourceObservable.compose(group.transform(testObserver)).subscribe(testObserver);
 
-    subject.onNext("Chespirito");
-    subject.onCompleted();
+    sourceObservable.onNext("Chespirito");
+    sourceObservable.onComplete();
 
-    testObserver.assertNotCompleted();
+    testObserver.assertNotComplete();
     testObserver.assertNoValues();
-    assertThat(group.hasObservables(fooObserver)).isEqualTo(true);
+    assertThat(group.hasObservables(testObserver)).isEqualTo(true);
   }
 
   @Test public void shouldAutoResubscribeAfterUnlock() throws InterruptedException {
     ObservableGroup group = observableManager.newGroup();
     TestObserver<String> testObserver = new TestObserver<>();
-    PublishSubject<String> subject = PublishSubject.create();
+    PublishSubject<String> sourceObservable = PublishSubject.create();
 
     group.lock();
-    group.add(fooObserver.getTag(), fooObserver.getTag(), subject, testObserver);
+    sourceObservable.compose(group.transform(testObserver)).subscribe(testObserver);
 
-    subject.onNext("Chespirito");
-    subject.onCompleted();
+    sourceObservable.onNext("Chespirito");
+    sourceObservable.onComplete();
 
     group.unlock();
 
-    testObserver.assertCompleted();
+    testObserver.assertComplete();
     testObserver.assertNoErrors();
     testObserver.assertValue("Chespirito");
     assertThat(group.hasObservables(fooObserver)).isEqualTo(false);
@@ -409,17 +423,17 @@ public class ObservableGroupTest {
   @Test public void shouldAutoResubscribeAfterLockAndUnlock() {
     ObservableGroup group = observableManager.newGroup();
     TestObserver<String> testObserver = new TestObserver<>();
-    PublishSubject<String> subject = PublishSubject.create();
+    PublishSubject<String> sourceObservable = PublishSubject.create();
 
-    group.add(fooObserver.getTag(), fooObserver.getTag(), subject, testObserver);
+    sourceObservable.compose(group.transform(testObserver)).subscribe(testObserver);
     group.lock();
 
-    subject.onNext("Chespirito");
-    subject.onCompleted();
+    sourceObservable.onNext("Chespirito");
+    sourceObservable.onComplete();
 
     group.unlock();
 
-    testObserver.assertTerminalEvent();
+    testObserver.assertTerminated();
     testObserver.assertNoErrors();
     testObserver.assertValue("Chespirito");
     assertThat(group.hasObservables(fooObserver)).isEqualTo(false);
@@ -428,37 +442,38 @@ public class ObservableGroupTest {
   @Test public void testUnsubscribeWhenLocked() {
     ObservableGroup group = observableManager.newGroup();
     TestObserver<String> testObserver = new TestObserver<>();
-    PublishSubject<String> subject = PublishSubject.create();
+    PublishSubject<String> sourceObservable = PublishSubject.create();
 
-    group.add(fooObserver.getTag(), fooObserver.getTag(), subject, testObserver);
+    sourceObservable.compose(group.transform(testObserver)).subscribe(testObserver);
     group.lock();
-    group.unsubscribe();
+    group.dispose();
 
-    subject.onNext("Chespirito");
-    subject.onCompleted();
+    sourceObservable.onNext("Chespirito");
+    sourceObservable.onComplete();
 
     group.unlock();
 
-    testObserver.assertNotCompleted();
+    testObserver.assertNotComplete();
     testObserver.assertNoValues();
-    assertThat(group.hasObservables(fooObserver)).isEqualTo(true);
+    assertThat(group.hasObservables(testObserver)).isEqualTo(true);
   }
 
   @Test public void testAddThrowsAfterDestroyed() {
     ObservableGroup group = observableManager.newGroup();
+    Observable<String> source = PublishSubject.create();
+    TestObserver<String> observer = new TestObserver<>();
     group.destroy();
-    try {
-      group.add(fooObserver.getTag(), null, PublishSubject.<String>create(), new TestObserver<>());
-      fail();
-    } catch (IllegalStateException ignored) {
-    }
+    source.compose(group.transform(observer)).subscribe(observer);
+    observer.assertError(IllegalStateException.class);
   }
 
   @Test public void testResubscribeThrowsAfterDestroyed() {
     ObservableGroup group = observableManager.newGroup();
+    Observable<String> source = PublishSubject.create();
+    TestObserver<String> observer = new TestObserver<>();
     try {
-      group.add(fooObserver.getTag(), null, PublishSubject.<String>create(), new TestObserver<>());
-      group.unsubscribe();
+      source.compose(group.transform(observer)).subscribe(observer);
+      group.dispose();
       group.destroy();
       group.observable(fooObserver).subscribe(new TestObserver<>());
       fail();
@@ -470,24 +485,25 @@ public class ObservableGroupTest {
     ObservableGroup group = observableManager.newGroup();
     PublishSubject<String> observable1 = PublishSubject.create();
     PublishSubject<String> observable2 = PublishSubject.create();
-    TestObserver<String> observer1 = new TestObserver<>();
-    TestObserver<String> observer2 = new TestObserver<>();
-    group.add(fooObserver.getTag(), fooObserver.getTag(), observable1, observer1);
-    group.add(fooObserver.getTag(), fooObserver.getTag(), observable2, observer2);
+    TestAutoResubscribingObserver observer1 = new TestAutoResubscribingObserver("foo");
+    TestAutoResubscribingObserver observer2 = new TestAutoResubscribingObserver("foo");
+    observable1.compose(group.transform(observer1)).subscribe(observer1);
+    observable2.compose(group.transform(observer2)).subscribe(observer2);
 
     assertThat(group.subscription(fooObserver).isCancelled()).isFalse();
     assertThat(group.hasObservables(fooObserver)).isTrue();
 
     observable1.onNext("Hello World 1");
-    observable1.onCompleted();
+    observable1.onComplete();
 
     observable2.onNext("Hello World 2");
-    observable2.onCompleted();
+    observable2.onComplete();
 
-    observer2.assertCompleted();
-    observer2.assertValue("Hello World 2");
+    observer2.assertionTarget.awaitTerminalEvent();
+    observer2.assertionTarget.assertComplete();
+    observer2.assertionTarget.assertValue("Hello World 2");
 
-    observer1.assertNoValues();
+    observer1.assertionTarget.assertNoValues();
   }
 
   /**
@@ -499,38 +515,68 @@ public class ObservableGroupTest {
     TestObserver<String> observer1 = new TestObserver<>();
     TestObserver<String> observer2 = new TestObserver<>();
     String sharedObservableTag = "sharedTag";
-    group.add(fooObserver.getTag(), sharedObservableTag, observable1, observer1);
-    group.add(barObserver.getTag(), sharedObservableTag, observable1, observer2);
+    observable1.compose(group.transform(observer1, sharedObservableTag)).subscribe(observer1);
+    observable1.compose(group.transform(observer2, sharedObservableTag)).subscribe(observer2);
 
-    assertThat(group.subscription(fooObserver, sharedObservableTag).isCancelled()).isFalse();
-    assertThat(group.hasObservables(fooObserver)).isTrue();
+    assertThat(group.subscription(observer1, sharedObservableTag).isCancelled()).isFalse();
+    assertThat(group.hasObservables(observer1)).isTrue();
 
-    assertThat(group.subscription(barObserver, sharedObservableTag).isCancelled()).isFalse();
-    assertThat(group.hasObservables(barObserver)).isTrue();
+    assertThat(group.subscription(observer2, sharedObservableTag).isCancelled()).isFalse();
+    assertThat(group.hasObservables(observer2)).isTrue();
 
     observable1.onNext("Hello World 1");
-    observable1.onCompleted();
+    observable1.onComplete();
 
-    observer2.assertCompleted();
+    observer2.assertComplete();
     observer2.assertValue("Hello World 1");
 
-    observer1.assertCompleted();
+    observer1.assertComplete();
     observer1.assertValue("Hello World 1");
   }
 
   @Test public void testCancelAndReAddSubscription() {
     ObservableGroup group = observableManager.newGroup();
-    group.add(fooObserver.getTag(), fooObserver.getTag(), PublishSubject.<String>create(),
-        new TestObserver<>());
+    PublishSubject<String> sourceObservable = PublishSubject.create();
+    sourceObservable.compose(group.transform(fooObserver)).subscribe(fooObserver);
     group.cancelAllObservablesForObserver(fooObserver);
     assertThat(group.subscription(fooObserver)).isNull();
 
-    Observable<String> observable = PublishSubject.create();
-    Observer<String> observer = new TestObserver<>();
-
-    group.add(fooObserver.getTag(), fooObserver.getTag(), observable, observer);
+    sourceObservable.compose(group.transform(fooObserver)).subscribe(fooObserver);
 
     assertThat(group.subscription(fooObserver).isCancelled()).isFalse();
+  }
+
+  @Test public void testDisposingObserver() {
+    ObservableGroup group = observableManager.newGroup();
+    TestObserver<String> testObserver = new TestObserver<>();
+    PublishSubject<String> sourceObservable = PublishSubject.create();
+
+    sourceObservable.compose(group.transform(testObserver)).subscribe(testObserver);
+
+    testObserver.dispose();
+
+    sourceObservable.onNext("Chespirito");
+    testObserver.assertNoValues();
+
+    assertThat(group.hasObservables(testObserver)).isEqualTo(true);
+  }
+
+  @Test public void testDisposingObserverResubscribe() {
+    ObservableGroup group = observableManager.newGroup();
+    TestAutoResubscribingObserver testObserver = new TestAutoResubscribingObserver("foo");
+    PublishSubject<String> sourceObservable = PublishSubject.create();
+
+    sourceObservable.compose(group.transform(testObserver)).subscribe(testObserver);
+
+    testObserver.dispose();
+
+    sourceObservable.onNext("Chespirito");
+    testObserver.assertionTarget.assertNoValues();
+
+    testObserver = new TestAutoResubscribingObserver("foo");
+
+    group.resubscribe(testObserver);
+    testObserver.assertionTarget.assertValue("Chespirito");
   }
 
 }
