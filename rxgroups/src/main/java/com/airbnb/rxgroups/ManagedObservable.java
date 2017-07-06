@@ -32,7 +32,7 @@ class ManagedObservable<T> implements SourceSubscription {
   private ObservableEmitter<? super T> observerEmitter;
 
   ManagedObservable(String observerTag, String observableTag, Observable<T> upstreamObservable,
-                    ObservableEmitter<? super T> observer, Action onTerminate) {
+      ObservableEmitter<? super T> observer, Action onTerminate) {
     this.observableTag = observableTag;
     this.observerTag = observerTag;
     this.observerEmitter = observer;
