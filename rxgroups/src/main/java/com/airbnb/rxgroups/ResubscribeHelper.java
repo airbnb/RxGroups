@@ -29,9 +29,9 @@ class ResubscribeHelper {
   }
 
   static void initializeAutoTaggingAndResubscriptionInTargetClassOnly(Object target,
-                                                                      Class<?> targetClass,
-                                                                      ObservableGroup group) {
-    Constructor<?> constructor = findConstructorForClass(targetClass, group);
+      Class<?> targetClass,
+      ObservableGroup group) {
+    Constructor<?> constructor = findConstructorForClass(targetClass);
     if (constructor == null) {
       return;
     }
@@ -39,7 +39,7 @@ class ResubscribeHelper {
   }
 
   private static void invokeConstructor(Constructor<?> constructor, Object target,
-                                        ObservableGroup group) {
+      ObservableGroup group) {
     try {
       constructor.newInstance(target, group);
     } catch (IllegalAccessException e) {
@@ -59,7 +59,7 @@ class ResubscribeHelper {
   }
 
   @Nullable
-  private static Constructor<?> findConstructorForClass(Class<?> cls, ObservableGroup group) {
+  private static Constructor<?> findConstructorForClass(Class<?> cls) {
     Constructor<?> bindingCtor = BINDINGS.get(cls);
     if (bindingCtor != null || BINDINGS.containsKey(cls)) {
       return bindingCtor;
@@ -76,7 +76,7 @@ class ResubscribeHelper {
       //noinspection unchecked
       bindingCtor = bindingClass.getConstructor(cls, ObservableGroup.class);
     } catch (ClassNotFoundException e) {
-      bindingCtor = findConstructorForClass(cls.getSuperclass(), group);
+      bindingCtor = findConstructorForClass(cls.getSuperclass());
     } catch (NoSuchMethodException e) {
       throw new RuntimeException("Unable to find binding constructor for " + clsName, e);
     }

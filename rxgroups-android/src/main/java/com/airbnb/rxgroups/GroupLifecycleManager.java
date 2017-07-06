@@ -105,7 +105,7 @@ public class GroupLifecycleManager {
    * this instance.
    */
   public <T> ObservableTransformer<? super T, T> transform(Observer<? super T> observer,
-                                                            String observableTag) {
+          String observableTag) {
     return group.transform(observer, observableTag);
   }
 
@@ -141,7 +141,7 @@ public class GroupLifecycleManager {
    * for the group managed by this instance.
    */
   public <T> void initializeAutoTaggingAndResubscriptionInTargetClassOnly(T target,
-                                                                          Class<T> targetClass) {
+          Class<T> targetClass) {
    group.initializeAutoTaggingAndResubscriptionInTargetClassOnly(target, targetClass);
   }
 
