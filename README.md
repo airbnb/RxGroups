@@ -20,7 +20,7 @@ automatically after `onDestroy()`.
 ## Usage
 
 1. Add a `GroupLifecycleManager` field to your `Activity`, `Fragment`, `Dialog`, etc. and call its respective lifecycle methods according to your own (eg.: `onPause`, `onResume`, `onDestroy`, etc.);
-2. Annotate your `ResubscriptionObserver` with `@AutoResubscribe` and use method `resubscriptionTag()` to tell RxGroups what tag it should use for reattaching your `Observer` to it `Observable` automatically.
+2. Annotate your `ResubscriptionObserver` with `@AutoResubscribe` and use method `resubscriptionTag()` to tell RxGroups what tag it should use for reattaching your `Observer` to it `Observable` automatically. To use RxGroups with Kotlin don't forget to annotate fields with `@JvmField`. 
 3. Before subscribing to your `Observable`, compose it with `observableGroup.transform()` to define a tag for that `Observable`;
 
 ### Example
