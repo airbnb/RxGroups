@@ -15,23 +15,36 @@
  */
 package com.airbnb.rxgroups;
 
-import rx.Observable;
-import rx.Subscriber;
 
-class GroupResubscriptionTransformer<T> implements Observable.Transformer<T, T> {
-  private final ObservableGroup group;
+import io.reactivex.Observable;
+import io.reactivex.ObservableEmitter;
+import io.reactivex.ObservableOnSubscribe;
+import io.reactivex.ObservableSource;
+import io.reactivex.ObservableTransformer;
+import io.reactivex.annotations.NonNull;
+import io.reactivex.disposables.Disposable;
+
+class GroupResubscriptionTransformer<T> implements ObservableTransformer<T, T> {
   private final ManagedObservable<T> managedObservable;
 
-  GroupResubscriptionTransformer(
-      ObservableGroup group, ManagedObservable<T> managedObservable) {
-    this.group = group;
+  GroupResubscriptionTransformer(ManagedObservable<T> managedObservable) {
     this.managedObservable = managedObservable;
   }
 
-  @Override public Observable<T> call(final Observable<T> observable) {
-    return Observable.<T>create(new Observable.OnSubscribe<T>() {
-      @Override public void call(Subscriber<? super T> subscriber) {
-        group.resubscribe(managedObservable, observable, subscriber);
+  @Override public ObservableSource<T> apply(@NonNull final Observable<T> ignored) {
+    return Observable.create(new ObservableOnSubscribe<T>() {
+      @Override
+      public void subscribe(@NonNull final ObservableEmitter<T> emitter) throws Exception {
+        emitter.setDisposable(new Disposable() {
+          @Override public void dispose() {
+            managedObservable.dispose();
+          }
+
+          @Override public boolean isDisposed() {
+            return managedObservable.isDisposed();
+          }
+        });
+        managedObservable.resubscribe(emitter);
       }
     });
   }

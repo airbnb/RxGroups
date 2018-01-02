@@ -1,0 +1,42 @@
+def versions = [
+        supportLibVersion: '25.3.1',
+        mockito          : '1.9.5',
+        testRunner       : '0.5',
+        hamcrestVersion  : '1.3'
+]
+
+ext.isCi = (project.hasProperty('CI') && CI == 'true')
+
+ext.repositoryUrl = hasProperty('RELEASE_REPOSITORY_URL') ? RELEASE_REPOSITORY_URL
+        : 'https://oss.sonatype.org/service/local/staging/deploy/maven2/'
+ext.snapshotRepositoryUrl = 'https://oss.sonatype.org/content/repositories/snapshots/'
+
+ext.androidConfig = [
+        compileSdkVersion: 25,
+        buildToolsVersion: '25.0.3',
+        minSdkVersion    : 16,
+        targetSdkVersion : 25
+]
+
+ext.dep = [
+        androidSupportAppCompat: "com.android.support:appcompat-v7:$versions.supportLibVersion",
+        androidSupportDesign   : "com.android.support:design:$versions.supportLibVersion",
+        androidPlugin          : 'com.android.tools.build:gradle:2.3.0',
+        autoService            : 'com.google.auto.service:auto-service:1.0-rc2',
+        findBugs               : 'com.google.code.findbugs:jsr305:3.0.0',
+        gradleNexus            : 'com.bmuschko:gradle-nexus-plugin:2.3.1',
+        javaPoet               : 'com.squareup:javapoet:1.8.0',
+        rxAndroid              : 'io.reactivex.rxjava2:rxandroid:2.0.1',
+        rxJava                 : 'io.reactivex.rxjava2:rxjava:2.1.0',
+
+        //Tests
+        junit                  : 'junit:junit:4.12',
+        mockito                : 'org.mockito:mockito-core:1.10.19',
+        hamcrestIntegration    : "org.hamcrest:hamcrest-integration:$versions.hamcrestVersion",
+        hamcrestCore           : "org.hamcrest:hamcrest-core:$versions.hamcrestVersion",
+        hamcrestLibrary        : "org.hamcrest:hamcrest-library:$versions.hamcrestVersion",
+        assertj                : 'org.assertj:assertj-core:1.7.0',
+        roboelectric           : 'org.robolectric:robolectric:3.1.2',
+        googleCompileTesting   : 'com.google.testing.compile:compile-testing:0.11'
+]
+

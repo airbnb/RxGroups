@@ -1,12 +1,5 @@
 apply plugin: 'java'
-apply plugin: 'checkstyle'
 apply plugin: 'com.bmuschko.nexus'
-
-checkstyle {
-  configFile rootProject.file('checkstyle.xml')
-  showViolations true
-  configProperties = ['checkstyle.cache.file': rootProject.file('build/checkstyle.cache')]
-}
 
 targetCompatibility = '1.7'
 sourceCompatibility = '1.7'
@@ -15,11 +8,11 @@ project.group = GROUP
 project.version = VERSION_NAME
 
 dependencies {
-  compile 'io.reactivex:rxjava:1.2.6'
-  compile 'com.google.code.findbugs:jsr305:3.0.0'
+  compile dep.rxJava
+  compile dep.findBugs
 
-  testCompile 'junit:junit:4.12'
-  testCompile 'org.assertj:assertj-core:1.7.0'
+  testCompile dep.junit
+  testCompile dep.assertj
 }
 
 if (JavaVersion.current().isJava8Compatible()) {
@@ -71,7 +64,7 @@ extraArchive {
 }
 
 nexus {
-  sign = !isCi()
-  repositoryUrl = 'https://oss.sonatype.org/service/local/staging/deploy/maven2/'
-  snapshotRepositoryUrl = 'https://oss.sonatype.org/content/repositories/snapshots/'
+  sign = !project.ext.isCi
+  repositoryUrl = project.ext.repositoryUrl
+  snapshotRepositoryUrl = project.ext.snapshotRepositoryUrl
 }

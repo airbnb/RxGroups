@@ -15,42 +15,55 @@
  */
 package com.airbnb.rxgroups;
 
-import rx.Emitter;
-import rx.Observable;
-import rx.Observer;
-import rx.functions.Action1;
+
+import io.reactivex.Observable;
+import io.reactivex.ObservableEmitter;
+import io.reactivex.ObservableOnSubscribe;
+import io.reactivex.ObservableSource;
+import io.reactivex.ObservableTransformer;
+import io.reactivex.annotations.NonNull;
+import io.reactivex.disposables.Disposable;
 
 /**
  * Transforms an existing {@link Observable} by returning a new {@link Observable} that is
- * automatically added to the provided {@link ObservableGroup} with the specified {@code tag} when
- * subscribed to.
+ * automatically added to the provided {@link ObservableGroup} with the specified {@code
+ * observableTag} when subscribed to.
  */
-class GroupSubscriptionTransformer<T> implements Observable.Transformer<T, T> {
+class GroupSubscriptionTransformer<T> implements ObservableTransformer<T, T> {
   private final ObservableGroup group;
-  private final String tag;
+  private final String observableTag;
+  private final String observerTag;
 
-  GroupSubscriptionTransformer(ObservableGroup group, String tag) {
+  GroupSubscriptionTransformer(ObservableGroup group, String observerTag, String observableTag) {
     this.group = group;
-    this.tag = tag;
+    this.observableTag = observableTag;
+    this.observerTag = observerTag;
   }
 
-  @Override public Observable<T> call(final Observable<T> observable) {
-    return Observable.fromEmitter(new Action1<Emitter<T>>() {
-      @Override public void call(final Emitter<T> emitter) {
-        group.add(tag, observable, new Observer<T>() {
-          @Override public void onCompleted() {
-            emitter.onCompleted();
-          }
-
-          @Override public void onError(Throwable e) {
-            emitter.onError(e);
-          }
-
-          @Override public void onNext(T t) {
-            emitter.onNext(t);
-          }
-        });
+  @Override public ObservableSource<T> apply(@NonNull final Observable<T> sourceObservable) {
+    return Observable.create(new ObservableOnSubscribe<T>() {
+      @Override
+      public void subscribe(@NonNull final ObservableEmitter<T> emitter) throws Exception {
+        group.add(observerTag, observableTag, sourceObservable, emitter);
+        emitter.setDisposable(managedObservableDisposable);
       }
-    }, Emitter.BackpressureMode.BUFFER);
+    });
   }
+
+  private Disposable managedObservableDisposable = new Disposable() {
+    @Override public void dispose() {
+      ManagedObservable managedObservable =
+          group.getObservablesForObserver(observerTag).get(observableTag);
+      if (managedObservable != null) {
+        managedObservable.dispose();
+      }
+    }
+
+    @Override public boolean isDisposed() {
+      ManagedObservable managedObservable =
+          group.getObservablesForObserver(observerTag).get(observableTag);
+      return managedObservable == null || managedObservable.isDisposed();
+    }
+  };
+
 }

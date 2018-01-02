@@ -25,54 +25,39 @@ import java.util.UUID;
 
 import javax.annotation.Nullable;
 
-import rx.Observable;
-import rx.Observer;
-import rx.Subscription;
-import rx.functions.Action1;
-import rx.functions.Func1;
-import rx.subscriptions.CompositeSubscription;
+import io.reactivex.ObservableTransformer;
+import io.reactivex.Observer;
 
 /**
- * TODO
+ * Manges unlocking, locking, and destroying observables based on the lifecycle of an activity or
+ * fragment. An Activity or fragment must call:
+ * <ul>
+ * <li>{@link #onCreate(ObservableManager, Bundle, Object)}</li>
+ * <li>{@link #onResume()}</li>
+ * <li>{@link #onPause()}</li>
+ * <li>{@link #onDestroy(Activity)}</li>
+ * <li>{@link #onSaveInstanceState(Bundle)}</li>
+ * </ul>
+ * in corresponding methods.
  */
 @SuppressWarnings("WeakerAccess")
 public class GroupLifecycleManager {
   private static final String KEY_STATE = "KEY_GROUPLIFECYCLEMANAGER_STATE";
 
-  private final CompositeSubscription pendingSubscriptions = new CompositeSubscription();
-  private final LifecycleResubscription resubscription;
   private final ObservableManager observableManager;
   private final ObservableGroup group;
   private boolean hasSavedState;
 
-  private GroupLifecycleManager(ObservableManager observableManager, ObservableGroup group,
-      LifecycleResubscription resubscription) {
+  private GroupLifecycleManager(ObservableManager observableManager, ObservableGroup group) {
     this.observableManager = observableManager;
     this.group = group;
-    this.resubscription = resubscription;
-  }
-
-  /** Call this method from your Activity or Fragment's onCreate method */
-  public static GroupLifecycleManager onCreate(ObservableManager observableManager,
-      LifecycleResubscription resubscription) {
-    return onCreate(observableManager, resubscription, null, null);
   }
 
   /** Call this method from your Activity or Fragment's onCreate method */
   public static GroupLifecycleManager onCreate(ObservableManager observableManager,
       @Nullable Bundle savedState, @Nullable Object target) {
-    return onCreate(observableManager, new LifecycleResubscription(), savedState,
-        target);
-  }
 
-  /** Call this method from your Activity or Fragment's onCreate method */
-  public static GroupLifecycleManager onCreate(ObservableManager observableManager,
-      LifecycleResubscription resubscription, @Nullable Bundle savedState,
-      @Nullable Object target) {
-    // Only need to resubscribe if restoring from saved state
-    boolean shouldResubscribe = target != null && savedState != null;
     ObservableGroup group;
-
     if (savedState != null) {
       State state = savedState.getParcelable(KEY_STATE);
 
@@ -93,11 +78,10 @@ public class GroupLifecycleManager {
 
     group.lock();
 
-    GroupLifecycleManager manager = new GroupLifecycleManager(observableManager, group,
-        resubscription);
+    GroupLifecycleManager manager = new GroupLifecycleManager(observableManager, group);
 
-    if (shouldResubscribe) {
-      manager.subscribe(target);
+    if (target != null) {
+      manager.initializeAutoTaggingAndResubscription(target);
     }
 
     return manager;
@@ -109,67 +93,80 @@ public class GroupLifecycleManager {
   }
 
   /**
-   * TODO
+   * Calls {@link ObservableGroup#transform(Observer)}  for the group managed by
+   * this instance.
    */
-  public <T> Observable.Transformer<? super T, T> transform(String tag) {
-    return group.transform(tag);
+  public <T> ObservableTransformer<? super T, T> transform(Observer<? super T> observer) {
+    return group.transform(observer);
   }
 
   /**
-   * Returns whether the provided {@link Class} exists for the {@link ObservableGroup}.
-   * Observables will only be removed from their respective groups once {@link
-   * Observer#onCompleted()} has been called.
+   * Calls {@link ObservableGroup#transform(Observer, String)}  for the group managed by
+   * this instance.
    */
-  public boolean hasObservable(String tag) {
-    return group.hasObservable(tag);
+  public <T> ObservableTransformer<? super T, T> transform(Observer<? super T> observer,
+          String observableTag) {
+    return group.transform(observer, observableTag);
   }
 
   /**
-   * Subscribe all Observer fields on the target that are annotated with {@link AutoResubscribe}
-   * and that have their corresponding Observable in flight.
+   * Call {@link ObservableGroup#hasObservables(Observer)} for the group managed by
+   * this instance.
    */
-  public void subscribe(Object target) {
-    Subscription subscription = resubscription.observers(target)
-        .filter(new Func1<LifecycleResubscription.ObserverInfo, Boolean>() {
-          @Override public Boolean call(LifecycleResubscription.ObserverInfo observerInfo) {
-            return hasObservable(observerInfo.tag);
-          }
-        }).subscribe(new Action1<LifecycleResubscription.ObserverInfo>() {
-          @Override public void call(LifecycleResubscription.ObserverInfo observerInfo) {
-            resubscribe(observerInfo.tag, observerInfo.observer);
-          }
-        });
-
-    pendingSubscriptions.add(subscription);
+  public boolean hasObservables(Observer<?> observer) {
+    return group.hasObservables(observer);
   }
 
   /**
-   * Resubscribes an existing {@link Class} If the Observable has already emitted events,
-   * they will be immediately delivered if the group is
-   * unlocked. Any previously subscribed Observers will be unsubscribed before the new one.
+   * Call {@link ObservableGroup#hasObservable(Observer, String)} for the group managed by
+   * this instance.
    */
-  @SuppressWarnings({ "rawtypes", "unchecked" })
-  public void resubscribe(String tag, Observer<?> observer) {
-    Observable observable = group.observable(tag);
-    observable.subscribe(observer);
+  public boolean hasObservable(Observer<?> observer, String observableTag) {
+    return group.hasObservable(observer, observableTag);
   }
 
   /**
-   * Cancel the given request if it is running, so that no future request callbacks are received.
-   * If the request is not running then nothing
-   * happens.
+   * Calls
+   * {@link ObservableGroup#initializeAutoTaggingAndResubscription(Object)} (Object, Class)}
+   * for the group managed by this instance.
    */
-  public void cancelAndRemove(String tag) {
-    group.cancelAndRemove(tag);
+  public void initializeAutoTaggingAndResubscription(Object target) {
+    Preconditions.checkNotNull(target, "Target cannot be null");
+    group.initializeAutoTaggingAndResubscription(target);
+  }
+
+  /**
+   * Calls
+   * {@link ObservableGroup#initializeAutoTaggingAndResubscriptionInTargetClassOnly(Object, Class)}
+   * for the group managed by this instance.
+   */
+  public <T> void initializeAutoTaggingAndResubscriptionInTargetClassOnly(T target,
+          Class<T> targetClass) {
+   group.initializeAutoTaggingAndResubscriptionInTargetClassOnly(target, targetClass);
+  }
+
+  /**
+   * Calls {@link ObservableGroup#cancelAllObservablesForObserver(Observer)} (Observer)}
+   * for the group associated with this instance.
+   */
+  public void cancelAllObservablesForObserver(Observer<?> observer) {
+    group.cancelAllObservablesForObserver(observer);
+  }
+
+  /**
+   * Calls {@link ObservableGroup#cancelAndRemove(Observer, String)} for the group
+   * associated with this instance.
+   */
+  public void cancelAndRemove(Observer<?> observer, String observableTag) {
+    group.cancelAndRemove(observer, observableTag);
   }
 
   private void onDestroy(boolean isFinishing) {
-    pendingSubscriptions.clear();
-
     if (isFinishing) {
       observableManager.destroy(group);
     } else {
-      group.unsubscribe();
+      group().removeNonResubscribableObservers();
+      group.dispose();
     }
   }
 

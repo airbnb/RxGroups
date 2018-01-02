@@ -15,8 +15,21 @@
  */
 package com.airbnb.rxgroups;
 
-import rx.Observer;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
-public interface ResubscriptionObserver<T> extends Observer<T> {
-  Object resubscriptionTag();
+/**
+ * Used on {@link io.reactivex.Observer} fields to indicate that they should be automatically
+ * subscribed to a certain Observable, or multiple Observables if they still haven't completed yet.
+ */
+@Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.FIELD)
+public @interface AutoResubscribe {
+  /**
+   * @return A custom tag to use instead of auto-generated tag.
+   * This tag should be unique within the RxGroup.
+   */
+  String customTag() default "";
 }

@@ -1,1 +1,6 @@
-include ':rxgroups', ':rxgroups-android', ':sample'
+include ':rxgroups',
+        ':rxgroups-annotation-test',
+        ':rxgroups-android',
+        ':rxgroups-processor',
+        ':sample'
+
