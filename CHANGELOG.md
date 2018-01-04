@@ -1,3 +1,9 @@
+# 1.0.0-alpha2 (1/4/2018)
+
+* Switches RxJava to 2.x
+* Currently only supports Rx2 Observable type
+* Adds `rxgroups-processor` to generate resubscription tag without runtime reflection
+
 # 0.3.5 (07/13/2016)
 
 * Fix: Correctly catch `NoClassDefFoundError` in `LifecycleResubscription`
