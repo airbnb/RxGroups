@@ -8,7 +8,7 @@ This is especially useful when used with [Retrofit](https://github.com/square/re
 For simple scenarios you can probably just let the original request be cancelled and fire a new one.
 However it's easy to see how this becomes a problem in more complex situations.
 
-Let's say your user is submitting a payment. You'll probably want to to guarantee that you can reattach
+Let's say your user is submitting a payment. You'll probably want to guarantee that you can reattach
 to the same in-flight or completed request after rotating the screen or leaving the Activity and
 returning later.
 
