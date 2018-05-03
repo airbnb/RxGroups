@@ -3,16 +3,18 @@
 buildscript {
   repositories {
     jcenter()
+      google()
   }
   dependencies {
     classpath 'com.bmuschko:gradle-nexus-plugin:2.3.1'
-    classpath 'com.android.tools.build:gradle:2.2.3'
+    classpath 'com.android.tools.build:gradle:3.1.2'
   }
 }
 
 allprojects {
   repositories {
     jcenter()
+    google()
   }
 }
 
