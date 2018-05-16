@@ -15,3 +15,8 @@
 #-keepclassmembers class fqcn.of.javascript.interface.for.webview {
 #   public *;
 #}
+
+# RxGroups creates classes that are accessed via reflection only. Need to make sure to keep those and their constructor
+-keep public class **_ObservableResubscriber {
+    <init>(**, com.airbnb.rxgroups.ObservableGroup);
+}
