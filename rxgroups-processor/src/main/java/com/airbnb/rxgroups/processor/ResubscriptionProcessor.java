@@ -116,6 +116,7 @@ public class ResubscriptionProcessor extends AbstractProcessor {
     private void processObserver(Element observer, LinkedHashMap<TypeElement, ClassToGenerateInfo>
             info, Class<? extends Annotation> annotationClass) {
         validateObserverField(observer, annotationClass);
+        validateСompetableField(observer, annotationClass);
         TypeElement enclosingClass = (TypeElement) observer.getEnclosingElement();
         ClassToGenerateInfo targetClass = getOrCreateTargetClass(info, enclosingClass);
 
@@ -149,19 +150,73 @@ public class ResubscriptionProcessor extends AbstractProcessor {
         TypeElement enclosingClass = (TypeElement) observerFieldElement.getEnclosingElement();
 
         if (annotationClass == AutoResubscribe.class
-                && !(ProcessorUtils.isTaggedObserver(observerFieldElement, typeUtils, elementUtils) ||
-                ProcessorUtils.isCompletableTaggedObserver(observerFieldElement, typeUtils, elementUtils))) {
-            logError("%s annotation may only be on %s (or %s) types. (class: %s, field: %s)",
-                    annotationClass.getSimpleName(), TaggedObserver.class, CompletableTaggedObserver.class,
+                && !ProcessorUtils.isTaggedObserver(observerFieldElement, typeUtils, elementUtils)) {
+            logError("%s annotation may only be on %s types. (class: %s, field: %s)",
+                    annotationClass.getSimpleName(), TaggedObserver.class,
                     enclosingClass.getSimpleName(), observerFieldElement.getSimpleName());
         }
 
         if (annotationClass == AutoTag.class &&
                 !(ProcessorUtils.isAutoTaggable(observerFieldElement, typeUtils, elementUtils) ||
-                        ProcessorUtils.isResubscribingObserver(observerFieldElement, typeUtils, elementUtils) ||
+                        ProcessorUtils.isResubscribingObserver(observerFieldElement, typeUtils, elementUtils))) {
+            logError("%s annotation may only be on %s or %s types. (class: %s, field: %s)",
+                    annotationClass.getSimpleName(), AutoTaggableObserver.class, AutoResubscribingObserver.class,
+                    enclosingClass.getSimpleName(), observerFieldElement.getSimpleName());
+        }
+
+        // Verify method modifiers.
+        Set<Modifier> modifiers = observerFieldElement.getModifiers();
+        if (modifiers.contains(PRIVATE) || modifiers.contains(STATIC)) {
+            logError(
+                    "%s annotations must not be on private or static fields. (class: %s, field: "
+                            + "%s)",
+                    annotationClass.getSimpleName(),
+                    enclosingClass.getSimpleName(), observerFieldElement.getSimpleName());
+        }
+
+        // Nested classes must be static
+        if (enclosingClass.getNestingKind().isNested()) {
+            if (!enclosingClass.getModifiers().contains(STATIC)) {
+                logError(
+                        "Nested classes with %s annotations must be static. (class: %s, field: %s)",
+                        annotationClass.getSimpleName(),
+                        enclosingClass.getSimpleName(), observerFieldElement.getSimpleName());
+            }
+        }
+
+        // Verify containing type.
+        if (enclosingClass.getKind() != CLASS) {
+            logError("%s annotations may only be contained in classes. (class: %s, field: %s)",
+                    annotationClass.getSimpleName(),
+                    enclosingClass.getSimpleName(), observerFieldElement.getSimpleName());
+        }
+
+        // Verify containing class visibility is not private.
+        if (enclosingClass.getModifiers().contains(PRIVATE)) {
+            logError("%s annotations may not be contained in private classes. (class: %s, "
+                            + "field: %s)",
+                    annotationClass.getSimpleName(),
+                    enclosingClass.getSimpleName(), observerFieldElement.getSimpleName());
+        }
+    }
+
+    private void validateСompetableField(Element observerFieldElement,
+                                         Class<? extends Annotation> annotationClass) {
+
+        TypeElement enclosingClass = (TypeElement) observerFieldElement.getEnclosingElement();
+
+        if (annotationClass == AutoResubscribe.class
+                && !(ProcessorUtils.isCompletableTaggedObserver(observerFieldElement, typeUtils, elementUtils))) {
+            logError("%s annotation may only be on %s types. (class: %s, field: %s)",
+                    annotationClass.getSimpleName(), CompletableTaggedObserver.class,
+                    enclosingClass.getSimpleName(), observerFieldElement.getSimpleName());
+        }
+
+        if (annotationClass == AutoTag.class &&
+                !(ProcessorUtils.isAutoTaggable(observerFieldElement, typeUtils, elementUtils) ||
                         ProcessorUtils.isResubscribingCompletable(observerFieldElement, typeUtils, elementUtils))) {
-            logError("%s annotation may only be on %s or %s or $s types. (class: %s, field: %s)",
-                    annotationClass.getSimpleName(), AutoTaggableObserver.class, AutoResubscribingObserver.class, AutoResubscribingCompletable.class,
+            logError("%s annotation may only be on %s or $s types. (class: %s, field: %s)",
+                    annotationClass.getSimpleName(), AutoTaggableObserver.class, AutoResubscribingCompletable.class,
                     enclosingClass.getSimpleName(), observerFieldElement.getSimpleName());
         }
 

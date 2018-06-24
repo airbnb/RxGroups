@@ -119,7 +119,7 @@ public class ResubscriptionProcessorTest {
         .withCompilerOptions("-Xlint:-processing")
         .processedWith(new ResubscriptionProcessor())
         .failsToCompile()
-        .withErrorContaining("AutoResubscribe annotation may only be on interface com.airbnb.rxgroups.TaggedObserver types.");
+        .withErrorContaining("AutoResubscribe annotation may only be on interface com.airbnb.rxgroups.TaggedObserver (or interface com.airbnb.rxgroups.CompletableTaggedObserver) types.");
   }
 
   @Test public void plainObserverFails_autoTag() throws Exception {
@@ -137,7 +137,6 @@ public class ResubscriptionProcessorTest {
   @Test public void taggedObserverFails_autoTag() throws Exception {
     JavaFileObject source = JavaFileObjects.forResource("TaggedObserver_Fail_AutoTag.java");
 
-
     Truth.assertAbout(JavaSourceSubjectFactory.javaSource()).that(source)
         .withCompilerOptions("-Xlint:-processing")
         .processedWith(new ResubscriptionProcessor())
@@ -145,9 +144,18 @@ public class ResubscriptionProcessorTest {
         .withErrorContaining("AutoTag annotation may only be on interface com.airbnb.rxgroups.AutoTaggableObserver or class com.airbnb.rxgroups.AutoResubscribingObserver types.");
   }
 
+  @Test public void completableTaggedObserverFails_autoTag() throws Exception {
+    JavaFileObject source = JavaFileObjects.forResource("CompletableTaggedObserver_Fail_AutoTag.java");
+
+    Truth.assertAbout(JavaSourceSubjectFactory.javaSource()).that(source)
+            .withCompilerOptions("-Xlint:-processing")
+            .processedWith(new ResubscriptionProcessor())
+            .failsToCompile()
+            .withErrorContaining("AutoTag annotation may only be on interface com.airbnb.rxgroups.AutoTaggableObserver or class com.airbnb.rxgroups.AutoResubscribingObserver types.");
+  }
+
   @Test public void privateObserver_fail() throws Exception {
     JavaFileObject source = JavaFileObjects.forResource("AutoResubscribingObserver_Fail_Private.java");
-
 
     Truth.assertAbout(JavaSourceSubjectFactory.javaSource()).that(source)
         .withCompilerOptions("-Xlint:-processing")
