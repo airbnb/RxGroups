@@ -15,7 +15,6 @@
  */
 package com.airbnb.rxgroups;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -133,7 +132,7 @@ public class ObservableGroup {
   Map<String, ManagedObservable<?>> getObservablesForObserver(String observerTag) {
     Map<String, ManagedObservable<?>> map = groupMap.get(observerTag);
     if (map == null) {
-      map = new HashMap<>();
+      map = new ConcurrentHashMap<>();
       groupMap.put(observerTag, map);
     }
     return map;
