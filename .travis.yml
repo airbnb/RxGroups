@@ -7,8 +7,8 @@ android:
   - android-25
   - extra-android-m2repository
   - extra-android-support
-after_success:
-  - ".buildscript/deploy_snapshot.sh"
+# after_success:
+#   - ".buildscript/deploy_snapshot.sh"
 jdk:
   - oraclejdk8
 branches:
@@ -27,7 +27,3 @@ cache:
   directories:
   - "$HOME/.gradle/caches/"
   - "$HOME/.gradle/wrapper/"
-env:
-  global:
-  - secure: MLFsb2JU7WV8cxAqnA4US2jp28GwfNwDuoEtDTVQlrD2kgJ+ViWTqlMxNNUAYkCUaTsIieWQ0HsBCbvGgZetHQws7F9hC1ZzG8CL+AFBsD8+QYETuf9vddnxI8/jrx6c1q+Pl70ENi2aRClcjCPch/fDIUUHwLjFIUYePARmdY66KHvKIR0buZPkcyh9Q1VRK0P0tQHzqVRTmQd+Bzc0K4lfLE2DVgF9Dul53x5u5NmoWh0VtXnHbV0nVrC3+W1R9u2AP2Dpzk8eC2lBicB1jLhMDE88rpSpebC7z3Hzw+XImkaO7lk5sJYcT5MflMKUPaEN/+w4kT2gyA19BLLVgcnKppTtViaJacHsQbWtG8NBkz3vfhO/ISkcXuGbTg8yxlFUvIv9zOuIzIOfYdbrWpr3Gl0GIQvIvNQAMAJGupTELq2GTswYcx3/O5iN4yljx7ruoPtz9AzFHAa42wFXOY5FzaQ6gGyqZpP99yLPDEdbricdjxKWqt5LmdMsDt5VHsD6e2v5tS2y0+tPAlkNjR1IyNZmc7AZ8GSqD1EvKeVWZKLCuUWJOb7b5F0hwRAnCfR1AQbEB6OgGUFsUwOx9WHsw2jVAYeVKn/Jpqf4nPPynbw9lse6+HrfEfsavO1nNNPibRE6Ian+Pia3bamabkfVxiTo37PGUkcIZFEc2ww=
-  - secure: Ssox6xEZML/ftPpvpnGjdDVY0UWlzxP61gePbdvuMZU0Ws7W+K7hu28Ltva+tPrj1sog+hfXVgXSTPGQr8b7bhNB1TB/83AICpGlLrkkVceH4iU4Eol8WV1r5C8EKnlnTz5/39SwHXbkX8c9jEeUrEHVmXuYYJxD9tQzkVdlFbsRHFgENMahWh9La3d68zfu93xfwtfaFtoQSrWypoZtKc5RwV8F8sIBSYVDUg0XFNsFbbLb5JkqpO24dd5L1FuLq7XGj8XozeXGu+ph6jQ3VD371T3gK7fhkG/gkbJxnFYLNKeP94Va8WsLtcoINhm0e1BKCsQ4BWnl52x7P1yJuAtHuGD7gtX8+TInHmWbOmtJLRmB8fn0bhHgflw0ugUvVIROlbQN1W+sG21iyUmJafHY8DEdDFjVkgzwR5hnjpK1RnfoGvtKJkWhQbMD+f3l9f011+M0XXy57+glhu984vAl3shWKgDowEmqFZ1Ow6Whun3OCib7xiy+QbGXP13yVVJnpYLVkC6ZENzjW7udhQl8/ek7nnF96dpc+KhIsc4RHEUfb7dVplEVf8iMmc0tpalbdIbon54FdWcA+8Io7T5yHBlQKBoJWgjugOl4rBikBU0rwUeDZIMJlK4TDVH7t7MM0BbbrwckGKkZXralrf83cQnNCvQ52L+13FgZKAQ=
