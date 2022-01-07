@@ -16,4 +16,4 @@ jobs:
           distribution: liberica
           java-version: '8'
       - name: Build/Test RxGroups
-        run: ./gradlew check
+        run: ./gradlew check --stacktrace
