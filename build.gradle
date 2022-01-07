@@ -3,7 +3,6 @@ subprojects {
 
   buildscript {
     repositories {
-      google()
       jcenter()
     }
 
@@ -13,7 +12,6 @@ subprojects {
     }
   }
   repositories {
-    google()
     jcenter()
   }
 
