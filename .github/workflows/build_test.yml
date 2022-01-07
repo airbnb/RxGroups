@@ -15,5 +15,7 @@ jobs:
         with:
           distribution: liberica
           java-version: '8'
+      - name: NDK workaround
+        run: mkdir -p $ANDROID_HOME/ndk-bundle/toolchains/mips64el-linux-android/prebuilt/linux-x86_64
       - name: Build/Test RxGroups
         run: ./gradlew check --stacktrace
