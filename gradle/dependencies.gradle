@@ -21,7 +21,7 @@ ext.androidConfig = [
 ext.dep = [
         androidSupportAppCompat: "com.android.support:appcompat-v7:$versions.supportLibVersion",
         androidSupportDesign   : "com.android.support:design:$versions.supportLibVersion",
-        androidPlugin          : 'com.android.tools.build:gradle:2.3.0',
+        androidPlugin          : 'com.android.tools.build:gradle:3.2.0',
         autoService            : 'com.google.auto.service:auto-service:1.0-rc2',
         findBugs               : 'com.google.code.findbugs:jsr305:3.0.0',
         gradleNexus            : 'com.bmuschko:gradle-nexus-plugin:2.3.1',
