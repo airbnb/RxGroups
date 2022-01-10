@@ -11,6 +11,10 @@ android {
     versionCode 1
     versionName "1.0"
   }
+  // Lint is broken becaues of the SDK being too old.
+  lintOptions {
+    abortOnError false
+  }
 }
 
 dependencies {

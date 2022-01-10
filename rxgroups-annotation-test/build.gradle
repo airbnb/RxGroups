@@ -21,6 +21,10 @@ android {
       proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
     }
   }
+  // Lint is broken becaues of the SDK being too old.
+  lintOptions {
+    abortOnError false
+  }
 }
 
 dependencies {

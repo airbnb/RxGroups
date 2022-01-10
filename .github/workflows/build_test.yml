@@ -1,0 +1,21 @@
+name: Build/Test
+
+on:
+  # Trigger on every pull request
+  pull_request:
+  # This is reused in deploy_snapshot.yml
+  workflow_call:
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout RxGroups
+        uses: actions/checkout@v2
+      - uses: actions/setup-java@v2
+        with:
+          distribution: liberica
+          java-version: '8'
+      - name: NDK workaround
+        run: mkdir -p $ANDROID_HOME/ndk-bundle/toolchains/mips64el-linux-android/prebuilt/linux-x86_64
+      - name: Build/Test RxGroups
+        run: ./gradlew check --stacktrace
